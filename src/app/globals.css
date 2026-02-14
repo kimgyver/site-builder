@@ -24,3 +24,268 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+  Rich text styling
+  Tailwind CSS preflight resets headings, lists, and links to inherit styles.
+  We add a small, predictable style layer for editor + rendered HTML.
+*/
+.rich-content {
+  /* Tweak these to control vertical rhythm globally. */
+  --rich-line-height: 0.7;
+  --rich-p-margin-y: 0.75rem;
+  --rich-list-margin-y: 0.75rem;
+  --rich-h2-margin-top: 1.25rem;
+  --rich-h2-margin-bottom: 0.5rem;
+  --rich-h3-margin-top: 1rem;
+  --rich-h3-margin-bottom: 0.5rem;
+
+  line-height: var(--rich-line-height);
+}
+
+.rich-content :where(p) {
+  margin: var(--rich-p-margin-y) 0;
+}
+
+/*
+  Tables with user-resized columns may be wider than their container.
+  We allow horizontal scrolling so column widths remain stable.
+*/
+.rich-content {
+  overflow-x: auto;
+}
+
+.rich-content :where(h2) {
+  margin: var(--rich-h2-margin-top) 0 var(--rich-h2-margin-bottom);
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+}
+
+.rich-content :where(h3) {
+  margin: var(--rich-h3-margin-top) 0 var(--rich-h3-margin-bottom);
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+}
+
+.rich-content :where(ul) {
+  margin: var(--rich-list-margin-y) 0;
+  padding-left: 1.5rem;
+  list-style: disc;
+}
+
+.rich-content :where(ol) {
+  margin: var(--rich-list-margin-y) 0;
+  padding-left: 1.5rem;
+  list-style: decimal;
+}
+
+.rich-content :where(li) {
+  margin: 0.25rem 0;
+}
+
+.rich-content :where(a) {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rich-content :where(code) {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.9em;
+}
+
+.rich-content :where(pre) {
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: #0b1220;
+  color: #e5e7eb;
+  overflow-x: auto;
+}
+
+.rich-content :where(img) {
+  margin: 0.75rem 0;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+/* In tables, we want explicit px widths to be honored (table can overflow and scroll). */
+.rich-content :where(td img, th img) {
+  max-width: none;
+}
+
+/* Show a clear visual indicator for the currently selected image node. */
+.rich-content :where(img).ProseMirror-selectednode,
+.rich-content .ProseMirror-selectednode :where(img) {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.9);
+  border-color: rgba(59, 130, 246, 0.9);
+}
+
+/* Image drag-resize UI (bottom-right handle) */
+.rich-content .tiptap-image-wrapper {
+  max-width: 100%;
+}
+
+.rich-content .tiptap-image-resize-handle {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.95);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+  cursor: nwse-resize;
+  opacity: 0;
+  transform: scale(0.95);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.rich-content .ProseMirror-selectednode .tiptap-image-resize-handle {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.rich-content :where(img[data-align="center"]) {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.rich-content :where(img[data-align="left"]) {
+  display: block;
+  margin-right: auto;
+}
+
+.rich-content :where(img[data-align="right"]) {
+  display: block;
+  margin-left: auto;
+}
+
+.rich-content :where(table) {
+  margin: 0.75rem 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+  /* Keep the sum of resized column widths (may overflow; container scrolls). */
+  width: max-content;
+  max-width: none;
+}
+
+.rich-content :where(th, td) {
+  border: 1px solid #e5e7eb;
+  padding: 0.5rem;
+  vertical-align: top;
+  position: relative;
+  /* Make multi-line content inside cells clearly separated
+     and preserve explicit line breaks/newlines. */
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+/* Treat empty paragraphs inside table cells as explicit blank lines, so
+   multiple Enters in the editor produce multiple visible gaps on the
+   rendered page (e.g. between "cdas" and "2222"). */
+.rich-content :where(th p:empty, td p:empty) {
+  min-height: 1em;
+}
+
+/* Inside table cells, paragraphs should behave more like simple lines,
+   so rely on line-height rather than paragraph margins. This avoids
+   margin-collapsing eating extra blank lines. */
+.rich-content :where(th p, td p) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* Support transparent borders for specific cells. */
+.rich-content
+  :where(th[data-border="transparent"], td[data-border="transparent"]) {
+  border-color: transparent;
+}
+
+/* In the editor, still show a faint dotted outline for transparent borders
+   so the cell area is visible while editing. Public view remains borderless. */
+.rich-content.editor
+  :where(th[data-border="transparent"], td[data-border="transparent"]) {
+  border-style: dashed;
+  border-width: 1px;
+  border-color: #a1a1aa; /* zinc-400, more visible */
+}
+
+/* When a cell has an explicit height from the editor (data-height-px),
+   reduce vertical padding so the visual row height can shrink more. */
+.rich-content :where(th[data-height-px], td[data-height-px]) {
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
+}
+
+.rich-content :where(th) {
+  background: #f4f4f5;
+  font-weight: 700;
+}
+
+/* ProseMirror/TipTap multi-cell selection (drag across columns/rows).
+   ProseMirror tables plugin adds `.selectedCell` to td/th elements.
+   Use a strong overlay so selection is always visible.
+*/
+.rich-content td.selectedCell,
+.rich-content th.selectedCell {
+  box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.85);
+}
+
+.rich-content td.selectedCell::after,
+.rich-content th.selectedCell::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(59, 130, 246, 0.18);
+  pointer-events: none;
+}
+
+/* TipTap/ProseMirror table column resizing */
+.rich-content .tableWrapper {
+  overflow-x: auto;
+}
+
+.rich-content .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  pointer-events: none;
+  background-color: rgba(59, 130, 246, 0.35);
+}
+
+.rich-content .resize-cursor {
+  cursor: col-resize;
+}
+
+/* Vertical row-resize handle for table cells (editor only). */
+.rich-content .row-resize-handle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 4px;
+  background-color: rgba(59, 130, 246, 0.35);
+  cursor: row-resize;
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.rich-content .row-resize-handle:hover {
+  opacity: 1;
+}

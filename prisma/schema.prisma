@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Page {
+  id        String    @id @default(cuid())
+  title     String
+  slug      String    @unique
+  status    PageStatus @default(DRAFT)
+  previewToken String  @unique @default(cuid())
+  seoTitle  String?
+  seoDescription String?
+  lastPublishedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sections  Section[]
+  revisions PageRevision[]
+}
+
+model Section {
+  id        String   @id @default(cuid())
+  type      String
+  order     Int
+  props     Json
+  enabled   Boolean  @default(true)
+  pageId    String
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+}
+
+model PageRevision {
+  id        String   @id @default(cuid())
+  pageId    String
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  version   Int
+  source    RevisionSource @default(MANUAL)
+  note      String?
+  snapshot  Json
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  @@unique([pageId, version])
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum RevisionSource {
+  MANUAL
+  METADATA
+  SECTIONS
+  PUBLISH
+}

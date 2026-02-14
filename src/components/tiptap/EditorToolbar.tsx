@@ -1,0 +1,334 @@
+import type { RefObject } from "react";
+import type { Editor } from "@tiptap/core";
+import { ToolbarButton } from "./ToolbarButton";
+
+interface EditorToolbarProps {
+  editor: Editor;
+  isImageActive: boolean;
+  effectiveImageWidth: number | null;
+  isTableActive: boolean;
+  activeTextColor?: string;
+  activeBorderColor?: string | null;
+  textColorValue: string;
+  highlightColorValue: string;
+  cellBgColorValue: string;
+  tableBorderColorValue: string;
+  tableBorderWidthValue: number;
+  textColorInputRef: RefObject<HTMLInputElement | null>;
+  highlightColorInputRef: RefObject<HTMLInputElement | null>;
+  cellBgColorInputRef: RefObject<HTMLInputElement | null>;
+  tableBorderColorInputRef: RefObject<HTMLInputElement | null>;
+  onSetTextColor: (color: string) => void;
+  onClearTextColor: () => void;
+  onSetHighlightColor: (color: string) => void;
+  onClearHighlightColor: () => void;
+  onSetOrUnsetLink: () => void;
+  onInsertImage: () => void;
+  onInsertTable: () => void;
+  onSetImageWidth: (width: number | null) => void;
+  onSetImageAlign: (align: "left" | "center" | "right") => void;
+  onSetCellAlign: (align: "left" | "center" | "right") => void;
+  onSetCellBackgroundColor: (color: string) => void;
+  onClearCellBackgroundColor: () => void;
+  onSetCellBorderTransparent: () => void;
+  onSetCellBorderNormal: () => void;
+  onSetCellBorderColor: (color: string) => void;
+  onClearCellBorderColor: () => void;
+  onSetCellBorderWidth: (width: number) => void;
+}
+
+export function EditorToolbar({
+  editor,
+  isImageActive,
+  effectiveImageWidth,
+  isTableActive,
+  activeTextColor,
+  activeBorderColor,
+  textColorValue,
+  highlightColorValue,
+  cellBgColorValue,
+  tableBorderColorValue,
+  tableBorderWidthValue,
+  textColorInputRef,
+  highlightColorInputRef,
+  cellBgColorInputRef,
+  tableBorderColorInputRef,
+  onSetTextColor,
+  onClearTextColor,
+  onSetHighlightColor,
+  onClearHighlightColor,
+  onSetOrUnsetLink,
+  onInsertImage,
+  onInsertTable,
+  onSetImageWidth,
+  onSetImageAlign,
+  onSetCellAlign,
+  onSetCellBackgroundColor,
+  onClearCellBackgroundColor,
+  onSetCellBorderTransparent,
+  onSetCellBorderNormal,
+  onSetCellBorderColor,
+  onClearCellBorderColor,
+  onSetCellBorderWidth
+}: EditorToolbarProps) {
+  return (
+    <div className="flex flex-wrap gap-1 rounded-md border border-zinc-300 bg-zinc-50 px-2 py-1 text-xs text-zinc-700">
+      <ToolbarButton
+        label="Bold"
+        title="Bold"
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        active={editor.isActive("bold")}
+      />
+      <ToolbarButton
+        label="Italic"
+        title="Italic"
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        active={editor.isActive("italic")}
+      />
+      <ToolbarButton
+        label="Underline"
+        title="Underline"
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+        active={editor.isActive("underline")}
+      />
+      <ToolbarButton
+        label="Text Color"
+        title="Text Color"
+        onClick={() => textColorInputRef.current?.click()}
+        active={!!activeTextColor}
+      />
+      <input
+        ref={textColorInputRef}
+        type="color"
+        value={textColorValue}
+        onChange={e => onSetTextColor(e.target.value)}
+        className="h-6 w-6 cursor-pointer rounded border border-zinc-300 bg-white p-0"
+        aria-label="Text color"
+      />
+      <ToolbarButton
+        label="Clear Text"
+        title="Clear Text Color"
+        onClick={onClearTextColor}
+        disabled={!activeTextColor}
+      />
+      <ToolbarButton
+        label="Highlight"
+        title="Highlight"
+        onClick={() => highlightColorInputRef.current?.click()}
+        active={editor.isActive("highlight")}
+      />
+      <input
+        ref={highlightColorInputRef}
+        type="color"
+        value={highlightColorValue}
+        onChange={e => onSetHighlightColor(e.target.value)}
+        className="h-6 w-6 cursor-pointer rounded border border-zinc-300 bg-white p-0"
+        aria-label="Highlight color"
+      />
+      <ToolbarButton
+        label="Clear HL"
+        title="Clear Highlight"
+        onClick={onClearHighlightColor}
+        disabled={!editor.isActive("highlight")}
+      />
+      <span className="mx-1 h-5 w-px bg-zinc-300" />
+      <ToolbarButton
+        label="P"
+        onClick={() => editor.chain().focus().setParagraph().run()}
+        active={editor.isActive("paragraph")}
+      />
+      <ToolbarButton
+        label="H2"
+        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        active={editor.isActive("heading", { level: 2 })}
+      />
+      <ToolbarButton
+        label="H3"
+        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        active={editor.isActive("heading", { level: 3 })}
+      />
+      <span className="mx-1 h-5 w-px bg-zinc-300" />
+      <ToolbarButton
+        label="• List"
+        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        active={editor.isActive("bulletList")}
+      />
+      <ToolbarButton
+        label="1. List"
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        active={editor.isActive("orderedList")}
+      />
+      <span className="mx-1 h-5 w-px bg-zinc-300" />
+      <ToolbarButton
+        label="Link"
+        onClick={onSetOrUnsetLink}
+        active={editor.isActive("link")}
+      />
+      <ToolbarButton
+        label="Unlink"
+        onClick={() =>
+          editor.chain().focus().extendMarkRange("link").unsetLink().run()
+        }
+        disabled={!editor.isActive("link")}
+      />
+      <span className="mx-1 h-5 w-px bg-zinc-300" />
+      <ToolbarButton
+        label="Undo"
+        onClick={() => editor.chain().focus().undo().run()}
+        disabled={!editor.can().undo()}
+      />
+      <ToolbarButton
+        label="Redo"
+        onClick={() => editor.chain().focus().redo().run()}
+        disabled={!editor.can().redo()}
+      />
+
+      <span className="mx-1 h-5 w-px bg-zinc-300" />
+      <ToolbarButton label="Image" onClick={onInsertImage} />
+      <ToolbarButton
+        label="Table"
+        onClick={onInsertTable}
+        active={isTableActive}
+      />
+
+      {isImageActive ? (
+        <>
+          <span className="mx-1 h-5 w-px bg-zinc-300" />
+          <span className="px-1 text-[11px] text-zinc-500">
+            Img {effectiveImageWidth ? `${effectiveImageWidth}%` : "Auto"}
+          </span>
+          <input
+            type="range"
+            min={5}
+            max={100}
+            step={1}
+            value={effectiveImageWidth ?? 100}
+            onChange={e => onSetImageWidth(Number(e.target.value))}
+            className="mx-1 h-5 w-28 accent-zinc-900"
+            aria-label="Image width"
+          />
+          <ToolbarButton label="Auto" onClick={() => onSetImageWidth(null)} />
+          <ToolbarButton label="⟸" onClick={() => onSetImageAlign("left")} />
+          <ToolbarButton label="↔" onClick={() => onSetImageAlign("center")} />
+          <ToolbarButton label="⟹" onClick={() => onSetImageAlign("right")} />
+        </>
+      ) : null}
+
+      {isTableActive ? (
+        <>
+          <span className="mx-1 h-5 w-px bg-zinc-300" />
+          <ToolbarButton
+            label="Merge"
+            title="Merge Cells"
+            onClick={() => editor.chain().focus().mergeCells().run()}
+          />
+          <ToolbarButton
+            label="Split"
+            title="Split Cell"
+            onClick={() => editor.chain().focus().splitCell().run()}
+          />
+          <ToolbarButton
+            label="Align Left"
+            title="Cell Align: Left"
+            onClick={() => onSetCellAlign("left")}
+          />
+          <ToolbarButton
+            label="Align Center"
+            title="Cell Align: Center"
+            onClick={() => onSetCellAlign("center")}
+          />
+          <ToolbarButton
+            label="Align Right"
+            title="Cell Align: Right"
+            onClick={() => onSetCellAlign("right")}
+          />
+          <ToolbarButton
+            label="Cell BG"
+            title="Cell Background"
+            onClick={() => cellBgColorInputRef.current?.click()}
+          />
+          <input
+            ref={cellBgColorInputRef}
+            type="color"
+            value={cellBgColorValue}
+            onChange={e => onSetCellBackgroundColor(e.target.value)}
+            className="h-6 w-6 cursor-pointer rounded border border-zinc-300 bg-white p-0"
+            aria-label="Cell background color"
+          />
+          <ToolbarButton
+            label="BG Clear"
+            title="Clear Cell Background"
+            onClick={onClearCellBackgroundColor}
+          />
+          <ToolbarButton
+            label="No Border"
+            title="Hide Cell Border"
+            onClick={onSetCellBorderTransparent}
+          />
+          <ToolbarButton
+            label="Border"
+            title="Restore Cell Border"
+            onClick={onSetCellBorderNormal}
+          />
+          <ToolbarButton
+            label="Border Color"
+            title="Border Color"
+            onClick={() => tableBorderColorInputRef.current?.click()}
+            active={!!activeBorderColor}
+          />
+          <input
+            ref={tableBorderColorInputRef}
+            type="color"
+            value={tableBorderColorValue}
+            onChange={e => onSetCellBorderColor(e.target.value)}
+            className="h-6 w-6 cursor-pointer rounded border border-zinc-300 bg-white p-0"
+            aria-label="Table border color"
+          />
+          <ToolbarButton
+            label="Border Clear"
+            title="Clear Border Color"
+            onClick={onClearCellBorderColor}
+          />
+          <span className="px-1 text-[11px] text-zinc-500">
+            Border {tableBorderWidthValue}px
+          </span>
+          <input
+            type="range"
+            min={1}
+            max={12}
+            step={1}
+            value={tableBorderWidthValue}
+            onChange={e => onSetCellBorderWidth(Number(e.target.value))}
+            className="mx-1 h-5 w-20 accent-zinc-900"
+            aria-label="Table border width"
+          />
+          <ToolbarButton
+            label="+Row"
+            title="Add Row Below"
+            onClick={() => editor.chain().focus().addRowAfter().run()}
+          />
+          <ToolbarButton
+            label="+Col"
+            title="Add Column Right"
+            onClick={() => editor.chain().focus().addColumnAfter().run()}
+          />
+          <ToolbarButton
+            label="-Row"
+            title="Delete Current Row"
+            onClick={() => editor.chain().focus().deleteRow().run()}
+          />
+          <ToolbarButton
+            label="-Col"
+            title="Delete Current Column"
+            onClick={() => editor.chain().focus().deleteColumn().run()}
+          />
+          <ToolbarButton
+            label="DelTbl"
+            title="Delete Table"
+            onClick={() => editor.chain().focus().deleteTable().run()}
+          />
+        </>
+      ) : null}
+    </div>
+  );
+}
