@@ -6,12 +6,14 @@ export default function SaveSectionsClientWrapper({
   pageId,
   expectedUpdatedAt,
   initialSections,
-  action
+  action,
+  onSuccess
 }: {
   pageId: string;
   expectedUpdatedAt: string;
   initialSections: EditableSection[];
   action: (formData: FormData) => Promise<any>;
+  onSuccess?: () => void;
 }) {
   return (
     <SaveSectionsWithLoading
@@ -19,6 +21,7 @@ export default function SaveSectionsClientWrapper({
       expectedUpdatedAt={expectedUpdatedAt}
       initialSections={initialSections}
       action={action}
+      onSuccess={onSuccess}
     />
   );
 }

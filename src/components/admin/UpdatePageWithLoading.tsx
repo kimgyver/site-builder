@@ -3,7 +3,8 @@ import { useState } from "react";
 
 export default function UpdatePageWithLoading({
   page,
-  action
+  action,
+  onSuccess
 }: {
   page: {
     id: string;
@@ -14,6 +15,7 @@ export default function UpdatePageWithLoading({
     status: string;
   };
   action: (formData: FormData) => Promise<any>;
+  onSuccess?: () => void;
 }) {
   const [form, setForm] = useState({
     title: page.title,
@@ -47,7 +49,7 @@ export default function UpdatePageWithLoading({
     const result = await action(formData);
     setIsSaving(false);
     if (result?.ok) {
-      window.location.reload();
+      if (onSuccess) onSuccess();
     } else {
       setError(result?.error || "Failed to update page");
     }

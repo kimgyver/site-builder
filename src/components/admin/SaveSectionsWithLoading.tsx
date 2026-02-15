@@ -13,7 +13,8 @@ export default function SaveSectionsWithLoading({
   pageId,
   expectedUpdatedAt,
   initialSections,
-  action
+  action,
+  onSuccess
 }: {
   pageId: string;
   expectedUpdatedAt: string;
@@ -21,6 +22,7 @@ export default function SaveSectionsWithLoading({
   action: (
     formData: FormData
   ) => Promise<{ ok: boolean; error?: string } | undefined>;
+  onSuccess?: () => void;
 }) {
   const [sections, setSections] = useState<EditableSection[]>(initialSections);
   const [isSaving, setIsSaving] = useState(false);
@@ -36,7 +38,7 @@ export default function SaveSectionsWithLoading({
     const result = await action(formData);
     setIsSaving(false);
     if (result?.ok) {
-      window.location.reload();
+      if (onSuccess) onSuccess();
     } else {
       setError(result?.error || "Failed to save sections");
     }
