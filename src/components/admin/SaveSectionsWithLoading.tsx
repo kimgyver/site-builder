@@ -18,7 +18,9 @@ export default function SaveSectionsWithLoading({
   pageId: string;
   expectedUpdatedAt: string;
   initialSections: EditableSection[];
-  action: (formData: FormData) => Promise<void>;
+  action: (
+    formData: FormData
+  ) => Promise<{ ok: boolean; error?: string } | undefined>;
 }) {
   const [sections, setSections] = useState<EditableSection[]>(initialSections);
   const [isSaving, setIsSaving] = useState(false);

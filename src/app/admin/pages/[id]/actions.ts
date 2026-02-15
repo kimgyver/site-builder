@@ -224,7 +224,7 @@ export async function updatePage(formData: FormData) {
         slug: String(slug),
         seoTitle: seoTitle ? String(seoTitle) : undefined,
         seoDescription: seoDescription ? String(seoDescription) : undefined,
-        status: String(status),
+        status: status as PageStatus,
         updatedAt: new Date()
       }
     });

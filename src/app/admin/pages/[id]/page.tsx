@@ -1,5 +1,6 @@
 import SaveSectionsWithLoading from "@/components/admin/SaveSectionsWithLoading";
 import SaveSectionsClientWrapper from "@/components/admin/SaveSectionsClientWrapper";
+import type { EditableSection } from "@/types/sections";
 import RestoreRevisionWithLoading from "@/components/admin/RestoreRevisionWithLoading";
 import UpdatePageWithLoading from "@/components/admin/UpdatePageWithLoading";
 
