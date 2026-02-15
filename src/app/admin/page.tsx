@@ -46,7 +46,12 @@ export default async function AdminHome() {
               <th className="px-4 py-2">Slug</th>
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2">Updated</th>
-              <th className="px-4 py-2 bg-white border-l border-zinc-200" style={{ position: 'sticky', right: 0, zIndex: 2 }}> </th>
+              <th
+                className="px-4 py-2 bg-white border-l border-zinc-200"
+                style={{ position: "sticky", right: 0, zIndex: 2 }}
+              >
+                {" "}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -71,14 +76,24 @@ export default async function AdminHome() {
                   <td className="px-4 py-2 text-xs text-zinc-600">
                     {page.updatedAt.toLocaleString()}
                   </td>
-                  <td className="px-4 py-2 text-xs bg-white border-l border-zinc-200" style={{ position: 'sticky', right: 0, zIndex: 1 }}>
+                  <td
+                    className="px-4 py-2 text-xs bg-white border-l border-zinc-200"
+                    style={{ position: "sticky", right: 0, zIndex: 1 }}
+                  >
                     <Link
                       href={`/admin/pages/${page.id}`}
                       className="rounded-md border border-blue-500 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 w-full sm:w-auto block text-center flex items-center justify-center gap-1"
                       aria-label="Edit page"
                       style={{ minWidth: "64px", overflow: "visible" }}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 inline-block"><path d="M15.414 2.586a2 2 0 0 1 2.828 2.828l-10 10A2 2 0 0 1 7 16H5a1 1 0 0 1-1-1v-2a2 2 0 0 1 .586-1.414l10-10z" /></svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="w-4 h-4 inline-block"
+                      >
+                        <path d="M15.414 2.586a2 2 0 0 1 2.828 2.828l-10 10A2 2 0 0 1 7 16H5a1 1 0 0 1-1-1v-2a2 2 0 0 1 .586-1.414l10-10z" />
+                      </svg>
                       <span>Edit</span>
                     </Link>
                   </td>
