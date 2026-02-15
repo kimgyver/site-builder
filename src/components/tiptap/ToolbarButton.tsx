@@ -1,10 +1,4 @@
-interface ToolbarButtonProps {
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-  active?: boolean;
-  title?: string;
-}
+import type { ToolbarButtonProps } from "@/types/components";
 
 export function ToolbarButton({
   label,

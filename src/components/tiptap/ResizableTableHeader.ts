@@ -119,6 +119,18 @@ export const ResizableTableHeader = TableHeader.extend({
           return {};
         }
       },
+      backgroundColor: {
+        default: null,
+        parseHTML: element => {
+          const attr = element.getAttribute("data-bg");
+          if (attr) return attr;
+          const style = (element as HTMLElement).style?.backgroundColor;
+          return style || null;
+        },
+        renderHTML: () => {
+          return {};
+        }
+      },
       heightPx: {
         default: null,
         parseHTML: element => {
@@ -134,6 +146,7 @@ export const ResizableTableHeader = TableHeader.extend({
         },
         renderHTML: attributes => {
           const rawHeight = attributes.heightPx as string | null;
+          const bg = attributes.backgroundColor as string | null;
           const colwidth = attributes.colwidth as number[] | null;
           const align = attributes.textAlign as string | null;
           const borderMode = attributes.borderMode as string | null;
@@ -141,6 +154,10 @@ export const ResizableTableHeader = TableHeader.extend({
           const rawBorderWidth = attributes.borderWidth as string | null;
 
           const styleParts: string[] = [];
+
+          if (bg) {
+            styleParts.push(`background-color:${String(bg)};`);
+          }
 
           let heightNumber: number | null = null;
           if (
@@ -191,6 +208,7 @@ export const ResizableTableHeader = TableHeader.extend({
 
           if (
             !styleParts.length &&
+            !bg &&
             heightNumber === null &&
             !borderColor &&
             borderWidthNumber === null
@@ -201,6 +219,9 @@ export const ResizableTableHeader = TableHeader.extend({
           const out: Record<string, string> = {};
           if (styleParts.length) {
             out.style = styleParts.join("");
+          }
+          if (bg) {
+            out["data-bg"] = String(bg);
           }
           if (heightNumber !== null) {
             out["data-height-px"] = String(Math.round(heightNumber));
@@ -244,6 +265,7 @@ export const ResizableTableHeader = TableHeader.extend({
 
       const applyFromNode = () => {
         const attrs = currentNode.attrs as Record<string, unknown> & {
+          backgroundColor?: string | null;
           heightPx?: string | null;
           colspan?: number;
           rowspan?: number;
@@ -260,6 +282,14 @@ export const ResizableTableHeader = TableHeader.extend({
           dom.setAttribute("data-colwidth", attrs.colwidth.join(","));
         } else {
           dom.removeAttribute("data-colwidth");
+        }
+
+        if (attrs.backgroundColor) {
+          dom.style.backgroundColor = String(attrs.backgroundColor);
+          dom.setAttribute("data-bg", String(attrs.backgroundColor));
+        } else {
+          dom.style.backgroundColor = "";
+          dom.removeAttribute("data-bg");
         }
 
         const rawHeight = attrs.heightPx;

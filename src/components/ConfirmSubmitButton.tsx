@@ -1,12 +1,7 @@
 "use client";
 
-import type { MouseEvent, ReactNode } from "react";
-
-interface ConfirmSubmitButtonProps {
-  message: string;
-  className?: string;
-  children: ReactNode;
-}
+import type { MouseEvent } from "react";
+import type { ConfirmSubmitButtonProps } from "@/types/components";
 
 export function ConfirmSubmitButton({
   message,

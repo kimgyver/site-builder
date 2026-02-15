@@ -1,41 +1,5 @@
-import type { RefObject } from "react";
-import type { Editor } from "@tiptap/core";
+import type { EditorToolbarProps } from "@/types/tiptap";
 import { ToolbarButton } from "./ToolbarButton";
-
-interface EditorToolbarProps {
-  editor: Editor;
-  isImageActive: boolean;
-  effectiveImageWidth: number | null;
-  isTableActive: boolean;
-  activeTextColor?: string;
-  activeBorderColor?: string | null;
-  textColorValue: string;
-  highlightColorValue: string;
-  cellBgColorValue: string;
-  tableBorderColorValue: string;
-  tableBorderWidthValue: number;
-  textColorInputRef: RefObject<HTMLInputElement | null>;
-  highlightColorInputRef: RefObject<HTMLInputElement | null>;
-  cellBgColorInputRef: RefObject<HTMLInputElement | null>;
-  tableBorderColorInputRef: RefObject<HTMLInputElement | null>;
-  onSetTextColor: (color: string) => void;
-  onClearTextColor: () => void;
-  onSetHighlightColor: (color: string) => void;
-  onClearHighlightColor: () => void;
-  onSetOrUnsetLink: () => void;
-  onInsertImage: () => void;
-  onInsertTable: () => void;
-  onSetImageWidth: (width: number | null) => void;
-  onSetImageAlign: (align: "left" | "center" | "right") => void;
-  onSetCellAlign: (align: "left" | "center" | "right") => void;
-  onSetCellBackgroundColor: (color: string) => void;
-  onClearCellBackgroundColor: () => void;
-  onSetCellBorderTransparent: () => void;
-  onSetCellBorderNormal: () => void;
-  onSetCellBorderColor: (color: string) => void;
-  onClearCellBorderColor: () => void;
-  onSetCellBorderWidth: (width: number) => void;
-}
 
 export function EditorToolbar({
   editor,

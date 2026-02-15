@@ -1,9 +1,13 @@
-export const SESSION_COOKIE_NAME = "sb_admin_session";
+import type { AdminRole } from "@/types/auth";
 
-export type AdminRole = "editor" | "publisher";
+export type { AdminRole } from "@/types/auth";
+
+export const SESSION_COOKIE_NAME = "sb_admin_session";
 
 function getSessionKey() {
   const password = process.env.ADMIN_PASSWORD?.trim() ?? "";
+  console.log("ADMIN_SESSION_KEY:", process.env.ADMIN_SESSION_KEY);
+  console.log("ADMIN_PASSWORD:", process.env.ADMIN_PASSWORD);
   return process.env.ADMIN_SESSION_KEY?.trim() || password;
 }
 

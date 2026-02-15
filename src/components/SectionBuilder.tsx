@@ -1,55 +1,78 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { JSONContent } from "@tiptap/core";
 import { TiptapEditor } from "@/components/TiptapEditor";
-
-export type SectionType = "hero" | "text" | "image" | "faq" | "richText";
-
-export interface EditableSection {
-  id: string;
-  type: SectionType;
-  order: number;
-  enabled: boolean;
-  props: Record<string, unknown>;
-}
-
-interface SectionBuilderProps {
-  pageId: string;
-  initialSections: EditableSection[];
-}
+import type { SectionBuilderProps } from "@/types/components";
+import type { EditableSection, SectionType } from "@/types/sections";
+import type { MediaItem, PageReferenceItem } from "@/types/references";
 
 export function SectionBuilder({
   pageId,
-  initialSections
-}: SectionBuilderProps) {
+  expectedUpdatedAt,
+  initialSections,
+  onSectionsChange
+}: SectionBuilderProps & {
+  onSectionsChange?: (sections: EditableSection[]) => void;
+}) {
   const initialSorted = useMemo(
     () => [...initialSections].sort((a, b) => a.order - b.order),
     [initialSections]
   );
 
   const [sections, setSections] = useState<EditableSection[]>(initialSorted);
+  const sectionsKey = useMemo(() => JSON.stringify(sections), [sections]);
   const sectionsRef = useRef<EditableSection[]>(initialSorted);
-  const sectionsInputRef = useRef<HTMLInputElement | null>(null);
   const tempIdRef = useRef(0);
+  const autosaveTimerRef = useRef<number | null>(null);
+  const skipFirstAutosaveRef = useRef(true);
+  const [expectedUpdatedAtValue, setExpectedUpdatedAtValue] =
+    useState(expectedUpdatedAt);
+  const [autosaveState, setAutosaveState] = useState<
+    "idle" | "saving" | "saved" | "conflict" | "db-unavailable" | "error"
+  >("idle");
+  const [lastSavedAtText, setLastSavedAtText] = useState<string>("");
+  const [libraryPages, setLibraryPages] = useState<PageReferenceItem[]>([]);
+  const [libraryMedia, setLibraryMedia] = useState<MediaItem[]>([]);
 
   const setSectionsSynced = (
     updater: (prev: EditableSection[]) => EditableSection[]
   ) => {
-    setSections(prev => {
-      const next = updater(prev);
-      sectionsRef.current = next;
-      return next;
-    });
+    const next = updater(sectionsRef.current);
+    sectionsRef.current = next;
+    setSections(next);
+    if (onSectionsChange) onSectionsChange(next);
   };
 
+  // Remove autosave effect for admin usage; saving is now explicit via parent form
+
   useEffect(() => {
-    // Keep the hidden input roughly in sync for debuggability,
-    // but we still overwrite it at submit time to avoid stale submits.
-    if (sectionsInputRef.current) {
-      sectionsInputRef.current.value = JSON.stringify(sectionsRef.current);
-    }
-  }, [sections]);
+    let active = true;
+
+    const loadLibrary = async () => {
+      try {
+        const response = await fetch("/api/admin/references", {
+          method: "GET",
+          cache: "no-store",
+          credentials: "include"
+        });
+        if (!response.ok) return;
+        const json = (await response.json()) as {
+          pages?: PageReferenceItem[];
+          media?: MediaItem[];
+        };
+        if (!active) return;
+        setLibraryPages(Array.isArray(json.pages) ? json.pages : []);
+        setLibraryMedia(Array.isArray(json.media) ? json.media : []);
+      } catch {
+        // no-op
+      }
+    };
+
+    void loadLibrary();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const updateOrder = (next: EditableSection[]) => {
     setSectionsSynced(() =>
@@ -110,6 +133,9 @@ export function SectionBuilder({
     if (type === "hero") {
       baseProps.title = "Hero title";
       baseProps.subtitle = "Hero subtitle";
+      baseProps.backgroundColor = "#18181b";
+      baseProps.textColor = "#fafafa";
+      baseProps.subtitleColor = "#d4d4d8";
     } else if (type === "text" || type === "richText") {
       baseProps.html = "<p>New text block</p>";
     } else if (type === "image") {
@@ -118,6 +144,21 @@ export function SectionBuilder({
     } else if (type === "faq") {
       baseProps.title = "Frequently asked questions";
       baseProps.items = [{ question: "Question", answer: "Answer" }];
+    } else if (type === "embed") {
+      baseProps.provider = "youtube";
+      baseProps.url = "";
+      baseProps.title = "";
+    } else if (type === "pageStyle") {
+      baseProps.backgroundColor = "#f8fafc";
+    } else if (type === "callout") {
+      baseProps.tone = "info";
+      baseProps.title = "Notice";
+      baseProps.body = "Add important note here.";
+    } else if (type === "accordion") {
+      baseProps.title = "Accordion";
+      baseProps.items = [
+        { question: "Accordion item", answer: "Accordion content" }
+      ];
     }
 
     setSectionsSynced(prev => [
@@ -138,23 +179,36 @@ export function SectionBuilder({
     );
   };
 
+  const patchProps = (index: number, patch: Record<string, unknown>) => {
+    setSectionsSynced(prev =>
+      prev.map((s, i) =>
+        i === index
+          ? {
+              ...s,
+              props: {
+                ...(s.props ?? {}),
+                ...patch
+              }
+            }
+          : s
+      )
+    );
+  };
+
   return (
-    <div
-      className="space-y-3"
-      onSubmitCapture={() => {
-        // Critical: ensure the submitted JSON includes the most recent editor changes
-        // (drag-resize and other fast interactions may not re-render before submit).
-        if (sectionsInputRef.current) {
-          sectionsInputRef.current.value = JSON.stringify(sectionsRef.current);
-        }
-      }}
-    >
+    <div className="space-y-3">
       <input type="hidden" name="pageId" value={pageId} />
       <input
-        ref={sectionsInputRef}
+        type="hidden"
+        name="expectedUpdatedAt"
+        value={expectedUpdatedAtValue}
+        readOnly
+      />
+      <input
         type="hidden"
         name="sections"
-        defaultValue={JSON.stringify(initialSorted)}
+        value={JSON.stringify(sections)}
+        readOnly
       />
 
       <div className="flex flex-wrap gap-2 text-xs">
@@ -194,6 +248,50 @@ export function SectionBuilder({
         >
           FAQ
         </button>
+        <button
+          type="button"
+          onClick={() => addSection("embed")}
+          className="rounded-md border border-zinc-300 bg-white px-2 py-1 hover:bg-zinc-100"
+        >
+          Embed
+        </button>
+        <button
+          type="button"
+          onClick={() => addSection("pageStyle")}
+          className="rounded-md border border-zinc-300 bg-white px-2 py-1 hover:bg-zinc-100"
+        >
+          Page style
+        </button>
+        <button
+          type="button"
+          onClick={() => addSection("callout")}
+          className="rounded-md border border-zinc-300 bg-white px-2 py-1 hover:bg-zinc-100"
+        >
+          Callout
+        </button>
+        <button
+          type="button"
+          onClick={() => addSection("accordion")}
+          className="rounded-md border border-zinc-300 bg-white px-2 py-1 hover:bg-zinc-100"
+        >
+          Accordion
+        </button>
+      </div>
+
+      <div className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[11px] text-zinc-600">
+        {autosaveState === "idle" || autosaveState === "saved"
+          ? `Autosave ready${lastSavedAtText ? ` · last saved ${lastSavedAtText}` : ""}`
+          : null}
+        {autosaveState === "saving" ? "Autosaving…" : null}
+        {autosaveState === "conflict"
+          ? "Autosave conflict: another editor changed this page. Reload before saving."
+          : null}
+        {autosaveState === "db-unavailable"
+          ? "Autosave paused: database is temporarily unavailable."
+          : null}
+        {autosaveState === "error"
+          ? "Autosave failed. You can still save manually."
+          : null}
       </div>
 
       {sections.length === 0 ? (
@@ -232,10 +330,7 @@ export function SectionBuilder({
                       className="w-full rounded-md border border-zinc-300 px-2 py-1 text-[11px]"
                       value={typeof props.title === "string" ? props.title : ""}
                       onChange={e =>
-                        updateProps(index, {
-                          ...props,
-                          title: e.target.value
-                        })
+                        patchProps(index, { title: e.target.value })
                       }
                       placeholder="Hero title"
                     />
@@ -245,13 +340,110 @@ export function SectionBuilder({
                         typeof props.subtitle === "string" ? props.subtitle : ""
                       }
                       onChange={e =>
-                        updateProps(index, {
-                          ...props,
-                          subtitle: e.target.value
-                        })
+                        patchProps(index, { subtitle: e.target.value })
                       }
                       placeholder="Hero subtitle"
                     />
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                      <label className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+                        BG color
+                        <input
+                          type="color"
+                          className="mt-1 h-7 w-full cursor-pointer rounded border border-zinc-300 bg-white p-0"
+                          value={
+                            typeof props.backgroundColor === "string"
+                              ? props.backgroundColor
+                              : "#18181b"
+                          }
+                          onInput={e =>
+                            patchProps(index, {
+                              backgroundColor: (e.target as HTMLInputElement)
+                                .value
+                            })
+                          }
+                          onChange={e =>
+                            patchProps(index, {
+                              backgroundColor: e.target.value
+                            })
+                          }
+                          onBlur={e =>
+                            patchProps(index, {
+                              backgroundColor: e.currentTarget.value
+                            })
+                          }
+                          onPointerUp={e =>
+                            patchProps(index, {
+                              backgroundColor: e.currentTarget.value
+                            })
+                          }
+                        />
+                      </label>
+                      <label className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+                        Text color
+                        <input
+                          type="color"
+                          className="mt-1 h-7 w-full cursor-pointer rounded border border-zinc-300 bg-white p-0"
+                          value={
+                            typeof props.textColor === "string"
+                              ? props.textColor
+                              : "#fafafa"
+                          }
+                          onInput={e =>
+                            patchProps(index, {
+                              textColor: (e.target as HTMLInputElement).value
+                            })
+                          }
+                          onChange={e =>
+                            patchProps(index, {
+                              textColor: e.target.value
+                            })
+                          }
+                          onBlur={e =>
+                            patchProps(index, {
+                              textColor: e.currentTarget.value
+                            })
+                          }
+                          onPointerUp={e =>
+                            patchProps(index, {
+                              textColor: e.currentTarget.value
+                            })
+                          }
+                        />
+                      </label>
+                      <label className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+                        Subtitle color
+                        <input
+                          type="color"
+                          className="mt-1 h-7 w-full cursor-pointer rounded border border-zinc-300 bg-white p-0"
+                          value={
+                            typeof props.subtitleColor === "string"
+                              ? props.subtitleColor
+                              : "#d4d4d8"
+                          }
+                          onInput={e =>
+                            patchProps(index, {
+                              subtitleColor: (e.target as HTMLInputElement)
+                                .value
+                            })
+                          }
+                          onChange={e =>
+                            patchProps(index, {
+                              subtitleColor: e.target.value
+                            })
+                          }
+                          onBlur={e =>
+                            patchProps(index, {
+                              subtitleColor: e.currentTarget.value
+                            })
+                          }
+                          onPointerUp={e =>
+                            patchProps(index, {
+                              subtitleColor: e.currentTarget.value
+                            })
+                          }
+                        />
+                      </label>
+                    </div>
                   </div>
                 )}
 
@@ -261,17 +453,15 @@ export function SectionBuilder({
                       defaultValue={
                         typeof props.html === "string" ? props.html : ""
                       }
-                      defaultDoc={props.doc as JSONContent | undefined}
                       placeholder={
                         section.type === "richText"
                           ? "Write and format rich text for this block"
                           : "Write text for this block (you can format with the toolbar)"
                       }
-                      onChangeHtml={(html, doc) =>
+                      onChangeHtml={html =>
                         updateProps(index, {
                           ...props,
-                          html,
-                          doc
+                          html
                         })
                       }
                     />
@@ -280,6 +470,57 @@ export function SectionBuilder({
 
                 {section.type === "image" && (
                   <div className="space-y-1">
+                    <div className="mb-2 grid grid-cols-2 gap-2">
+                      {libraryMedia.map(item => {
+                        // 간단한 이미지 URL 판별
+                        const isImage =
+                          (typeof item.url === "string" &&
+                            /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(
+                              item.url
+                            )) ||
+                          item.url.startsWith("https://placehold.co/") ||
+                          item.url.startsWith("https://imgnews") ||
+                          item.url.startsWith("https://images") ||
+                          item.url.startsWith("https://pstatic") ||
+                          item.url.startsWith("https://cdn") ||
+                          item.url.startsWith("/public/");
+                        return (
+                          <button
+                            key={item.url}
+                            type="button"
+                            className={`flex flex-col items-center rounded border border-zinc-300 bg-white p-2 text-[11px] hover:bg-zinc-100 ${props.url === item.url ? "ring-2 ring-blue-400" : ""}`}
+                            onClick={() =>
+                              updateProps(index, {
+                                ...props,
+                                url: item.url
+                              })
+                            }
+                          >
+                            {isImage ? (
+                              <img
+                                src={item.url}
+                                alt={item.label || "Preview"}
+                                className="mb-1 h-16 w-full object-cover rounded"
+                                style={{ maxWidth: 120 }}
+                              />
+                            ) : (
+                              <div className="mb-1 flex h-16 w-full items-center justify-center bg-zinc-100 rounded">
+                                <span className="text-xs text-zinc-500">
+                                  {item.url.includes("youtube")
+                                    ? "YouTube"
+                                    : item.url.includes("maps")
+                                      ? "Google Maps"
+                                      : "Link"}
+                                </span>
+                              </div>
+                            )}
+                            <span className="truncate w-full text-center">
+                              {item.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                     <input
                       className="w-full rounded-md border border-zinc-300 px-2 py-1 text-[11px]"
                       value={typeof props.url === "string" ? props.url : ""}
@@ -302,6 +543,23 @@ export function SectionBuilder({
                       }
                       placeholder="Alt text"
                     />
+                    <select
+                      className="w-full rounded-md border border-zinc-300 px-2 py-1 text-[11px]"
+                      value={typeof props.href === "string" ? props.href : ""}
+                      onChange={e =>
+                        updateProps(index, {
+                          ...props,
+                          href: e.target.value || null
+                        })
+                      }
+                    >
+                      <option value="">No internal link</option>
+                      {libraryPages.map(item => (
+                        <option key={item.id} value={`/${item.slug}`}>
+                          /{item.slug} · {item.title}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 )}
 
@@ -355,6 +613,177 @@ export function SectionBuilder({
                         });
                       }}
                       placeholder={"Each line: question::answer"}
+                    />
+                  </div>
+                )}
+
+                {section.type === "embed" && (
+                  <div className="space-y-1">
+                    <select
+                      className="w-full rounded-md border border-zinc-300 px-2 py-1 text-[11px]"
+                      value={
+                        props.provider === "maps" ||
+                        props.provider === "youtube"
+                          ? String(props.provider)
+                          : "youtube"
+                      }
+                      onChange={e =>
+                        updateProps(index, {
+                          ...props,
+                          provider:
+                            e.target.value === "maps" ? "maps" : "youtube"
+                        })
+                      }
+                    >
+                      <option value="youtube">YouTube</option>
+                      <option value="maps">Google Maps</option>
+                    </select>
+                    <input
+                      className="w-full rounded-md border border-zinc-300 px-2 py-1 text-[11px]"
+                      value={typeof props.url === "string" ? props.url : ""}
+                      onChange={e =>
+                        updateProps(index, {
+                          ...props,
+                          url: e.target.value
+                        })
+                      }
+                      placeholder="Paste YouTube/Google Maps URL"
+                    />
+                    <input
+                      className="w-full rounded-md border border-zinc-300 px-2 py-1 text-[11px]"
+                      value={typeof props.title === "string" ? props.title : ""}
+                      onChange={e =>
+                        updateProps(index, {
+                          ...props,
+                          title: e.target.value
+                        })
+                      }
+                      placeholder="Embed title (optional)"
+                    />
+                  </div>
+                )}
+
+                {section.type === "pageStyle" && (
+                  <div className="space-y-1">
+                    <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+                      Document background color
+                      <input
+                        type="color"
+                        className="mt-1 h-7 w-full cursor-pointer rounded border border-zinc-300 bg-white p-0"
+                        value={
+                          typeof props.backgroundColor === "string"
+                            ? props.backgroundColor
+                            : "#f8fafc"
+                        }
+                        onChange={e =>
+                          updateProps(index, {
+                            ...props,
+                            backgroundColor: e.target.value
+                          })
+                        }
+                      />
+                    </label>
+                    <p className="text-[10px] text-zinc-500">
+                      Applies to whole page background. Keep one enabled Page
+                      style section.
+                    </p>
+                  </div>
+                )}
+
+                {section.type === "callout" && (
+                  <div className="space-y-1">
+                    <select
+                      className="w-full rounded-md border border-zinc-300 px-2 py-1 text-[11px]"
+                      value={
+                        props.tone === "success" ||
+                        props.tone === "warning" ||
+                        props.tone === "danger"
+                          ? String(props.tone)
+                          : "info"
+                      }
+                      onChange={e =>
+                        updateProps(index, {
+                          ...props,
+                          tone: e.target.value
+                        })
+                      }
+                    >
+                      <option value="info">Info</option>
+                      <option value="success">Success</option>
+                      <option value="warning">Warning</option>
+                      <option value="danger">Danger</option>
+                    </select>
+                    <input
+                      className="w-full rounded-md border border-zinc-300 px-2 py-1 text-[11px]"
+                      value={typeof props.title === "string" ? props.title : ""}
+                      onChange={e =>
+                        updateProps(index, {
+                          ...props,
+                          title: e.target.value
+                        })
+                      }
+                      placeholder="Callout title"
+                    />
+                    <textarea
+                      className="h-24 w-full rounded-md border border-zinc-300 px-2 py-1 text-[11px]"
+                      value={typeof props.body === "string" ? props.body : ""}
+                      onChange={e =>
+                        updateProps(index, {
+                          ...props,
+                          body: e.target.value
+                        })
+                      }
+                      placeholder="Callout content"
+                    />
+                  </div>
+                )}
+
+                {section.type === "accordion" && (
+                  <div className="space-y-1">
+                    <input
+                      className="w-full rounded-md border border-zinc-300 px-2 py-1 text-[11px]"
+                      value={typeof props.title === "string" ? props.title : ""}
+                      onChange={e =>
+                        updateProps(index, {
+                          ...props,
+                          title: e.target.value
+                        })
+                      }
+                      placeholder="Accordion section title"
+                    />
+                    <textarea
+                      className="h-24 w-full rounded-md border border-zinc-300 px-2 py-1 text-[11px] font-mono"
+                      value={items
+                        .map(item => {
+                          const q =
+                            typeof item.question === "string"
+                              ? item.question
+                              : "";
+                          const a =
+                            typeof item.answer === "string" ? item.answer : "";
+                          return `${q}::${a}`;
+                        })
+                        .join("\n")}
+                      onChange={e => {
+                        const nextItems = e.target.value
+                          .split("\n")
+                          .map(line => line.trim())
+                          .filter(Boolean)
+                          .map(line => {
+                            const [question, answer] = line
+                              .split("::")
+                              .map(part => part.trim());
+                            return {
+                              question: question ?? "",
+                              answer: answer ?? ""
+                            };
+                          });
+                        updateProps(index, {
+                          ...props,
+                          items: nextItems
+                        });
+                      }}
+                      placeholder="Each line: question::answer"
                     />
                   </div>
                 )}

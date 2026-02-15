@@ -1,13 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-
-interface RichTextEditorProps {
-  name?: string;
-  defaultValue?: string;
-  placeholder?: string;
-  onChangeHtml?: (html: string) => void;
-}
+import type { RichTextEditorProps } from "@/types/components";
 
 export function RichTextEditor({
   name,

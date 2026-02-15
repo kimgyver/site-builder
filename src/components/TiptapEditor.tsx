@@ -8,7 +8,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent
 } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { type JSONContent } from "@tiptap/core";
+import type { TiptapEditorProps } from "@/types/components";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
@@ -52,15 +52,6 @@ import {
 } from "./tiptap/editorCommands";
 import { getEditorDerivedState } from "./tiptap/editorDerivedState";
 
-export interface TiptapEditorProps {
-  defaultValue?: string;
-  defaultDoc?: JSONContent;
-  placeholder?: string;
-  onChangeHtml?: (html: string, doc: JSONContent) => void;
-  className?: string;
-  editorClassName?: string;
-}
-
 export function TiptapEditor({
   defaultValue = "",
   defaultDoc,
@@ -75,6 +66,7 @@ export function TiptapEditor({
   const lastTextSelectionRef = useRef<{ from: number; to: number } | null>(
     null
   );
+  const lastSelectedTableCellPositionsRef = useRef<number[] | null>(null);
   const textColorInputRef = useRef<HTMLInputElement | null>(null);
   const highlightColorInputRef = useRef<HTMLInputElement | null>(null);
   const cellBgColorInputRef = useRef<HTMLInputElement | null>(null);
@@ -173,7 +165,13 @@ export function TiptapEditor({
     onTransaction: ({ editor, transaction }) => {
       updateSlashMatch(getSlashMatchFromEditor(editor));
       if (!onChangeHtml) return;
-      if (!transaction.docChanged) return;
+      if (
+        !transaction.docChanged &&
+        !transaction.getMeta("rowResize") &&
+        !transaction.getMeta("tableAttrUpdate")
+      ) {
+        return;
+      }
 
       const html = editor.getHTML();
       const doc = editor.getJSON();
@@ -243,6 +241,23 @@ export function TiptapEditor({
       const bgColor = activeTableAttrs.backgroundColor;
       if (typeof bgColor === "string" && /^#([0-9a-fA-F]{6})$/.test(bgColor)) {
         setCellBgColorValue(bgColor);
+      }
+
+      const selectionWithCells = editor.state.selection as unknown as {
+        forEachCell?: (
+          fn: (node: { attrs: Record<string, unknown> }, pos: number) => void
+        ) => void;
+      };
+      if (typeof selectionWithCells.forEachCell === "function") {
+        const positions: number[] = [];
+        selectionWithCells.forEachCell((_, pos) => {
+          positions.push(pos);
+        });
+        lastSelectedTableCellPositionsRef.current = positions.length
+          ? positions
+          : null;
+      } else {
+        lastSelectedTableCellPositionsRef.current = null;
       }
 
       bumpSelectionTick(t => (t + 1) % 1000000);
@@ -321,23 +336,49 @@ export function TiptapEditor({
     clearHighlightColorCommand(editor, lastTextSelectionRef.current);
 
   const setCellBackgroundColor = (color: string) =>
-    setCellBackgroundColorCommand(editor, color);
+    setCellBackgroundColorCommand(
+      editor,
+      color,
+      lastSelectedTableCellPositionsRef.current
+    );
 
   const clearCellBackgroundColor = () =>
-    clearCellBackgroundColorCommand(editor);
+    clearCellBackgroundColorCommand(
+      editor,
+      lastSelectedTableCellPositionsRef.current
+    );
 
   const setCellBorderTransparent = () =>
-    setCellBorderTransparentCommand(editor);
+    setCellBorderTransparentCommand(
+      editor,
+      lastSelectedTableCellPositionsRef.current
+    );
 
-  const setCellBorderNormal = () => setCellBorderNormalCommand(editor);
+  const setCellBorderNormal = () =>
+    setCellBorderNormalCommand(
+      editor,
+      lastSelectedTableCellPositionsRef.current
+    );
 
   const setCellBorderColor = (color: string) =>
-    setCellBorderColorCommand(editor, color);
+    setCellBorderColorCommand(
+      editor,
+      color,
+      lastSelectedTableCellPositionsRef.current
+    );
 
-  const clearCellBorderColor = () => clearCellBorderColorCommand(editor);
+  const clearCellBorderColor = () =>
+    clearCellBorderColorCommand(
+      editor,
+      lastSelectedTableCellPositionsRef.current
+    );
 
   const setCellBorderWidth = (width: number) =>
-    setCellBorderWidthCommand(editor, width);
+    setCellBorderWidthCommand(
+      editor,
+      width,
+      lastSelectedTableCellPositionsRef.current
+    );
 
   const insertImage = () => insertImagePrompt(editor);
 
@@ -350,7 +391,11 @@ export function TiptapEditor({
   const insertTable = () => insertTableCommand(editor);
 
   const setCellAlign = (align: "left" | "center" | "right") =>
-    setCellAlignCommand(editor, align);
+    setCellAlignCommand(
+      editor,
+      align,
+      lastSelectedTableCellPositionsRef.current
+    );
 
   const runSlashCommand = (command: SlashCommand) => {
     if (!slashMatch) return;

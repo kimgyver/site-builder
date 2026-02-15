@@ -1,7 +1,6 @@
 import type { Editor } from "@tiptap/core";
+import type { SelectionRange } from "@/types/tiptap";
 import { updateCurrentTableCells } from "./tableUtils";
-
-type SelectionRange = { from: number; to: number };
 
 export function setOrUnsetLink(editor: Editor) {
   editor.chain().focus().run();
@@ -90,45 +89,106 @@ export function clearHighlightColor(
   editor.chain().focus().unsetHighlight().run();
 }
 
-function applyTableAttrs(editor: Editor, attrs: Record<string, unknown>) {
+function applyTableAttrsToSelection(
+  editor: Editor,
+  attrs: Record<string, unknown>,
+  selectedCellPositions?: number[] | null
+) {
   if (!editor.isActive("table")) return;
-  if (updateCurrentTableCells(editor, attrs)) return;
+  if (updateCurrentTableCells(editor, attrs, selectedCellPositions)) return;
 }
 
-export function setCellBackgroundColor(editor: Editor, color: string) {
-  applyTableAttrs(editor, { backgroundColor: color, borderMode: null });
+export function setCellBackgroundColor(
+  editor: Editor,
+  color: string,
+  selectedCellPositions?: number[] | null
+) {
+  applyTableAttrsToSelection(
+    editor,
+    { backgroundColor: color, borderMode: null },
+    selectedCellPositions
+  );
 }
 
-export function clearCellBackgroundColor(editor: Editor) {
-  applyTableAttrs(editor, { backgroundColor: null });
+export function clearCellBackgroundColor(
+  editor: Editor,
+  selectedCellPositions?: number[] | null
+) {
+  applyTableAttrsToSelection(
+    editor,
+    { backgroundColor: null },
+    selectedCellPositions
+  );
 }
 
-export function setCellBorderTransparent(editor: Editor) {
-  applyTableAttrs(editor, { borderMode: "transparent" });
+export function setCellBorderTransparent(
+  editor: Editor,
+  selectedCellPositions?: number[] | null
+) {
+  applyTableAttrsToSelection(
+    editor,
+    { borderMode: "transparent" },
+    selectedCellPositions
+  );
 }
 
-export function setCellBorderNormal(editor: Editor) {
-  applyTableAttrs(editor, { borderMode: null });
+export function setCellBorderNormal(
+  editor: Editor,
+  selectedCellPositions?: number[] | null
+) {
+  applyTableAttrsToSelection(
+    editor,
+    { borderMode: null },
+    selectedCellPositions
+  );
 }
 
-export function setCellBorderColor(editor: Editor, color: string) {
-  applyTableAttrs(editor, { borderColor: color, borderMode: null });
+export function setCellBorderColor(
+  editor: Editor,
+  color: string,
+  selectedCellPositions?: number[] | null
+) {
+  applyTableAttrsToSelection(
+    editor,
+    { borderColor: color, borderMode: null },
+    selectedCellPositions
+  );
 }
 
-export function clearCellBorderColor(editor: Editor) {
-  applyTableAttrs(editor, { borderColor: null });
+export function clearCellBorderColor(
+  editor: Editor,
+  selectedCellPositions?: number[] | null
+) {
+  applyTableAttrsToSelection(
+    editor,
+    { borderColor: null },
+    selectedCellPositions
+  );
 }
 
-export function setCellBorderWidth(editor: Editor, width: number) {
+export function setCellBorderWidth(
+  editor: Editor,
+  width: number,
+  selectedCellPositions?: number[] | null
+) {
   const clamped = Math.max(1, Math.min(12, width));
-  applyTableAttrs(editor, { borderWidth: String(clamped), borderMode: null });
+  applyTableAttrsToSelection(
+    editor,
+    { borderWidth: String(clamped), borderMode: null },
+    selectedCellPositions
+  );
 }
 
 export function setCellAlign(
   editor: Editor,
-  align: "left" | "center" | "right"
+  align: "left" | "center" | "right",
+  selectedCellPositions?: number[] | null
 ) {
-  applyTableAttrs(editor, { textAlign: align });
+  applyTableAttrsToSelection(
+    editor,
+    { textAlign: align },
+    selectedCellPositions
+  );
 }
 
 export function insertImagePrompt(editor: Editor) {

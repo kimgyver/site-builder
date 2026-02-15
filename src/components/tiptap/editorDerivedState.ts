@@ -1,15 +1,6 @@
 import { NodeSelection } from "@tiptap/pm/state";
 import type { Editor } from "@tiptap/core";
-
-export interface EditorDerivedState {
-  selectedImagePos: number | null;
-  selectedImageAttrs: Record<string, unknown> | null;
-  isImageActive: boolean;
-  isTableActive: boolean;
-  activeTextColor?: string;
-  activeBorderColor: string | null;
-  effectiveImageWidth: number | null;
-}
+import type { EditorDerivedState } from "@/types/editor";
 
 export function getEditorDerivedState(editor: Editor): EditorDerivedState {
   const { selection } = editor.state;

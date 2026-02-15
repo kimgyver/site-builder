@@ -1,13 +1,4 @@
-import type { RefObject } from "react";
-import type { SlashCommand, SlashMatch } from "./slashCommands";
-
-interface SlashMenuProps {
-  slashMatch: SlashMatch | null;
-  filteredSlashCommands: SlashCommand[];
-  slashActiveIndex: number;
-  slashListRef: RefObject<HTMLDivElement | null>;
-  onRunSlashCommand: (command: SlashCommand) => void;
-}
+import type { SlashMenuProps } from "@/types/tiptap";
 
 export function SlashMenu({
   slashMatch,

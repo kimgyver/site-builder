@@ -1,16 +1,7 @@
 import type { Editor } from "@tiptap/core";
+import type { SlashCommand, SlashMatch } from "@/types/tiptap";
 
-export type SlashMatch = {
-  from: number;
-  to: number;
-  query: string;
-};
-
-export type SlashCommand = {
-  id: string;
-  label: string;
-  keywords: string[];
-};
+export type { SlashCommand, SlashMatch };
 
 export const SLASH_COMMANDS: SlashCommand[] = [
   {
