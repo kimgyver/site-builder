@@ -84,7 +84,7 @@ export default async function EditPage({
 
   return (
     <div className="w-full max-w-2xl space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Edit page</h1>
           <p className="mt-1 text-sm text-zinc-600">
@@ -93,11 +93,11 @@ export default async function EditPage({
           </p>
         </div>
         {canDelete ? (
-          <form action={deletePage}>
+          <form action={deletePage} className="sm:ml-4">
             <input type="hidden" name="id" value={page.id} />
             <button
               type="submit"
-              className="rounded-md border border-red-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50"
+              className="rounded-md border border-red-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 w-full sm:w-auto"
             >
               Delete
             </button>
