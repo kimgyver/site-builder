@@ -63,6 +63,8 @@ export function SectionBuilder({
   const tempIdRef = useRef(0);
   const [libraryPages, setLibraryPages] = useState<PageReferenceItem[]>([]);
   const [libraryMedia, setLibraryMedia] = useState<MediaItem[]>([]);
+  const [isReferenceLibraryLoading, setIsReferenceLibraryLoading] =
+    useState(true);
 
   const serializeSections = (items: EditableSection[]) =>
     JSON.stringify(
@@ -119,6 +121,10 @@ export function SectionBuilder({
         setLibraryMedia(Array.isArray(json.media) ? json.media : []);
       } catch {
         // no-op
+      } finally {
+        if (active) {
+          setIsReferenceLibraryLoading(false);
+        }
       }
     };
 
@@ -435,6 +441,7 @@ export function SectionBuilder({
                         updateProps={next => updateProps(index, next)}
                         libraryMedia={libraryMedia}
                         libraryPages={libraryPages}
+                        isLibraryLoading={isReferenceLibraryLoading}
                       />
                     ) : section.type === "faq" ? (
                       <FAQSectionEditor
