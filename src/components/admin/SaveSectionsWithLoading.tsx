@@ -127,6 +127,26 @@ export default function SaveSectionsWithLoading({
   };
 
   useEffect(() => {
+    const nextJson = JSON.stringify(initialSections);
+    if (nextJson === lastSavedJsonRef.current) {
+      setExpectedUpdatedAtLocal(expectedUpdatedAt);
+      return;
+    }
+
+    if (autosaveTimerRef.current) {
+      window.clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+
+    setSections(initialSections);
+    setExpectedUpdatedAtLocal(expectedUpdatedAt);
+    lastSavedJsonRef.current = nextJson;
+    setAutosaveState("idle");
+    setError(null);
+    firstRenderRef.current = true;
+  }, [expectedUpdatedAt, initialSections]);
+
+  useEffect(() => {
     setExpectedUpdatedAtLocal(expectedUpdatedAt);
   }, [expectedUpdatedAt]);
 
