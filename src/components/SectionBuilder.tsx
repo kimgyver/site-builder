@@ -64,6 +64,17 @@ export function SectionBuilder({
   const [libraryPages, setLibraryPages] = useState<PageReferenceItem[]>([]);
   const [libraryMedia, setLibraryMedia] = useState<MediaItem[]>([]);
 
+  const serializeSections = (items: EditableSection[]) =>
+    JSON.stringify(
+      items.map(section => ({
+        id: section.id,
+        type: section.type,
+        order: section.order,
+        enabled: section.enabled,
+        props: section.props
+      }))
+    );
+
   const setSectionsSynced = (
     updater: (prev: EditableSection[]) => EditableSection[]
   ) => {
@@ -74,6 +85,19 @@ export function SectionBuilder({
   };
 
   // Remove autosave effect for admin usage; saving is now explicit via parent form
+
+  useEffect(() => {
+    const incoming = initialSorted;
+    const currentSerialized = serializeSections(sectionsRef.current);
+    const incomingSerialized = serializeSections(incoming);
+
+    if (currentSerialized === incomingSerialized) {
+      return;
+    }
+
+    sectionsRef.current = incoming;
+    setSections(incoming);
+  }, [initialSorted]);
 
   useEffect(() => {
     let active = true;
