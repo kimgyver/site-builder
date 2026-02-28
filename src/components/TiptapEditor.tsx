@@ -303,6 +303,11 @@ export function TiptapEditor({
       return;
     }
 
+    // Never overwrite content while user is actively typing in this editor.
+    if (editor.isFocused) {
+      return;
+    }
+
     editor.commands.setContent(next, { emitUpdate: false });
     lastEmittedHtmlRef.current = next;
     lastPropagatedHtmlRef.current = next;
