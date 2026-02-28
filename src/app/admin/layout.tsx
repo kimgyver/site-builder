@@ -17,20 +17,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <Link href="/admin" className="font-semibold tracking-tight">
+          <Link href="/admin/pages" className="font-semibold tracking-tight">
             Site Builder Admin
           </Link>
           <nav className="flex gap-4 text-sm text-zinc-600">
             <Link href="/admin/pages" className="hover:text-zinc-900">
               Page Management
-            </Link>
-            <Link
-              href="/"
-              className="hover:text-zinc-900"
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              Public Home
             </Link>
             <Link href="/admin/menus" className="hover:text-zinc-900">
               Menus
