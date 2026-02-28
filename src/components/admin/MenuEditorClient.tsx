@@ -6,7 +6,6 @@ import { useFormState, useFormStatus } from "react-dom";
 type MenuItemInput = {
   label: string;
   href: string;
-  openInNewTab: boolean;
 };
 
 type SaveState =
@@ -33,8 +32,7 @@ export default function MenuEditorClient({
   initialName,
   initialItems,
   saveAction,
-  canEdit,
-  supportsOpenInNewTab
+  canEdit
 }: {
   menuId: string;
   location: string;
@@ -42,7 +40,6 @@ export default function MenuEditorClient({
   initialItems: MenuItemInput[];
   saveAction: (prevState: SaveState, formData: FormData) => Promise<SaveState>;
   canEdit: boolean;
-  supportsOpenInNewTab: boolean;
 }) {
   const [name, setName] = useState(initialName);
   const [state, formAction] = useFormState<SaveState, FormData>(saveAction, {
@@ -51,7 +48,7 @@ export default function MenuEditorClient({
   const [items, setItems] = useState<MenuItemInput[]>(
     Array.isArray(initialItems) && initialItems.length
       ? initialItems
-      : [{ label: "Home", href: "/", openInNewTab: false }]
+      : [{ label: "Home", href: "/" }]
   );
 
   const itemsJson = useMemo(() => JSON.stringify(items), [items]);
@@ -78,10 +75,7 @@ export default function MenuEditorClient({
   };
 
   const addItem = () => {
-    setItems(prev => [
-      ...prev,
-      { label: "Link", href: "/", openInNewTab: false }
-    ]);
+    setItems(prev => [...prev, { label: "Link", href: "/" }]);
   };
 
   return (
@@ -106,12 +100,6 @@ export default function MenuEditorClient({
           <div>
             <div className="text-sm font-medium text-zinc-900">Items</div>
             <div className="text-xs text-zinc-600">Location: {location}</div>
-            {!supportsOpenInNewTab ? (
-              <div className="mt-1 text-xs text-zinc-600">
-                “Open in new tab” is unavailable until the DB schema is updated
-                (no existing data migration needed).
-              </div>
-            ) : null}
           </div>
           <button
             type="button"
@@ -161,18 +149,6 @@ export default function MenuEditorClient({
                       />
                     </div>
                   </div>
-
-                  <label className="inline-flex items-center gap-2 text-xs text-zinc-700">
-                    <input
-                      type="checkbox"
-                      checked={item.openInNewTab}
-                      onChange={e =>
-                        patchItem(index, { openInNewTab: e.target.checked })
-                      }
-                      disabled={!canEdit || !supportsOpenInNewTab}
-                    />
-                    Open in new tab
-                  </label>
                 </div>
 
                 <div className="flex flex-col items-end gap-1 pt-5 text-[10px]">

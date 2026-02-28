@@ -22,7 +22,7 @@ async function ensureRole(nextPath: string) {
   return role;
 }
 
-type MenuItemInput = { label: string; href: string; openInNewTab: boolean };
+type MenuItemInput = { label: string; href: string };
 type SaveState =
   | { status: "idle" }
   | { status: "saved"; savedAt: number }
@@ -39,8 +39,7 @@ function parseItems(raw: string): MenuItemInput[] {
       const href = (hrefRaw ?? "").trim();
       return {
         label: label || href || "Link",
-        href: href || "/",
-        openInNewTab: false
+        href: href || "/"
       };
     });
 }
@@ -54,15 +53,12 @@ function parseItemsJson(raw: string): MenuItemInput[] {
         const maybe = item as {
           label?: unknown;
           href?: unknown;
-          openInNewTab?: unknown;
         };
         const label = typeof maybe.label === "string" ? maybe.label.trim() : "";
         const href = typeof maybe.href === "string" ? maybe.href.trim() : "";
-        const openInNewTab = Boolean(maybe.openInNewTab);
         return {
           label: label || href || "Link",
-          href: href || "/",
-          openInNewTab
+          href: href || "/"
         };
       })
       .filter(item => Boolean(item.href));
@@ -128,7 +124,7 @@ async function saveMenu(
             menuId: id,
             label: item.label,
             href: item.href,
-            openInNewTab: item.openInNewTab,
+            openInNewTab: false,
             order: index
           }))
         });
@@ -162,7 +158,7 @@ async function getMenu(id: string) {
     id: string;
     name: string;
     location: string;
-    items: Array<{ label: string; href: string; openInNewTab?: boolean }>;
+    items: Array<{ label: string; href: string }>;
   } | null = null;
 
   try {
@@ -175,7 +171,7 @@ async function getMenu(id: string) {
         items: {
           orderBy: { order: "asc" },
           select: supportsOpenInNewTab
-            ? { label: true, href: true, openInNewTab: true }
+            ? { label: true, href: true }
             : { label: true, href: true }
         }
       }
@@ -213,7 +209,6 @@ export default async function MenuEditPage({
   const role = await ensureRole(`/admin/menus/${id}`);
   const canEdit = canEditContent(role);
   const menu = await getMenu(id);
-  const supportsOpenInNewTab = await hasMenuItemOpenInNewTabColumn();
 
   return (
     <div className="w-full max-w-2xl space-y-6">
@@ -238,12 +233,10 @@ export default async function MenuEditPage({
         initialName={menu.name}
         initialItems={menu.items.map(item => ({
           label: item.label,
-          href: item.href,
-          openInNewTab: item.openInNewTab ?? false
+          href: item.href
         }))}
         saveAction={saveMenu}
         canEdit={canEdit}
-        supportsOpenInNewTab={supportsOpenInNewTab}
       />
     </div>
   );
