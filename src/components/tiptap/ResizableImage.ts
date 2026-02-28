@@ -116,6 +116,7 @@ export const ResizableImage = Image.extend({
 
       const img = document.createElement("img");
       img.draggable = false;
+      img.className = "tiptap-editor-image";
 
       const handle = document.createElement("div");
       handle.className = "tiptap-image-resize-handle";
@@ -134,6 +135,7 @@ export const ResizableImage = Image.extend({
         if (!next) return;
         srcCandidateIndex = index;
         img.dataset.currentCandidateIndex = String(index);
+        wrapper.dataset.imageState = "loading";
         if (img.src !== next) {
           img.src = next;
         }
@@ -210,11 +212,19 @@ export const ResizableImage = Image.extend({
 
       applyFromNode();
 
+      const onLoad = () => {
+        wrapper.dataset.imageState = "loaded";
+      };
+
+      img.addEventListener("load", onLoad);
+
       img.addEventListener("error", () => {
         const nextIndex = srcCandidateIndex + 1;
         if (nextIndex < srcCandidates.length) {
           applyCandidateSrc(nextIndex);
+          return;
         }
+        wrapper.dataset.imageState = "error";
       });
 
       wrapper.appendChild(img);
@@ -316,6 +326,7 @@ export const ResizableImage = Image.extend({
           wrapper.classList.remove("ProseMirror-selectednode");
         },
         destroy: () => {
+          img.removeEventListener("load", onLoad);
           handle.removeEventListener("mousedown", onMouseDown);
           if (cleanupDrag) cleanupDrag();
         }
