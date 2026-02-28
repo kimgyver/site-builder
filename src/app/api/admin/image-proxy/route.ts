@@ -49,16 +49,20 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch {
-    return NextResponse.json({ error: "FETCH_FAILED" }, { status: 502 });
+    return NextResponse.redirect(target.toString(), 307);
   }
 
   if (!upstream.ok) {
-    return NextResponse.json({ error: "UPSTREAM_ERROR" }, { status: 502 });
+    return NextResponse.redirect(target.toString(), 307);
   }
 
   const contentType = upstream.headers.get("content-type") ?? "";
-  if (!contentType.toLowerCase().startsWith("image/")) {
-    return NextResponse.json({ error: "NOT_IMAGE" }, { status: 415 });
+  const normalizedType = contentType.toLowerCase();
+  if (
+    !normalizedType.startsWith("image/") &&
+    !normalizedType.startsWith("application/octet-stream")
+  ) {
+    return NextResponse.redirect(target.toString(), 307);
   }
 
   const headers = new Headers();

@@ -107,6 +107,9 @@ export const ResizableImage = Image.extend({
   addNodeView() {
     return ({ node, getPos, editor }) => {
       let currentNode = node;
+      let currentOriginalSrc = "";
+      let srcCandidates: string[] = [];
+      let srcCandidateIndex = 0;
       const wrapper = document.createElement("div");
       wrapper.className = "tiptap-image-wrapper";
       wrapper.setAttribute("data-type", "image");
@@ -118,6 +121,28 @@ export const ResizableImage = Image.extend({
       handle.className = "tiptap-image-resize-handle";
       handle.title = "Drag to resize";
 
+      const buildSrcCandidates = (src: string) => {
+        if (!/^https?:\/\//i.test(src)) {
+          return [src];
+        }
+        const encoded = encodeURIComponent(src);
+        return [
+          `/api/admin/image-proxy?url=${encoded}`,
+          `/api/image-proxy?url=${encoded}`,
+          src
+        ];
+      };
+
+      const applyCandidateSrc = (index: number) => {
+        const next = srcCandidates[index] || "";
+        if (!next) return;
+        srcCandidateIndex = index;
+        img.dataset.currentCandidateIndex = String(index);
+        if (img.src !== next) {
+          img.src = next;
+        }
+      };
+
       const applyFromNode = () => {
         const attrs = currentNode.attrs as Record<string, unknown>;
         const src = typeof attrs.src === "string" ? attrs.src : "";
@@ -128,12 +153,13 @@ export const ResizableImage = Image.extend({
         const alignRaw =
           typeof attrs.align === "string" ? attrs.align : "center";
 
-        const shouldProxy = /^https?:\/\//i.test(src);
-        const proxiedSrc = shouldProxy
-          ? `/api/admin/image-proxy?url=${encodeURIComponent(src)}`
-          : src;
-        img.src = proxiedSrc;
-        img.dataset.originalSrc = src;
+        if (src !== currentOriginalSrc) {
+          currentOriginalSrc = src;
+          srcCandidates = buildSrcCandidates(src);
+          srcCandidateIndex = 0;
+          img.dataset.originalSrc = src;
+          applyCandidateSrc(0);
+        }
         img.alt = alt;
         if (title) img.title = title;
         img.loading = "eager";
@@ -189,9 +215,10 @@ export const ResizableImage = Image.extend({
       applyFromNode();
 
       img.addEventListener("error", () => {
-        const original = img.dataset.originalSrc || "";
-        if (!original || img.src === original) return;
-        img.src = original;
+        const nextIndex = srcCandidateIndex + 1;
+        if (nextIndex < srcCandidates.length) {
+          applyCandidateSrc(nextIndex);
+        }
       });
 
       wrapper.appendChild(img);
