@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import type { MediaItem, PageReferenceItem } from "@/types/references";
 
 export function ImageSectionEditor({
@@ -50,12 +51,16 @@ export function ImageSectionEditor({
                   }
                 >
                   {isImage ? (
-                    <img
-                      src={item.url}
-                      alt={item.label || "Preview"}
-                      className="mb-1 h-16 w-full object-cover rounded"
-                      style={{ maxWidth: 120 }}
-                    />
+                    <div className="relative mb-1 h-16 w-full max-w-30 overflow-hidden rounded">
+                      <Image
+                        src={item.url}
+                        alt={item.label || "Preview"}
+                        fill
+                        unoptimized
+                        sizes="120px"
+                        className="object-cover"
+                      />
+                    </div>
                   ) : (
                     <div className="mb-1 flex h-16 w-full items-center justify-center bg-zinc-100 rounded">
                       <span className="text-xs text-zinc-500">

@@ -107,6 +107,12 @@ body {
   overflow-x: auto;
 }
 
+.rich-content :where(hr) {
+  margin: 1rem 0;
+  border: 0;
+  border-top: 1px solid #e4e4e7;
+}
+
 .rich-content :where(img) {
   margin: 0.75rem 0;
   max-width: 100%;

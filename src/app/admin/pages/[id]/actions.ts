@@ -114,6 +114,7 @@ export function sanitizeRichHtml(input: unknown) {
     allowedTags: [
       "p",
       "br",
+      "hr",
       "strong",
       "em",
       "u",
