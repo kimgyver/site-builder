@@ -26,7 +26,6 @@ export function EditorToolbar({
   onInsertTable,
   onSetImageWidth,
   onSetImageAlign,
-  onSetCellAlign,
   onSetTableAlign,
   onSetCellBackgroundColor,
   onClearCellBackgroundColor,
@@ -227,7 +226,6 @@ export function EditorToolbar({
             title="Table Align: Right"
             onClick={() => onSetTableAlign("right")}
           />
-          <span className="px-1 text-[10px] text-zinc-500">Cell</span>
           <ToolbarButton
             label="Merge"
             title="Merge Cells"
@@ -237,21 +235,6 @@ export function EditorToolbar({
             label="Split"
             title="Split Cell"
             onClick={() => editor.chain().focus().splitCell().run()}
-          />
-          <ToolbarButton
-            label="L"
-            title="Cell Align: Left"
-            onClick={() => onSetCellAlign("left")}
-          />
-          <ToolbarButton
-            label="C"
-            title="Cell Align: Center"
-            onClick={() => onSetCellAlign("center")}
-          />
-          <ToolbarButton
-            label="R"
-            title="Cell Align: Right"
-            onClick={() => onSetCellAlign("right")}
           />
           <ToolbarButton
             label="Cell BG"

@@ -218,6 +218,24 @@ export function setTableAlign(
     align
   });
   view.dispatch(tr);
+
+  const domAtPos = view.domAtPos(state.selection.from);
+  const baseNode =
+    domAtPos.node instanceof Element ? domAtPos.node : domAtPos.node.parentElement;
+  const tableEl = baseNode?.closest("table");
+  if (tableEl) {
+    tableEl.setAttribute("data-align", align);
+    if (align === "center") {
+      tableEl.style.marginLeft = "auto";
+      tableEl.style.marginRight = "auto";
+    } else if (align === "right") {
+      tableEl.style.marginLeft = "auto";
+      tableEl.style.marginRight = "0";
+    } else {
+      tableEl.style.marginLeft = "0";
+      tableEl.style.marginRight = "auto";
+    }
+  }
 }
 
 export function insertImagePrompt(editor: Editor) {

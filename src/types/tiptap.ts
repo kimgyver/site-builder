@@ -53,7 +53,6 @@ export interface EditorToolbarProps {
   onInsertTable: () => void;
   onSetImageWidth: (width: number | null) => void;
   onSetImageAlign: (align: CellAlign) => void;
-  onSetCellAlign: (align: CellAlign) => void;
   onSetTableAlign: (align: CellAlign) => void;
   onSetCellBackgroundColor: (color: string) => void;
   onClearCellBackgroundColor: () => void;

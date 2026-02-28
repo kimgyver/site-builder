@@ -40,7 +40,6 @@ import {
   clearTextColor as clearTextColorCommand,
   insertImagePrompt,
   insertTable as insertTableCommand,
-  setCellAlign as setCellAlignCommand,
   setCellBackgroundColor as setCellBackgroundColorCommand,
   setCellBorderColor as setCellBorderColorCommand,
   setCellBorderNormal as setCellBorderNormalCommand,
@@ -115,7 +114,7 @@ export function TiptapEditor({
         underline: false
       }),
       TextAlign.configure({
-        types: ["heading", "paragraph"]
+        types: ["heading", "paragraph", "tableCell", "tableHeader"]
       }),
       WebPasteTables,
       ClickSelectImage,
@@ -421,13 +420,6 @@ export function TiptapEditor({
 
   const insertTable = () => insertTableCommand(editor);
 
-  const setCellAlign = (align: "left" | "center" | "right") =>
-    setCellAlignCommand(
-      editor,
-      align,
-      lastSelectedTableCellPositionsRef.current
-    );
-
   const setTableAlign = (align: "left" | "center" | "right") =>
     setTableAlignCommand(editor, align);
 
@@ -546,7 +538,6 @@ export function TiptapEditor({
         onInsertTable={insertTable}
         onSetImageWidth={setImageWidth}
         onSetImageAlign={setImageAlign}
-        onSetCellAlign={setCellAlign}
         onSetTableAlign={setTableAlign}
         onSetCellBackgroundColor={color => {
           setCellBgColorValue(color);

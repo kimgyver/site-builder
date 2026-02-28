@@ -304,6 +304,23 @@ body {
 /* TipTap/ProseMirror table column resizing */
 .rich-content .tableWrapper {
   overflow-x: auto;
+  display: block;
+  width: 100%;
+}
+
+.rich-content .tableWrapper:has(> table[data-align="center"]) {
+  display: flex;
+  justify-content: center;
+}
+
+.rich-content .tableWrapper:has(> table[data-align="right"]) {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rich-content .tableWrapper:has(> table[data-align="left"]) {
+  display: flex;
+  justify-content: flex-start;
 }
 
 .rich-content .column-resize-handle {
