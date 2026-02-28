@@ -31,6 +31,19 @@ function isRevisionSchemaIssue(error: unknown) {
     isMissingTable(error, "sectionrevision")
   );
 }
+
+function isIgnorableRevisionError(error: unknown) {
+  if (isRevisionSchemaIssue(error)) {
+    return true;
+  }
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002"
+  ) {
+    return true;
+  }
+  return false;
+}
 import {
   SESSION_COOKIE_NAME,
   canEditContent,
@@ -353,7 +366,7 @@ export async function saveSections(formData: FormData) {
           }
         });
       } catch (error) {
-        if (!isRevisionSchemaIssue(error)) {
+        if (!isIgnorableRevisionError(error)) {
           throw error;
         }
       }
@@ -370,7 +383,7 @@ export async function saveSections(formData: FormData) {
           }
         });
       } catch (error) {
-        if (!isRevisionSchemaIssue(error)) {
+        if (!isIgnorableRevisionError(error)) {
           throw error;
         }
       }

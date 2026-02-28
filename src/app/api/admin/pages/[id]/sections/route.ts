@@ -37,6 +37,19 @@ function isRevisionSchemaIssue(error: unknown) {
   );
 }
 
+function isIgnorableRevisionError(error: unknown) {
+  if (isRevisionSchemaIssue(error)) {
+    return true;
+  }
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002"
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function sanitizeRichHtml(input: unknown) {
   const html = typeof input === "string" ? input : "";
   return sanitizeHtml(html, {
@@ -270,62 +283,17 @@ export async function PUT(
           throw new Error("STALE_PAGE");
         }
 
-        const existing = await tx.section.findMany({
-          where: { pageId },
-          select: { id: true }
-        });
-        const existingIds = new Set(existing.map(section => section.id));
-
-        const keepIds = new Set(
-          nextSections
-            .map(section => section.id)
-            .filter(
-              (id): id is string =>
-                typeof id === "string" &&
-                !id.startsWith("temp-") &&
-                existingIds.has(id)
-            )
-        );
-
-        const deleteIds = existing
-          .filter(section => !keepIds.has(section.id))
-          .map(section => section.id);
-
-        if (deleteIds.length > 0) {
-          await tx.section.deleteMany({
-            where: {
+        await tx.section.deleteMany({ where: { pageId } });
+        if (nextSections.length > 0) {
+          await tx.section.createMany({
+            data: nextSections.map(section => ({
               pageId,
-              id: { in: deleteIds }
-            }
+              type: section.type,
+              order: section.order,
+              enabled: section.enabled,
+              props: section.props
+            }))
           });
-        }
-
-        for (const section of nextSections) {
-          if (
-            section.id &&
-            !section.id.startsWith("temp-") &&
-            existingIds.has(section.id)
-          ) {
-            await tx.section.update({
-              where: { id: section.id },
-              data: {
-                type: section.type,
-                order: section.order,
-                enabled: section.enabled,
-                props: section.props
-              }
-            });
-          } else {
-            await tx.section.create({
-              data: {
-                pageId,
-                type: section.type,
-                order: section.order,
-                enabled: section.enabled,
-                props: section.props
-              }
-            });
-          }
         }
 
         let latestPageRevisionVersion = 0;
@@ -381,7 +349,7 @@ export async function PUT(
               }
             });
           } catch (error) {
-            if (!isRevisionSchemaIssue(error)) {
+            if (!isIgnorableRevisionError(error)) {
               throw error;
             }
           }
@@ -398,7 +366,7 @@ export async function PUT(
               }
             });
           } catch (error) {
-            if (!isRevisionSchemaIssue(error)) {
+            if (!isIgnorableRevisionError(error)) {
               throw error;
             }
           }

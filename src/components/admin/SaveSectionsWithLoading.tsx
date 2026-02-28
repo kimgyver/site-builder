@@ -106,6 +106,21 @@ export default function SaveSectionsWithLoading({
     [pageId, readJsonSafe]
   );
 
+  const saveViaServerAction = useCallback(async () => {
+    const formData = new FormData();
+    formData.set("sections", JSON.stringify(sections));
+    formData.set("pageId", pageId);
+    formData.set("expectedUpdatedAt", expectedUpdatedAtLocal);
+    const serverResult = await action(formData);
+    if (serverResult?.ok) {
+      return { ok: true as const, updatedAt: serverResult.updatedAt };
+    }
+    return {
+      ok: false as const,
+      error: serverResult?.error || "Failed to save sections"
+    };
+  }, [action, expectedUpdatedAtLocal, pageId, sections]);
+
   const handleSectionsChange = (nextSections: EditableSection[]) => {
     setSections(nextSections);
     setAutosaveState("idle");
@@ -134,28 +149,19 @@ export default function SaveSectionsWithLoading({
     }
     autosaveTimerRef.current = window.setTimeout(async () => {
       setAutosaveState("saving");
-      const result = await putSections({
-        sections,
-        expectedUpdatedAt: expectedUpdatedAtLocal
-      });
-      if (result.ok) {
-        setExpectedUpdatedAtLocal(result.updatedAt);
+      const serverResult = await saveViaServerAction();
+      if (serverResult.ok) {
+        if (serverResult.updatedAt) {
+          setExpectedUpdatedAtLocal(serverResult.updatedAt);
+        }
         lastSavedJsonRef.current = nextJson;
         setAutosaveState("saved");
         setError(null);
         return;
       }
 
-      if (result.error === "STALE_PAGE") {
-        setAutosaveState("conflict");
-        setError(
-          "Conflict detected: this page was updated elsewhere. Reload to continue editing."
-        );
-        return;
-      }
-
       setAutosaveState("error");
-      setError(toUserError(result.error ?? "Failed to autosave"));
+      setError(toUserError(serverResult.error ?? "Failed to autosave"));
     }, 1200);
 
     return () => {
@@ -163,7 +169,7 @@ export default function SaveSectionsWithLoading({
         window.clearTimeout(autosaveTimerRef.current);
       }
     };
-  }, [expectedUpdatedAtLocal, pageId, putSections, readOnly, sections]);
+  }, [expectedUpdatedAtLocal, readOnly, saveViaServerAction, sections]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (readOnly) return;
