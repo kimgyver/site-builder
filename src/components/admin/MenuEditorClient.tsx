@@ -33,7 +33,8 @@ export default function MenuEditorClient({
   initialName,
   initialItems,
   saveAction,
-  canEdit
+  canEdit,
+  supportsOpenInNewTab
 }: {
   menuId: string;
   location: string;
@@ -41,6 +42,7 @@ export default function MenuEditorClient({
   initialItems: MenuItemInput[];
   saveAction: (prevState: SaveState, formData: FormData) => Promise<SaveState>;
   canEdit: boolean;
+  supportsOpenInNewTab: boolean;
 }) {
   const [name, setName] = useState(initialName);
   const [state, formAction] = useFormState<SaveState, FormData>(saveAction, {
@@ -161,10 +163,15 @@ export default function MenuEditorClient({
                       onChange={e =>
                         patchItem(index, { openInNewTab: e.target.checked })
                       }
-                      disabled={!canEdit}
+                      disabled={!canEdit || !supportsOpenInNewTab}
                     />
                     Open in new tab
                   </label>
+                  {!supportsOpenInNewTab && (
+                    <div className="text-xs text-muted-foreground">
+                      Requires DB migration.
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col items-end gap-1 pt-5 text-[10px]">

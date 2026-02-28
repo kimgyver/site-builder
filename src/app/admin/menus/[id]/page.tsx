@@ -1,4 +1,5 @@
 import Link from "next/link";
+import crypto from "crypto";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -70,6 +71,24 @@ function parseItemsJson(raw: string): MenuItemInput[] {
   }
 }
 
+async function hasMenuItemOpenInNewTabColumn() {
+  try {
+    const rows = (await prisma.$queryRaw`
+      SELECT EXISTS(
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'MenuItem'
+          AND column_name = 'openInNewTab'
+      ) as "exists";
+    `) as Array<{ exists: boolean }>;
+
+    return rows?.[0]?.exists === true;
+  } catch {
+    return false;
+  }
+}
+
 async function saveMenu(
   _prevState: SaveState,
   formData: FormData
@@ -91,6 +110,8 @@ async function saveMenu(
     ? parseItemsJson(itemsJsonRaw)
     : parseItems(itemsRaw);
 
+  const supportsOpenInNewTab = await hasMenuItemOpenInNewTabColumn();
+
   try {
     await prisma.$transaction(async tx => {
       await tx.menu.update({
@@ -98,7 +119,10 @@ async function saveMenu(
         data: { name }
       });
       await tx.menuItem.deleteMany({ where: { menuId: id } });
-      if (nextItems.length) {
+
+      if (!nextItems.length) return;
+
+      if (supportsOpenInNewTab) {
         await tx.menuItem.createMany({
           data: nextItems.map((item, index) => ({
             menuId: id,
@@ -108,43 +132,21 @@ async function saveMenu(
             order: index
           }))
         });
+        return;
+      }
+
+      // If the DB hasn't been migrated yet, Prisma may still reference the missing column.
+      // Use raw inserts without mentioning openInNewTab.
+      for (const [index, item] of nextItems.entries()) {
+        const itemId = crypto.randomUUID();
+        await tx.$executeRaw`
+          INSERT INTO "MenuItem" ("id", "menuId", "label", "href", "order", "parentId", "updatedAt")
+          VALUES (${itemId}, ${id}, ${item.label}, ${item.href}, ${index}, NULL, CURRENT_TIMESTAMP);
+        `;
       }
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    // Production safety: tolerate missing column during phased migrations.
-    if (message.includes("openInNewTab") || message.includes("OpenInNewTab")) {
-      try {
-        await prisma.$transaction(async tx => {
-          await tx.menu.update({
-            where: { id },
-            data: { name }
-          });
-          await tx.menuItem.deleteMany({ where: { menuId: id } });
-          if (nextItems.length) {
-            await tx.menuItem.createMany({
-              data: nextItems.map((item, index) => ({
-                menuId: id,
-                label: item.label,
-                href: item.href,
-                order: index
-              }))
-            });
-          }
-        });
-
-        return { status: "saved", savedAt: Date.now() };
-      } catch (fallbackError) {
-        return {
-          status: "error",
-          message:
-            fallbackError instanceof Error
-              ? fallbackError.message
-              : "Save failed"
-        };
-      }
-    }
-
     return {
       status: "error",
       message
@@ -155,6 +157,7 @@ async function saveMenu(
 }
 
 async function getMenu(id: string) {
+  const supportsOpenInNewTab = await hasMenuItemOpenInNewTabColumn();
   let menu: {
     id: string;
     name: string;
@@ -171,7 +174,9 @@ async function getMenu(id: string) {
         location: true,
         items: {
           orderBy: { order: "asc" },
-          select: { label: true, href: true, openInNewTab: true }
+          select: supportsOpenInNewTab
+            ? { label: true, href: true, openInNewTab: true }
+            : { label: true, href: true }
         }
       }
     });
@@ -208,6 +213,7 @@ export default async function MenuEditPage({
   const role = await ensureRole(`/admin/menus/${id}`);
   const canEdit = canEditContent(role);
   const menu = await getMenu(id);
+  const supportsOpenInNewTab = await hasMenuItemOpenInNewTabColumn();
 
   return (
     <div className="w-full max-w-2xl space-y-6">
@@ -237,6 +243,7 @@ export default async function MenuEditPage({
         }))}
         saveAction={saveMenu}
         canEdit={canEdit}
+        supportsOpenInNewTab={supportsOpenInNewTab}
       />
     </div>
   );
