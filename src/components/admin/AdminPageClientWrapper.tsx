@@ -51,6 +51,7 @@ export default function AdminPageClientWrapper({
   ) => Promise<{ ok?: boolean; error?: string; updatedAt?: string } | unknown>;
 }) {
   const router = useRouter();
+  const [showInlinePreview, setShowInlinePreview] = useState(false);
   const [sectionsExpectedUpdatedAt, setSectionsExpectedUpdatedAt] = useState(
     page.updatedAt.toISOString()
   );
@@ -60,6 +61,7 @@ export default function AdminPageClientWrapper({
   });
   const handleShowToast = (message: string) =>
     setToast({ show: true, message });
+  const previewHref = `/${page.locale}/${page.slug}?preview=${page.previewToken}`;
 
   return (
     <>
@@ -120,14 +122,34 @@ export default function AdminPageClientWrapper({
             Share this private preview URL to review draft content before
             publishing.
           </p>
-          <a
-            href={`/${page.locale}/${page.slug}?preview=${page.previewToken}`}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="inline-flex rounded-md border border-blue-500 bg-blue-600 px-3 py-1.5 text-xs text-white font-semibold shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
-          >
-            Open preview in new tab
-          </a>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href={previewHref}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="inline-flex rounded-md border border-blue-500 bg-blue-600 px-3 py-1.5 text-xs text-white font-semibold shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+            >
+              Open preview in new tab
+            </a>
+            <button
+              type="button"
+              onClick={() => setShowInlinePreview(prev => !prev)}
+              className="inline-flex rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+            >
+              {showInlinePreview
+                ? "Hide inline preview"
+                : "Show inline preview"}
+            </button>
+          </div>
+          {showInlinePreview ? (
+            <div className="overflow-hidden rounded-md border border-zinc-200 bg-white">
+              <iframe
+                src={previewHref}
+                title="Inline preview"
+                className="h-[520px] w-full"
+              />
+            </div>
+          ) : null}
         </div>
         <div className="space-y-3 border-t border-dashed border-zinc-200 pt-4">
           <div className="flex items-center justify-between">
