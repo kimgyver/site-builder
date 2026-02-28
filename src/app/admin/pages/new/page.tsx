@@ -4,10 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { PageStatus, RevisionSource } from "@prisma/client";
 import {
   SESSION_COOKIE_NAME,
+  canEditContent,
+  canPublishContent,
   getRoleFromSessionCookie,
   isAdminAuthEnabled,
   type AdminRole
 } from "@/lib/adminAuth";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "@/lib/i18n";
 
 async function getAdminRoleForAction(nextPath: string): Promise<AdminRole> {
   if (!isAdminAuthEnabled()) return "publisher";
@@ -32,6 +35,7 @@ async function createPage(formData: FormData) {
   const status = String(formData.get("status") ?? PageStatus.DRAFT);
   const seoTitle = String(formData.get("seoTitle") ?? "").trim();
   const seoDescription = String(formData.get("seoDescription") ?? "").trim();
+  const locale = String(formData.get("locale") ?? DEFAULT_LOCALE).trim();
 
   if (!title || !slug) {
     // 간단히 무시하고 돌아가지만, 실제로는 에러 처리가 필요합니다.
@@ -39,7 +43,10 @@ async function createPage(formData: FormData) {
   }
 
   const role = await getAdminRoleForAction("/admin/pages/new");
-  if (role === "editor" && status === PageStatus.PUBLISHED) {
+  if (!canEditContent(role)) {
+    redirect("/admin?error=forbidden-create");
+  }
+  if (!canPublishContent(role) && status === PageStatus.PUBLISHED) {
     redirect("/admin/pages/new?error=forbidden-publish");
   }
 
@@ -47,6 +54,7 @@ async function createPage(formData: FormData) {
     data: {
       title,
       slug,
+      locale,
       seoTitle: seoTitle || null,
       seoDescription: seoDescription || null,
       status: status === "PUBLISHED" ? PageStatus.PUBLISHED : PageStatus.DRAFT
@@ -94,7 +102,7 @@ export default async function NewPage({
     redirect(`/admin/login?next=${encodeURIComponent("/admin/pages/new")}`);
   }
 
-  const canPublish = role === "publisher";
+  const canPublish = canPublishContent(role);
 
   return (
     <div className="w-full max-w-2xl space-y-6">
@@ -145,6 +153,23 @@ export default async function NewPage({
             className="h-20 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
             placeholder="Short summary for search and link previews"
           />
+        </div>
+
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-zinc-800">
+            Locale
+          </label>
+          <select
+            name="locale"
+            className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+            defaultValue={DEFAULT_LOCALE}
+          >
+            {SUPPORTED_LOCALES.map(loc => (
+              <option key={loc} value={loc}>
+                {loc}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="space-y-1">

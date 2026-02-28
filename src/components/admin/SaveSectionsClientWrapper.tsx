@@ -7,12 +7,16 @@ export default function SaveSectionsClientWrapper({
   expectedUpdatedAt,
   initialSections,
   action,
+  readOnly,
   onSuccess
 }: {
   pageId: string;
   expectedUpdatedAt: string;
   initialSections: EditableSection[];
-  action: (formData: FormData) => Promise<any>;
+  action: (
+    formData: FormData
+  ) => Promise<{ ok: boolean; error?: string; updatedAt?: string } | undefined>;
+  readOnly?: boolean;
   onSuccess?: () => void;
 }) {
   return (
@@ -21,6 +25,7 @@ export default function SaveSectionsClientWrapper({
       expectedUpdatedAt={expectedUpdatedAt}
       initialSections={initialSections}
       action={action}
+      readOnly={readOnly}
       onSuccess={onSuccess}
     />
   );

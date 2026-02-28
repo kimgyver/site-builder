@@ -42,9 +42,9 @@ Current reality-check status is tracked in [docs/cms-phase-status.md](docs/cms-p
 Phase A (complete) includes:
 
 - Admin auth middleware for `/admin` routes
-- RBAC with `publisher` and `editor` roles
+- RBAC with `admin` / `publisher` / `editor` / `reviewer` roles
 - Draft preview via `?preview=<token>`
-- Revision history tracking on metadata and sections updates
+- Revision history tracking on metadata and sections updates (`PageRevision`, `SectionRevision`)
 - Publisher-only revision restore (rollback)
 
 Phase 2 (complete) includes:
@@ -57,8 +57,10 @@ Phase 2 (complete) includes:
 
 Set these environment variables for admin authentication:
 
+- `ADMIN_ADMIN_PASSWORD`: admin login password (can edit/publish/delete/restore).
 - `ADMIN_PUBLISHER_PASSWORD`: publisher login password (can publish/delete).
 - `ADMIN_EDITOR_PASSWORD`: editor login password (can edit, cannot publish/delete).
+- `ADMIN_REVIEWER_PASSWORD`: reviewer login password (read-only).
 - `ADMIN_PASSWORD`: legacy publisher fallback password.
 - `ADMIN_SESSION_KEY`: optional session cookie value override (recommended random string).
 
@@ -74,7 +76,7 @@ Recommended way to generate `ADMIN_SESSION_KEY`:
 
 After pulling schema changes, run:
 
-- `npx prisma migrate dev --name phase-a-revisions`
+- `npx prisma migrate dev`
 - `npx prisma generate`
 
 ## 수동 테스트 절차 (Phase A / B 분리, 상세판)

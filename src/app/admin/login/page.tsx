@@ -49,7 +49,7 @@ export default async function AdminLogin({
       <div>
         <h1 className="text-lg font-semibold text-zinc-900">Admin login</h1>
         <p className="mt-1 text-xs text-zinc-600">
-          Sign in with editor or publisher password.
+          Sign in with admin, publisher, editor, or reviewer password.
         </p>
       </div>
 

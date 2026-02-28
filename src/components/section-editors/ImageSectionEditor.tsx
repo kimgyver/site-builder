@@ -94,8 +94,8 @@ export function ImageSectionEditor({
       >
         <option value="">No internal link</option>
         {libraryPages.map(item => (
-          <option key={item.id} value={`/${item.slug}`}>
-            /{item.slug} · {item.title}
+          <option key={item.id} value={`/${item.locale}/${item.slug}`}>
+            /{item.locale}/{item.slug} · {item.title}
           </option>
         ))}
       </select>

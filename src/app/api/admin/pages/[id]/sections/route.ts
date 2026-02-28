@@ -4,6 +4,7 @@ import sanitizeHtml from "sanitize-html";
 import { prisma } from "@/lib/prisma";
 import {
   SESSION_COOKIE_NAME,
+  canEditContent,
   getRoleFromSessionCookie,
   isAdminAuthEnabled
 } from "@/lib/adminAuth";
@@ -145,7 +146,7 @@ export async function PUT(
     const role = getRoleFromSessionCookie(
       request.cookies.get(SESSION_COOKIE_NAME)?.value
     );
-    if (!role) {
+    if (!role || !canEditContent(role)) {
       return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
     }
   }
@@ -306,6 +307,12 @@ export async function PUT(
           select: { version: true }
         });
 
+        const latestSection = await tx.sectionRevision.findFirst({
+          where: { pageId },
+          orderBy: { version: "desc" },
+          select: { version: true }
+        });
+
         await tx.pageRevision.create({
           data: {
             pageId,
@@ -320,6 +327,15 @@ export async function PUT(
               seoDescription: page.seoDescription,
               sections: nextSections
             }
+          }
+        });
+
+        await tx.sectionRevision.create({
+          data: {
+            pageId,
+            version: (latestSection?.version ?? 0) + 1,
+            note: "Sections autosaved",
+            snapshot: nextSections
           }
         });
 

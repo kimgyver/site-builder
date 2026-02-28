@@ -10,7 +10,9 @@ datasource db {
 model Page {
   id        String    @id @default(cuid())
   title     String
-  slug      String    @unique
+  slug      String
+  locale    String    @default("en")
+  pageGroupId String?
   status    PageStatus @default(DRAFT)
   previewToken String  @unique @default(cuid())
   seoTitle  String?
@@ -20,6 +22,10 @@ model Page {
   updatedAt DateTime @updatedAt
   sections  Section[]
   revisions PageRevision[]
+  sectionRevisions SectionRevision[]
+
+  @@unique([slug, locale])
+  @@unique([pageGroupId, locale])
 }
 
 model Section {
@@ -44,6 +50,69 @@ model PageRevision {
   createdAt DateTime @default(now())
 
   @@unique([pageId, version])
+}
+
+model SectionRevision {
+  id        String   @id @default(cuid())
+  pageId    String
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  version   Int
+  note      String?
+  snapshot  Json
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  @@unique([pageId, version])
+}
+
+model Menu {
+  id        String   @id @default(cuid())
+  name      String
+  location  String   @default("header")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items     MenuItem[]
+
+  @@unique([location])
+}
+
+model MenuItem {
+  id        String   @id @default(cuid())
+  menuId    String
+  menu      Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  label     String
+  href      String
+  order     Int
+  parentId  String?
+  parent    MenuItem? @relation("MenuItemChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children  MenuItem[] @relation("MenuItemChildren")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([menuId, order])
+}
+
+model GlobalSectionGroup {
+  id        String   @id @default(cuid())
+  name      String
+  location  String   @default("header")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sections  GlobalSection[]
+
+  @@unique([location])
+}
+
+model GlobalSection {
+  id        String   @id @default(cuid())
+  type      String
+  order     Int
+  props     Json
+  enabled   Boolean  @default(true)
+  groupId   String
+  group     GlobalSectionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
 }
 
 enum PageStatus {

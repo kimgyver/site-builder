@@ -12,10 +12,13 @@ import CalloutSectionEditor from "./section-editors/CalloutSectionEditor";
 import AccordionSectionEditor from "./section-editors/AccordionSectionEditor";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import SlashMenu from "@/tiptap/SlashMenu";
+import { getSlashCommands } from "@/tiptap/slashCommands";
 import { Toast } from "@/components/Toast";
 // import { TiptapEditor } from "@/components/TiptapEditor";
 import type { SectionBuilderProps } from "@/types/components";
 import type { EditableSection, SectionType } from "@/types/sections";
+import { SECTION_CATALOG, SECTION_TYPES_IN_ORDER } from "@/lib/sectionCatalog";
 import { HeroSectionEditor } from "./section-editors/HeroSectionEditor";
 import { TextSectionEditor } from "./section-editors/TextSectionEditor";
 import type { MediaItem, PageReferenceItem } from "@/types/references";
@@ -28,10 +31,28 @@ export function SectionBuilder({
 }: SectionBuilderProps & {
   onSectionsChange?: (sections: EditableSection[]) => void;
 }) {
+  // 드래그 핸들 상태 (섹션 전체에서 공유)
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const initialSorted = useMemo(
     () => [...initialSections].sort((a, b) => a.order - b.order),
     [initialSections]
   );
+
+  // Slash menu state
+  const [slashMenuOpen, setSlashMenuOpen] = useState(false);
+  const [slashMenuPosition, setSlashMenuPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+  const [slashMenuQuery, setSlashMenuQuery] = useState("");
+  const [slashMenuFocusedIndex, setSlashMenuFocusedIndex] = useState<
+    number | null
+  >(null);
+  const [slashMenuCommands, setSlashMenuCommands] = useState(
+    [] as ReturnType<typeof getSlashCommands>
+  );
+  const sectionBuilderRef = useRef<HTMLDivElement>(null);
 
   const [sections, setSections] = useState<EditableSection[]>(initialSorted);
   const [toast, setToast] = useState<{ show: boolean; message: string }>({
@@ -114,6 +135,28 @@ export function SectionBuilder({
     });
   };
 
+  const convertSectionType = (index: number, newType: SectionType) => {
+    const meta = SECTION_CATALOG[newType];
+    if (!meta) return;
+
+    setSectionsSynced(prev => {
+      const section = prev[index];
+      if (!section) return prev;
+      const currentProps = (section.props || {}) as Record<string, unknown>;
+      const nextProps = meta.convertProps
+        ? meta.convertProps(currentProps)
+        : meta.createDefaultProps();
+      const next = [...prev];
+      next[index] = {
+        ...section,
+        type: newType,
+        props: nextProps
+      };
+      return next;
+    });
+    setToast({ show: true, message: `Section converted to ${newType}!` });
+  };
+
   const duplicateSection = (index: number) => {
     setSectionsSynced(prev => {
       const source = prev[index];
@@ -136,40 +179,11 @@ export function SectionBuilder({
   };
 
   const addSection = (type: SectionType) => {
+    const meta = SECTION_CATALOG[type];
+    if (!meta) return;
     tempIdRef.current += 1;
     const id = `temp-${tempIdRef.current}`;
-    const baseProps: Record<string, unknown> = {};
-    if (type === "hero") {
-      baseProps.title = "Hero title";
-      baseProps.subtitle = "Hero subtitle";
-      baseProps.backgroundColor = "#18181b";
-      baseProps.textColor = "#fafafa";
-      baseProps.subtitleColor = "#d4d4d8";
-    } else if (type === "text" || type === "richText") {
-      baseProps.html = "<p>New text block</p>";
-    } else if (type === "image") {
-      baseProps.url = "https://placehold.co/1200x600";
-      baseProps.alt = "Placeholder image";
-    } else if (type === "faq") {
-      baseProps.title = "Frequently asked questions";
-      baseProps.items = [{ question: "Question", answer: "Answer" }];
-    } else if (type === "embed") {
-      baseProps.provider = "youtube";
-      baseProps.url = "";
-      baseProps.title = "";
-    } else if (type === "pageStyle") {
-      baseProps.backgroundColor = "#f8fafc";
-    } else if (type === "callout") {
-      baseProps.tone = "info";
-      baseProps.title = "Notice";
-      baseProps.body = "Add important note here.";
-    } else if (type === "accordion") {
-      baseProps.title = "Accordion";
-      baseProps.items = [
-        { question: "Accordion item", answer: "Accordion content" }
-      ];
-    }
-
+    const baseProps = meta.createDefaultProps();
     setSectionsSynced(prev => [
       ...prev,
       {
@@ -189,7 +203,10 @@ export function SectionBuilder({
     );
   };
 
-  const patchProps = (index: number, patch: Record<string, unknown>) => {
+  const patchProps = (
+    index: number,
+    patch: Partial<Record<string, unknown>>
+  ) => {
     setSectionsSynced(prev =>
       prev.map((s, i) =>
         i === index
@@ -205,6 +222,28 @@ export function SectionBuilder({
     );
   };
 
+  const getFocusedIndexFromActiveElement = () => {
+    const active = document.activeElement as HTMLElement | null;
+    if (!active) return null;
+    const attr = active.getAttribute("data-section-index");
+    if (!attr) return null;
+    const parsed = Number(attr);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  useEffect(() => {
+    if (!slashMenuOpen) return;
+    setSlashMenuCommands(
+      getSlashCommands({
+        addSection,
+        sections: sectionsRef.current,
+        focusedIndex: slashMenuFocusedIndex,
+        convertSectionType
+      })
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slashMenuOpen, slashMenuFocusedIndex]);
+
   return (
     <>
       <Toast
@@ -212,7 +251,56 @@ export function SectionBuilder({
         show={toast.show}
         onClose={() => setToast({ ...toast, show: false })}
       />
-      <div className="space-y-3">
+      <div
+        ref={sectionBuilderRef}
+        className="space-y-3"
+        tabIndex={0}
+        onKeyDown={e => {
+          // Slash menu trigger
+          if (e.key === "/") {
+            e.preventDefault();
+            const rect = sectionBuilderRef.current?.getBoundingClientRect();
+            setSlashMenuOpen(true);
+            setSlashMenuFocusedIndex(getFocusedIndexFromActiveElement());
+            setSlashMenuPosition(
+              rect
+                ? { top: rect.top + 40, left: rect.left + 20 }
+                : { top: 40, left: 20 }
+            );
+            setSlashMenuQuery("");
+          }
+          // 섹션 이동: Ctrl+ArrowUp/ArrowDown
+          if (e.ctrlKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+            const focused = document.activeElement;
+            // 현재 포커스된 섹션 index 찾기
+            const sectionEls = sectionBuilderRef.current?.querySelectorAll(
+              "[data-section-index]"
+            );
+            let currentIndex = -1;
+            if (sectionEls) {
+              sectionEls.forEach((el, idx) => {
+                if (el === focused) currentIndex = idx;
+              });
+            }
+            if (currentIndex >= 0) {
+              if (e.key === "ArrowUp") move(currentIndex, -1);
+              if (e.key === "ArrowDown") move(currentIndex, 1);
+            }
+          }
+          // 섹션 추가: Ctrl+Alt+N
+          if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "n") {
+            addSection("text");
+          }
+          // block 변환 메뉴: Ctrl+Alt+B
+          if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "b") {
+            e.preventDefault();
+            setSlashMenuOpen(true);
+            setSlashMenuFocusedIndex(getFocusedIndexFromActiveElement());
+            setSlashMenuPosition({ top: 40, left: 20 });
+            setSlashMenuQuery("block");
+          }
+        }}
+      >
         <input type="hidden" name="pageId" value={pageId} />
         <input
           type="hidden"
@@ -227,71 +315,22 @@ export function SectionBuilder({
           readOnly
         />
 
-        <div className="flex flex-wrap gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-zinc-500">Add section:</span>
-          <button
-            type="button"
-            onClick={() => addSection("hero")}
-            className="rounded-md border border-zinc-300 bg-white px-2 py-1 hover:bg-zinc-100"
-          >
-            Hero
-          </button>
-          <button
-            type="button"
-            onClick={() => addSection("text")}
-            className="rounded-md border border-zinc-300 bg-white px-2 py-1 hover:bg-zinc-100"
-          >
-            Text
-          </button>
-          <button
-            type="button"
-            onClick={() => addSection("richText")}
-            className="rounded-md border border-zinc-300 bg-white px-2 py-1 hover:bg-zinc-100"
-          >
-            Rich text
-          </button>
-          <button
-            type="button"
-            onClick={() => addSection("image")}
-            className="rounded-md border border-zinc-300 bg-white px-2 py-1 hover:bg-zinc-100"
-          >
-            Image
-          </button>
-          <button
-            type="button"
-            onClick={() => addSection("faq")}
-            className="rounded-md border border-zinc-300 bg-white px-2 py-1 hover:bg-zinc-100"
-          >
-            FAQ
-          </button>
-          <button
-            type="button"
-            onClick={() => addSection("embed")}
-            className="rounded-md border border-zinc-300 bg-white px-2 py-1 hover:bg-zinc-100"
-          >
-            Embed
-          </button>
-          <button
-            type="button"
-            onClick={() => addSection("pageStyle")}
-            className="rounded-md border border-zinc-300 bg-white px-2 py-1 hover:bg-zinc-100"
-          >
-            Page style
-          </button>
-          <button
-            type="button"
-            onClick={() => addSection("callout")}
-            className="rounded-md border border-zinc-300 bg-white px-2 py-1 hover:bg-zinc-100"
-          >
-            Callout
-          </button>
-          <button
-            type="button"
-            onClick={() => addSection("accordion")}
-            className="rounded-md border border-zinc-300 bg-white px-2 py-1 hover:bg-zinc-100"
-          >
-            Accordion
-          </button>
+          {SECTION_TYPES_IN_ORDER.map(type => {
+            const meta = SECTION_CATALOG[type];
+            return (
+              <button
+                key={type}
+                type="button"
+                className="inline-flex items-center gap-1 rounded-full border border-zinc-200 px-2 py-0.5 text-[10px] font-medium text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+                onClick={() => addSection(type)}
+              >
+                {meta?.icon ? <span>{meta.icon}</span> : null}
+                <span>{meta?.label ?? type}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Autosave status UI removed (no longer used) */}
@@ -305,15 +344,39 @@ export function SectionBuilder({
         <div className="space-y-2">
           {sections.map((section, index) => {
             const props = (section.props || {}) as Record<string, unknown>;
-            // items variable removed (was unused)
-
             return (
               <div
                 key={section.id}
-                className="flex items-start justify-between gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs"
+                data-section-index={index}
+                tabIndex={0}
+                className={`flex items-start justify-between gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs ${draggedIndex === index ? "opacity-50" : ""}`}
+                draggable
+                onDragStart={() => setDraggedIndex(index)}
+                onDragOver={e => {
+                  e.preventDefault();
+                  setDragOverIndex(index);
+                }}
+                onDrop={() => {
+                  if (
+                    draggedIndex !== null &&
+                    dragOverIndex !== null &&
+                    draggedIndex !== dragOverIndex
+                  ) {
+                    const next = [...sections];
+                    const [item] = next.splice(draggedIndex, 1);
+                    next.splice(dragOverIndex, 0, item);
+                    updateOrder(next);
+                  }
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
+                onDragEnd={() => {
+                  setDraggedIndex(null);
+                  setDragOverIndex(null);
+                }}
               >
                 <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-700">
                       {section.type}
                     </span>
@@ -322,126 +385,99 @@ export function SectionBuilder({
                         hidden
                       </span>
                     )}
+                    <span
+                      className="ml-2 cursor-grab text-zinc-400"
+                      title="Drag to reorder"
+                    >
+                      ↕
+                    </span>
                   </div>
-
-                  {section.type === "hero" && (
-                    <HeroSectionEditor
-                      props={props}
-                      patchProps={patch => patchProps(index, patch)}
-                    />
-                  )}
-
-                  {(section.type === "text" || section.type === "richText") && (
-                    <TextSectionEditor
-                      props={props}
-                      updateProps={newProps => updateProps(index, newProps)}
-                      type={section.type}
-                    />
-                  )}
-
-                  {section.type === "image" && (
-                    <ImageSectionEditor
-                      props={props}
-                      updateProps={newProps => updateProps(index, newProps)}
-                      libraryMedia={libraryMedia}
-                      libraryPages={libraryPages}
-                    />
-                  )}
-
-                  {section.type === "faq" && (
-                    <FAQSectionEditor
-                      section={section}
-                      patchProps={(patch: Partial<Record<string, unknown>>) =>
-                        patchProps(index, patch)
-                      }
-                      updateProps={(newProps: Record<string, unknown>) =>
-                        updateProps(index, newProps)
-                      }
-                    />
-                  )}
-
-                  {section.type === "embed" && (
-                    <EmbedSectionEditor
-                      section={section}
-                      patchProps={(patch: Partial<Record<string, unknown>>) =>
-                        patchProps(index, patch)
-                      }
-                      updateProps={(newProps: Record<string, unknown>) =>
-                        updateProps(index, newProps)
-                      }
-                    />
-                  )}
-
-                  {section.type === "pageStyle" && (
-                    <PageStyleSectionEditor
-                      section={section}
-                      patchProps={(patch: Partial<Record<string, unknown>>) =>
-                        patchProps(index, patch)
-                      }
-                      updateProps={(newProps: Record<string, unknown>) =>
-                        updateProps(index, newProps)
-                      }
-                    />
-                  )}
-
-                  {section.type === "callout" && (
-                    <CalloutSectionEditor
-                      section={section}
-                      patchProps={(patch: Partial<Record<string, unknown>>) =>
-                        patchProps(index, patch)
-                      }
-                      updateProps={(newProps: Record<string, unknown>) =>
-                        updateProps(index, newProps)
-                      }
-                    />
-                  )}
-
-                  {section.type === "accordion" && (
-                    <AccordionSectionEditor
-                      section={section}
-                      patchProps={(patch: Partial<Record<string, unknown>>) =>
-                        patchProps(index, patch)
-                      }
-                      updateProps={(newProps: Record<string, unknown>) =>
-                        updateProps(index, newProps)
-                      }
-                    />
-                  )}
+                  <div className="mt-2">
+                    {section.type === "hero" ? (
+                      <HeroSectionEditor
+                        props={props}
+                        patchProps={patch => patchProps(index, patch)}
+                      />
+                    ) : section.type === "text" ||
+                      section.type === "richText" ? (
+                      <TextSectionEditor
+                        props={props}
+                        updateProps={next => updateProps(index, next)}
+                        type={section.type}
+                      />
+                    ) : section.type === "image" ? (
+                      <ImageSectionEditor
+                        props={props}
+                        updateProps={next => updateProps(index, next)}
+                        libraryMedia={libraryMedia}
+                        libraryPages={libraryPages}
+                      />
+                    ) : section.type === "faq" ? (
+                      <FAQSectionEditor
+                        section={section}
+                        patchProps={patch => patchProps(index, patch)}
+                        updateProps={next => updateProps(index, next)}
+                      />
+                    ) : section.type === "embed" ? (
+                      <EmbedSectionEditor
+                        section={section}
+                        patchProps={patch => patchProps(index, patch)}
+                        updateProps={next => updateProps(index, next)}
+                      />
+                    ) : section.type === "pageStyle" ? (
+                      <PageStyleSectionEditor
+                        section={section}
+                        patchProps={patch => patchProps(index, patch)}
+                        updateProps={next => updateProps(index, next)}
+                      />
+                    ) : section.type === "callout" ? (
+                      <CalloutSectionEditor
+                        section={section}
+                        patchProps={patch => patchProps(index, patch)}
+                        updateProps={next => updateProps(index, next)}
+                      />
+                    ) : section.type === "accordion" ? (
+                      <AccordionSectionEditor
+                        section={section}
+                        patchProps={patch => patchProps(index, patch)}
+                        updateProps={next => updateProps(index, next)}
+                      />
+                    ) : null}
+                  </div>
                 </div>
-
                 <div className="flex flex-col items-end gap-1 text-[10px]">
                   <button
                     type="button"
+                    className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
                     onClick={() => move(index, -1)}
-                    className="rounded border border-zinc-300 bg-white px-1 py-0.5 hover:bg-zinc-100"
                   >
                     ↑
                   </button>
                   <button
                     type="button"
+                    className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
                     onClick={() => move(index, 1)}
-                    className="rounded border border-zinc-300 bg-white px-1 py-0.5 hover:bg-zinc-100"
                   >
                     ↓
                   </button>
                   <button
                     type="button"
-                    onClick={() => toggleEnabled(index)}
-                    className="mt-1 rounded border border-zinc-300 bg-white px-1 py-0.5 hover:bg-zinc-100"
-                  >
-                    {section.enabled ? "Hide" : "Show"}
-                  </button>
-                  <button
-                    type="button"
+                    className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
                     onClick={() => duplicateSection(index)}
-                    className="mt-1 rounded border border-zinc-300 bg-white px-1 py-0.5 hover:bg-zinc-100"
                   >
                     Duplicate
                   </button>
                   <button
                     type="button"
+                    className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
+                    onClick={() => toggleEnabled(index)}
+                  >
+                    {section.enabled ? "Hide" : "Show"}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded border border-red-200 px-1.5 py-0.5 text-red-600 hover:border-red-300 hover:bg-red-50"
                     onClick={() => removeSection(index)}
-                    className="mt-1 rounded border border-red-200 bg-white px-1 py-0.5 text-red-600 hover:bg-red-50"
                   >
                     Delete
                   </button>
@@ -450,6 +486,15 @@ export function SectionBuilder({
             );
           })}
         </div>
+
+        {slashMenuOpen && (
+          <SlashMenu
+            position={slashMenuPosition}
+            query={slashMenuQuery}
+            commands={slashMenuCommands}
+            onClose={() => setSlashMenuOpen(false)}
+          />
+        )}
       </div>
     </>
   );

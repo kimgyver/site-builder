@@ -51,7 +51,8 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         title: true,
-        slug: true
+        slug: true,
+        locale: true
       }
     }),
     prisma.section.findMany({
@@ -62,7 +63,8 @@ export async function GET(request: NextRequest) {
         page: {
           select: {
             title: true,
-            slug: true
+            slug: true,
+            locale: true
           }
         }
       },
@@ -81,7 +83,7 @@ export async function GET(request: NextRequest) {
     const baseLabel = section.page?.title
       ? `${section.page.title}`
       : section.page?.slug
-        ? `/${section.page.slug}`
+        ? `/${section.page.locale}/${section.page.slug}`
         : section.type;
 
     pushMediaFromValue(props.url, mediaMap, baseLabel);

@@ -6,13 +6,19 @@ export const SESSION_COOKIE_NAME = "sb_admin_session";
 
 function getSessionKey() {
   const password = process.env.ADMIN_PASSWORD?.trim() ?? "";
-  console.log("ADMIN_SESSION_KEY:", process.env.ADMIN_SESSION_KEY);
-  console.log("ADMIN_PASSWORD:", process.env.ADMIN_PASSWORD);
   return process.env.ADMIN_SESSION_KEY?.trim() || password;
 }
 
 function getEditorPassword() {
   return process.env.ADMIN_EDITOR_PASSWORD?.trim() ?? "";
+}
+
+function getReviewerPassword() {
+  return process.env.ADMIN_REVIEWER_PASSWORD?.trim() ?? "";
+}
+
+function getAdminPassword() {
+  return process.env.ADMIN_ADMIN_PASSWORD?.trim() ?? "";
 }
 
 function getPublisherPassword() {
@@ -24,12 +30,22 @@ function getPublisherPassword() {
 }
 
 export function isAdminAuthEnabled() {
-  return Boolean(getEditorPassword() || getPublisherPassword());
+  return Boolean(
+    getAdminPassword() ||
+    getPublisherPassword() ||
+    getEditorPassword() ||
+    getReviewerPassword()
+  );
 }
 
 export function resolveRoleForPassword(password: string): AdminRole | null {
   const normalized = password.trim();
   if (!normalized) return null;
+
+  const adminPassword = getAdminPassword();
+  if (adminPassword && normalized === adminPassword) {
+    return "admin";
+  }
 
   const publisherPassword = getPublisherPassword();
   if (publisherPassword && normalized === publisherPassword) {
@@ -39,6 +55,11 @@ export function resolveRoleForPassword(password: string): AdminRole | null {
   const editorPassword = getEditorPassword();
   if (editorPassword && normalized === editorPassword) {
     return "editor";
+  }
+
+  const reviewerPassword = getReviewerPassword();
+  if (reviewerPassword && normalized === reviewerPassword) {
+    return "reviewer";
   }
 
   return null;
@@ -59,6 +80,25 @@ export function getRoleFromSessionCookie(
   const expectedKey = getSessionKey();
 
   if (!expectedKey || key !== expectedKey) return null;
-  if (role === "editor" || role === "publisher") return role;
+  if (
+    role === "admin" ||
+    role === "publisher" ||
+    role === "editor" ||
+    role === "reviewer"
+  ) {
+    return role;
+  }
   return null;
+}
+
+export function canEditContent(role: AdminRole) {
+  return role === "admin" || role === "publisher" || role === "editor";
+}
+
+export function canPublishContent(role: AdminRole) {
+  return role === "admin" || role === "publisher";
+}
+
+export function canDeleteContent(role: AdminRole) {
+  return role === "admin" || role === "publisher";
 }

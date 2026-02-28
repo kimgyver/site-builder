@@ -11,11 +11,13 @@ function Spinner() {
 export default function RestoreRevisionWithLoading({
   pageId,
   revisionId,
-  version
+  version,
+  action
 }: {
   pageId: string;
   revisionId: string;
   version: number;
+  action: (formData: FormData) => Promise<unknown>;
 }) {
   const [loading, setLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -25,8 +27,7 @@ export default function RestoreRevisionWithLoading({
       action={async (formData: FormData) => {
         setLoading(true);
         await new Promise(r => setTimeout(r, 100));
-        // @ts-ignore
-        await (window as any).restoreRevision(formData);
+        await action(formData);
         setLoading(false);
       }}
       className="relative"

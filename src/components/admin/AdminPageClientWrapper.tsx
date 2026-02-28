@@ -5,9 +5,28 @@ import SaveSectionsClientWrapper from "@/components/admin/SaveSectionsClientWrap
 import UpdatePageWithLoading from "@/components/admin/UpdatePageWithLoading";
 import RestoreRevisionWithLoading from "@/components/admin/RestoreRevisionWithLoading";
 import type { EditableSection } from "@/types/sections";
+import type { Prisma } from "@prisma/client";
+
+type PageWithSectionsAndRevisions = Prisma.PageGetPayload<{
+  include: {
+    sections: true;
+    revisions: {
+      select: {
+        id: true;
+        version: true;
+        source: true;
+        createdAt: true;
+        note: true;
+      };
+    };
+  };
+}>;
+
+type ActionResult = { ok: boolean; error?: string };
 
 export default function AdminPageClientWrapper({
   page,
+  canEdit,
   canDelete,
   canPublish,
   saveSections,
@@ -15,14 +34,22 @@ export default function AdminPageClientWrapper({
   deletePage,
   restoreRevision
 }: {
-  page: any;
+  page: PageWithSectionsAndRevisions;
+  canEdit: boolean;
   canDelete: boolean;
   canPublish: boolean;
-  saveSections: any;
-  updatePage: any;
-  deletePage: any;
-  restoreRevision: any;
+  saveSections: (
+    formData: FormData
+  ) => Promise<(ActionResult & { updatedAt?: string }) | undefined>;
+  updatePage: (
+    formData: FormData
+  ) => Promise<(ActionResult & { updatedAt?: string }) | undefined>;
+  deletePage: (formData: FormData) => Promise<unknown>;
+  restoreRevision: (formData: FormData) => Promise<unknown>;
 }) {
+  const [sectionsExpectedUpdatedAt, setSectionsExpectedUpdatedAt] = useState(
+    page.updatedAt.toISOString()
+  );
   const [toast, setToast] = useState<{ show: boolean; message: string }>({
     show: false,
     message: ""
@@ -47,7 +74,12 @@ export default function AdminPageClientWrapper({
             </p>
           </div>
           {canDelete ? (
-            <form action={deletePage} className="sm:ml-4">
+            <form
+              action={async (formData: FormData) => {
+                await deletePage(formData);
+              }}
+              className="sm:ml-4"
+            >
               <input type="hidden" name="id" value={page.id} />
               <button
                 type="submit"
@@ -63,12 +95,19 @@ export default function AdminPageClientWrapper({
             id: page.id,
             title: page.title,
             slug: page.slug,
+            locale: page.locale,
             seoTitle: page.seoTitle ?? "",
             seoDescription: page.seoDescription ?? "",
             status: page.status
           }}
           action={updatePage}
-          onSuccess={() => handleShowToast("Page info saved!")}
+          readOnly={!canEdit}
+          onSuccess={updatedAt => {
+            if (updatedAt) {
+              setSectionsExpectedUpdatedAt(updatedAt);
+            }
+            handleShowToast("Page info saved!");
+          }}
         />
         <div className="space-y-2 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-3">
           <h2 className="text-sm font-medium text-zinc-900">Preview</h2>
@@ -77,7 +116,7 @@ export default function AdminPageClientWrapper({
             publishing.
           </p>
           <a
-            href={`/${page.slug}?preview=${page.previewToken}`}
+            href={`/${page.locale}/${page.slug}?preview=${page.previewToken}`}
             target="_blank"
             rel="noreferrer noopener"
             className="inline-flex rounded-md border border-blue-500 bg-blue-600 px-3 py-1.5 text-xs text-white font-semibold shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
@@ -98,9 +137,10 @@ export default function AdminPageClientWrapper({
           </div>
           <SaveSectionsClientWrapper
             pageId={page.id}
-            expectedUpdatedAt={page.updatedAt.toISOString()}
+            expectedUpdatedAt={sectionsExpectedUpdatedAt}
             initialSections={page.sections as unknown as EditableSection[]}
             action={saveSections}
+            readOnly={!canEdit}
             onSuccess={() => handleShowToast("Sections saved!")}
           />
         </div>
@@ -112,7 +152,7 @@ export default function AdminPageClientWrapper({
             <p className="text-xs text-zinc-500">No revisions yet.</p>
           ) : (
             <ul className="space-y-1 text-xs text-zinc-700">
-              {page.revisions.map((revision: any) => (
+              {page.revisions.map(revision => (
                 <li
                   key={revision.id}
                   className="flex items-center justify-between rounded border border-zinc-200 bg-white px-2 py-1"
@@ -135,6 +175,7 @@ export default function AdminPageClientWrapper({
                         pageId={page.id}
                         revisionId={revision.id}
                         version={revision.version}
+                        action={restoreRevision}
                       />
                     ) : null}
                   </div>

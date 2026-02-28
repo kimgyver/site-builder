@@ -1,1 +1,1 @@
-export type AdminRole = "editor" | "publisher";
+export type AdminRole = "admin" | "publisher" | "editor" | "reviewer";

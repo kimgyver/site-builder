@@ -14,6 +14,9 @@ import { prisma } from "@/lib/prisma";
 //
 import {
   SESSION_COOKIE_NAME,
+  canEditContent,
+  canDeleteContent,
+  canPublishContent,
   getRoleFromSessionCookie,
   isAdminAuthEnabled
 } from "@/lib/adminAuth";
@@ -28,8 +31,9 @@ async function getPageData(id: string) {
   if (!role) {
     redirect(`/admin/login?next=${encodeURIComponent(`/admin/pages/${id}`)}`);
   }
-  const canPublish = role === "publisher";
-  const canDelete = role === "publisher";
+  const canPublish = canPublishContent(role);
+  const canDelete = canDeleteContent(role);
+  const canEdit = canEditContent(role);
   const page = await prisma.page.findUnique({
     where: { id },
     include: {
@@ -50,7 +54,7 @@ async function getPageData(id: string) {
   if (!page) {
     notFound();
   }
-  return { page, canDelete, canPublish };
+  return { page, canDelete, canPublish, canEdit };
 }
 
 export default function EditPage({
@@ -63,12 +67,13 @@ export default function EditPage({
   if (!id) {
     notFound();
   }
-  const { page, canDelete, canPublish } = use(getPageData(id));
+  const { page, canDelete, canPublish, canEdit } = use(getPageData(id));
   return (
     <AdminPageClientWrapper
       page={page}
       canDelete={canDelete}
       canPublish={canPublish}
+      canEdit={canEdit}
       saveSections={saveSections}
       updatePage={updatePage}
       deletePage={deletePage}

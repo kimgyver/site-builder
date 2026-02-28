@@ -6,5 +6,6 @@ export type MediaItem = {
 export type PageReferenceItem = {
   id: string;
   title: string;
+  locale: string;
   slug: string;
 };

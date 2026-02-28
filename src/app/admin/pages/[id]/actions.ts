@@ -6,6 +6,7 @@ import sanitizeHtml from "sanitize-html";
 import type { EditableSection, RawSectionInput } from "@/types/sections";
 import {
   SESSION_COOKIE_NAME,
+  canEditContent,
   getRoleFromSessionCookie,
   isAdminAuthEnabled,
   type AdminRole
@@ -207,6 +208,7 @@ export async function updatePage(formData: FormData) {
     const id = formData.get("id");
     const title = formData.get("title");
     const slug = formData.get("slug");
+    const locale = formData.get("locale");
     const seoTitle = formData.get("seoTitle");
     const seoDescription = formData.get("seoDescription");
     const status = formData.get("status");
@@ -214,21 +216,22 @@ export async function updatePage(formData: FormData) {
       return { ok: false, error: "Missing required fields" };
     }
     const role = await getAdminRoleForAction(`/admin/pages/${id}`);
-    if (role !== "publisher" && role !== "editor") {
+    if (!canEditContent(role)) {
       return { ok: false, error: "Unauthorized" };
     }
-    await prisma.page.update({
+    const updated = await prisma.page.update({
       where: { id: String(id) },
       data: {
         title: String(title),
         slug: String(slug),
+        locale: locale ? String(locale) : undefined,
         seoTitle: seoTitle ? String(seoTitle) : undefined,
         seoDescription: seoDescription ? String(seoDescription) : undefined,
-        status: status as PageStatus,
-        updatedAt: new Date()
-      }
+        status: status as PageStatus
+      },
+      select: { updatedAt: true }
     });
-    return { ok: true };
+    return { ok: true, updatedAt: updated.updatedAt.toISOString() };
   } catch (error) {
     return {
       ok: false,
@@ -252,7 +255,7 @@ export async function saveSections(formData: FormData) {
       return { ok: false, error: "Missing pageId or sections" };
     }
     const role = await getAdminRoleForAction(`/admin/pages/${pageId}`);
-    if (role !== "publisher" && role !== "editor") {
+    if (!canEditContent(role)) {
       return { ok: false, error: "Unauthorized" };
     }
     // 섹션 데이터 정규화
@@ -278,7 +281,14 @@ export async function saveSections(formData: FormData) {
       where: { pageId: String(pageId) },
       orderBy: { version: "desc" }
     });
+    const lastSectionRevision = await prisma.sectionRevision.findFirst({
+      where: { pageId: String(pageId) },
+      orderBy: { version: "desc" }
+    });
     const nextVersion = lastRevision ? lastRevision.version + 1 : 1;
+    const nextSectionVersion = lastSectionRevision
+      ? lastSectionRevision.version + 1
+      : 1;
     // 섹션 변경 요약 note 생성
     const sectionTypes = sections.map(s => s.type).join(", ");
     const sectionCount = sections.length;
@@ -293,11 +303,21 @@ export async function saveSections(formData: FormData) {
         createdAt: new Date()
       }
     });
-    await prisma.page.update({
-      where: { id: String(pageId) },
-      data: { updatedAt: new Date() }
+    await prisma.sectionRevision.create({
+      data: {
+        pageId: String(pageId),
+        version: nextSectionVersion,
+        note,
+        snapshot: sections,
+        createdAt: new Date()
+      }
     });
-    return { ok: true };
+    const updated = await prisma.page.update({
+      where: { id: String(pageId) },
+      data: { updatedAt: new Date() },
+      select: { updatedAt: true }
+    });
+    return { ok: true, updatedAt: updated.updatedAt.toISOString() };
   } catch (error) {
     return {
       ok: false,
