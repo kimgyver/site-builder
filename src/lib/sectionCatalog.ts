@@ -116,10 +116,12 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
     icon: "🎨",
     keywords: ["style", "background", "theme"],
     createDefaultProps: () => ({
-      backgroundColor: "#f8fafc"
+      backgroundColor: "#f8fafc",
+      backgroundImageUrl: ""
     }),
     convertProps: from => ({
-      backgroundColor: (from.backgroundColor as string) ?? "#f8fafc"
+      backgroundColor: (from.backgroundColor as string) ?? "#f8fafc",
+      backgroundImageUrl: (from.backgroundImageUrl as string) ?? ""
     })
   },
   callout: {

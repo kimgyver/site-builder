@@ -8,7 +8,7 @@ import {
   getRoleFromSessionCookie,
   isAdminAuthEnabled
 } from "@/lib/adminAuth";
-import { use } from "react";
+import MenuEditorClient from "@/components/admin/MenuEditorClient";
 
 async function ensureRole(nextPath: string) {
   const cookieStore = await cookies();
@@ -37,6 +37,26 @@ function parseItems(raw: string): Array<{ label: string; href: string }> {
     });
 }
 
+function parseItemsJson(raw: string): Array<{ label: string; href: string }> {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map(item => {
+        const maybe = item as { label?: unknown; href?: unknown };
+        const label = typeof maybe.label === "string" ? maybe.label.trim() : "";
+        const href = typeof maybe.href === "string" ? maybe.href.trim() : "";
+        return {
+          label: label || href || "Link",
+          href: href || "/"
+        };
+      })
+      .filter(item => Boolean(item.href));
+  } catch {
+    return [];
+  }
+}
+
 async function saveMenu(formData: FormData) {
   "use server";
   const id = String(formData.get("id") ?? "").trim();
@@ -45,8 +65,11 @@ async function saveMenu(formData: FormData) {
   if (!id) return;
 
   const name = String(formData.get("name") ?? "").trim();
+  const itemsJsonRaw = String(formData.get("itemsJson") ?? "").trim();
   const itemsRaw = String(formData.get("items") ?? "");
-  const nextItems = parseItems(itemsRaw);
+  const nextItems = itemsJsonRaw
+    ? parseItemsJson(itemsJsonRaw)
+    : parseItems(itemsRaw);
 
   await prisma.$transaction(async tx => {
     await tx.menu.update({
@@ -76,19 +99,16 @@ async function getMenu(id: string) {
   return menu;
 }
 
-export default function MenuEditPage({
+export default async function MenuEditPage({
   params
 }: {
   params: Promise<{ id?: string }>;
 }) {
-  const { id } = use(params);
+  const { id } = await params;
   if (!id) notFound();
-  use(ensureRole(`/admin/menus/${id}`));
-  const menu = use(getMenu(id));
-
-  const itemsText = menu.items
-    .map(item => `${item.label}::${item.href}`)
-    .join("\n");
+  const role = await ensureRole(`/admin/menus/${id}`);
+  const canEdit = canEditContent(role);
+  const menu = await getMenu(id);
 
   return (
     <div className="w-full max-w-2xl space-y-6">
@@ -107,40 +127,17 @@ export default function MenuEditPage({
         </Link>
       </div>
 
-      <form action={saveMenu} className="space-y-4">
-        <input type="hidden" name="id" value={menu.id} />
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-zinc-800">
-            Name
-          </label>
-          <input
-            name="name"
-            defaultValue={menu.name}
-            className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-            required
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-zinc-800">
-            Items
-          </label>
-          <p className="text-xs text-zinc-500">One per line: label::href</p>
-          <textarea
-            name="items"
-            defaultValue={itemsText}
-            className="h-52 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm font-mono focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-            placeholder="Home::/\nAbout::/about"
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-        >
-          Save menu
-        </button>
-      </form>
+      <MenuEditorClient
+        menuId={menu.id}
+        location={menu.location}
+        initialName={menu.name}
+        initialItems={menu.items.map(item => ({
+          label: item.label,
+          href: item.href
+        }))}
+        saveAction={saveMenu}
+        canEdit={canEdit}
+      />
     </div>
   );
 }

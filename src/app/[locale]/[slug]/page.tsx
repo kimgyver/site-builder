@@ -14,6 +14,7 @@ import {
 } from "@/lib/i18n";
 import {
   getPageBackgroundColor,
+  getSectionBackgroundStyle,
   isExternalHref,
   localizeInternalHref,
   renderSections,
@@ -160,6 +161,17 @@ export default async function LocaleDynamicPage({
     page.sections as unknown as RenderableSection[]
   );
 
+  const headerGlobalsStyle = headerGlobals?.sections
+    ? getSectionBackgroundStyle(
+        headerGlobals.sections as unknown as RenderableSection[]
+      )
+    : undefined;
+  const footerGlobalsStyle = footerGlobals?.sections
+    ? getSectionBackgroundStyle(
+        footerGlobals.sections as unknown as RenderableSection[]
+      )
+    : undefined;
+
   return (
     <div
       className="min-h-screen bg-zinc-50 text-zinc-900"
@@ -196,7 +208,10 @@ export default async function LocaleDynamicPage({
           </nav>
         </div>
         {(headerGlobals?.sections?.length ?? 0) > 0 ? (
-          <div className="mx-auto max-w-3xl px-4 pb-6 pt-2">
+          <div
+            className="mx-auto max-w-3xl px-4 pb-6 pt-2"
+            style={headerGlobalsStyle}
+          >
             <div className="space-y-8 text-zinc-800">
               {renderSections(
                 headerGlobals!.sections as unknown as RenderableSection[],
@@ -219,7 +234,10 @@ export default async function LocaleDynamicPage({
 
       <footer className="border-t bg-white">
         {(footerGlobals?.sections?.length ?? 0) > 0 ? (
-          <div className="mx-auto max-w-3xl px-4 py-8">
+          <div
+            className="mx-auto max-w-3xl px-4 py-8"
+            style={footerGlobalsStyle}
+          >
             <div className="space-y-8 text-zinc-800">
               {renderSections(
                 footerGlobals!.sections as unknown as RenderableSection[],

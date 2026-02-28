@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { FaqItem, SectionProps } from "@/types/sections";
 
 export type RenderableSection = {
@@ -18,6 +18,50 @@ function getSafeColor(value: unknown): string | undefined {
     return color;
   }
   return undefined;
+}
+
+function getSafeBackgroundImageUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const raw = value.trim();
+  if (!raw) return undefined;
+  if (raw.startsWith("/")) return raw;
+  try {
+    const url = new URL(raw);
+    const protocol = url.protocol.toLowerCase();
+    if (protocol !== "http:" && protocol !== "https:") return undefined;
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+}
+
+export function getSectionBackgroundStyle(
+  sections: RenderableSection[]
+): CSSProperties | undefined {
+  const pageStyleSection = sections.find(
+    section => section.enabled !== false && section.type === "pageStyle"
+  );
+  const pageStyleProps = (pageStyleSection?.props ?? {}) as SectionProps;
+  const backgroundColor = getSafeColor(pageStyleProps.backgroundColor);
+  const backgroundImageUrl = getSafeBackgroundImageUrl(
+    pageStyleProps.backgroundImageUrl
+  );
+
+  if (!backgroundColor && !backgroundImageUrl) return undefined;
+
+  const style: CSSProperties = {
+    ...(backgroundColor ? { backgroundColor } : {})
+  };
+
+  if (backgroundImageUrl) {
+    const escaped = backgroundImageUrl.replace(/"/g, '\\"');
+    style.backgroundImage = `url("${escaped}")`;
+    style.backgroundSize = "cover";
+    style.backgroundRepeat = "no-repeat";
+    style.backgroundPosition = "center";
+  }
+
+  return style;
 }
 
 function getYouTubeEmbedSrc(value: unknown): string | null {

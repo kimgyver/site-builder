@@ -15,7 +15,7 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
   return (
     <div className="space-y-1">
       <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
-        Document background color
+        Background color
         <input
           type="color"
           className="mt-1 h-7 w-full cursor-pointer rounded border border-zinc-300 bg-white p-0"
@@ -32,8 +32,27 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           }
         />
       </label>
+      <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+        Background image URL (optional)
+        <input
+          type="url"
+          className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+          value={
+            typeof props.backgroundImageUrl === "string"
+              ? props.backgroundImageUrl
+              : ""
+          }
+          onChange={e =>
+            updateProps({
+              ...props,
+              backgroundImageUrl: e.target.value
+            })
+          }
+          placeholder="https://... or /images/bg.jpg"
+        />
+      </label>
       <p className="text-[10px] text-zinc-500">
-        Applies to whole page background. Keep one enabled Page style section.
+        Keep one enabled Page Style section. Can be used in pages and globals.
       </p>
     </div>
   );
