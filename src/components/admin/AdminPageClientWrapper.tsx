@@ -46,7 +46,9 @@ export default function AdminPageClientWrapper({
     formData: FormData
   ) => Promise<(ActionResult & { updatedAt?: string }) | undefined>;
   deletePage: (formData: FormData) => Promise<unknown>;
-  restoreRevision: (formData: FormData) => Promise<unknown>;
+  restoreRevision: (
+    formData: FormData
+  ) => Promise<{ ok?: boolean; error?: string; updatedAt?: string } | unknown>;
 }) {
   const router = useRouter();
   const [sectionsExpectedUpdatedAt, setSectionsExpectedUpdatedAt] = useState(
@@ -144,8 +146,14 @@ export default function AdminPageClientWrapper({
             initialSections={page.sections as unknown as EditableSection[]}
             action={saveSections}
             readOnly={!canEdit}
-            onSuccess={() => {
-              router.refresh();
+            onSuccess={(mode, updatedAt) => {
+              if (updatedAt) {
+                setSectionsExpectedUpdatedAt(updatedAt);
+              }
+              if (mode === "manual") {
+                handleShowToast("Sections saved!");
+                router.refresh();
+              }
             }}
           />
         </div>
@@ -181,7 +189,10 @@ export default function AdminPageClientWrapper({
                         revisionId={revision.id}
                         version={revision.version}
                         action={restoreRevision}
-                        onSuccess={() => {
+                        onSuccess={updatedAt => {
+                          if (updatedAt) {
+                            setSectionsExpectedUpdatedAt(updatedAt);
+                          }
                           handleShowToast(`Restored v${revision.version}`);
                           router.refresh();
                         }}

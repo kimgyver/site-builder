@@ -17,7 +17,7 @@ export default function SaveSectionsClientWrapper({
     formData: FormData
   ) => Promise<{ ok: boolean; error?: string; updatedAt?: string } | undefined>;
   readOnly?: boolean;
-  onSuccess?: () => void;
+  onSuccess?: (mode: "autosave" | "manual", updatedAt?: string) => void;
 }) {
   return (
     <SaveSectionsWithLoading

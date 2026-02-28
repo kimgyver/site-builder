@@ -24,7 +24,7 @@ export default function SaveSectionsWithLoading({
     formData: FormData
   ) => Promise<{ ok: boolean; error?: string; updatedAt?: string } | undefined>;
   readOnly?: boolean;
-  onSuccess?: () => void;
+  onSuccess?: (mode: "autosave" | "manual", updatedAt?: string) => void;
 }) {
   const [sections, setSections] = useState<EditableSection[]>(initialSections);
   const [isSaving, setIsSaving] = useState(false);
@@ -177,7 +177,7 @@ export default function SaveSectionsWithLoading({
         lastSavedJsonRef.current = nextJson;
         setAutosaveState("saved");
         setError(null);
-        if (onSuccess) onSuccess();
+        if (onSuccess) onSuccess("autosave", serverResult.updatedAt);
         return;
       }
 
@@ -221,7 +221,7 @@ export default function SaveSectionsWithLoading({
       setExpectedUpdatedAtLocal(result.updatedAt);
       lastSavedJsonRef.current = JSON.stringify(sections);
       setAutosaveState("saved");
-      if (onSuccess) onSuccess();
+      if (onSuccess) onSuccess("manual", result.updatedAt);
       return;
     }
 
@@ -246,7 +246,7 @@ export default function SaveSectionsWithLoading({
         }
         lastSavedJsonRef.current = JSON.stringify(sections);
         setAutosaveState("saved");
-        if (onSuccess) onSuccess();
+        if (onSuccess) onSuccess("manual", serverResult.updatedAt);
       } else {
         setAutosaveState("error");
         setError(toUserError(serverResult?.error || "Failed to save sections"));

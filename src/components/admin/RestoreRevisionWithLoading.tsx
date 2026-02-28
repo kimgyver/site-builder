@@ -20,8 +20,8 @@ export default function RestoreRevisionWithLoading({
   version: number;
   action: (
     formData: FormData
-  ) => Promise<{ ok?: boolean; error?: string } | unknown>;
-  onSuccess?: () => void;
+  ) => Promise<{ ok?: boolean; error?: string; updatedAt?: string } | unknown>;
+  onSuccess?: (updatedAt?: string) => void;
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,11 +34,11 @@ export default function RestoreRevisionWithLoading({
         setError(null);
         await new Promise(r => setTimeout(r, 100));
         const result = (await action(formData)) as
-          | { ok?: boolean; error?: string }
+          | { ok?: boolean; error?: string; updatedAt?: string }
           | undefined;
         if (result && typeof result === "object" && "ok" in result) {
           if (result.ok) {
-            onSuccess?.();
+            onSuccess?.(result.updatedAt);
           } else {
             setError(result.error ?? "Failed to restore revision");
           }

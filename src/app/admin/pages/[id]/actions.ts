@@ -541,7 +541,7 @@ export async function restoreRevision(formData: FormData) {
       };
     }
 
-    await prisma.$transaction(async tx => {
+    const restoredUpdatedAt = await prisma.$transaction(async tx => {
       const currentPage = await tx.page.findUnique({
         where: { id: pageId },
         select: { id: true, locale: true }
@@ -550,7 +550,7 @@ export async function restoreRevision(formData: FormData) {
         throw new Error("PAGE_NOT_FOUND");
       }
 
-      await tx.page.update({
+      const updatedPage = await tx.page.update({
         where: { id: pageId },
         data: {
           title: payload.title,
@@ -559,7 +559,8 @@ export async function restoreRevision(formData: FormData) {
           seoTitle: payload.seoTitle,
           seoDescription: payload.seoDescription,
           updatedAt: new Date()
-        }
+        },
+        select: { updatedAt: true }
       });
 
       await tx.section.deleteMany({ where: { pageId } });
@@ -600,11 +601,13 @@ export async function restoreRevision(formData: FormData) {
           throw error;
         }
       }
+
+      return updatedPage.updatedAt;
     });
 
     revalidatePath(`/admin/pages/${pageId}`);
     revalidatePath("/admin");
-    return { ok: true };
+    return { ok: true, updatedAt: restoredUpdatedAt.toISOString() };
   } catch (error) {
     if (error instanceof Error && error.message === "PAGE_NOT_FOUND") {
       notFound();
