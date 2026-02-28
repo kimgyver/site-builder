@@ -4,6 +4,20 @@ import { prisma } from "@/lib/prisma";
 import { PageStatus, Prisma, RevisionSource } from "@prisma/client";
 import sanitizeHtml from "sanitize-html";
 import type { EditableSection, RawSectionInput } from "@/types/sections";
+
+function isMissingSectionRevisionTable(error: unknown) {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
+    return false;
+  }
+  if (error.code !== "P2021") {
+    return false;
+  }
+  const table =
+    error.meta && typeof error.meta === "object" && "table" in error.meta
+      ? String((error.meta as Record<string, unknown>).table ?? "")
+      : "";
+  return table.toLowerCase().includes("sectionrevision");
+}
 import {
   SESSION_COOKIE_NAME,
   canEditContent,
@@ -281,14 +295,24 @@ export async function saveSections(formData: FormData) {
       where: { pageId: String(pageId) },
       orderBy: { version: "desc" }
     });
-    const lastSectionRevision = await prisma.sectionRevision.findFirst({
-      where: { pageId: String(pageId) },
-      orderBy: { version: "desc" }
-    });
+    let nextSectionVersion = 1;
+    let sectionRevisionEnabled = true;
+    try {
+      const lastSectionRevision = await prisma.sectionRevision.findFirst({
+        where: { pageId: String(pageId) },
+        orderBy: { version: "desc" }
+      });
+      nextSectionVersion = lastSectionRevision
+        ? lastSectionRevision.version + 1
+        : 1;
+    } catch (error) {
+      if (isMissingSectionRevisionTable(error)) {
+        sectionRevisionEnabled = false;
+      } else {
+        throw error;
+      }
+    }
     const nextVersion = lastRevision ? lastRevision.version + 1 : 1;
-    const nextSectionVersion = lastSectionRevision
-      ? lastSectionRevision.version + 1
-      : 1;
     // 섹션 변경 요약 note 생성
     const sectionTypes = sections.map(s => s.type).join(", ");
     const sectionCount = sections.length;
@@ -303,15 +327,23 @@ export async function saveSections(formData: FormData) {
         createdAt: new Date()
       }
     });
-    await prisma.sectionRevision.create({
-      data: {
-        pageId: String(pageId),
-        version: nextSectionVersion,
-        note,
-        snapshot: sections,
-        createdAt: new Date()
+    if (sectionRevisionEnabled) {
+      try {
+        await prisma.sectionRevision.create({
+          data: {
+            pageId: String(pageId),
+            version: nextSectionVersion,
+            note,
+            snapshot: sections,
+            createdAt: new Date()
+          }
+        });
+      } catch (error) {
+        if (!isMissingSectionRevisionTable(error)) {
+          throw error;
+        }
       }
-    });
+    }
     const updated = await prisma.page.update({
       where: { id: String(pageId) },
       data: { updatedAt: new Date() },

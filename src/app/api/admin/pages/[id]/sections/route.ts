@@ -10,6 +10,20 @@ import {
 } from "@/lib/adminAuth";
 import type { IncomingRawSectionInput } from "@/types/sections";
 
+function isMissingSectionRevisionTable(error: unknown) {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
+    return false;
+  }
+  if (error.code !== "P2021") {
+    return false;
+  }
+  const table =
+    error.meta && typeof error.meta === "object" && "table" in error.meta
+      ? String((error.meta as Record<string, unknown>).table ?? "")
+      : "";
+  return table.toLowerCase().includes("sectionrevision");
+}
+
 function sanitizeRichHtml(input: unknown) {
   const html = typeof input === "string" ? input : "";
   return sanitizeHtml(html, {
@@ -307,11 +321,22 @@ export async function PUT(
           select: { version: true }
         });
 
-        const latestSection = await tx.sectionRevision.findFirst({
-          where: { pageId },
-          orderBy: { version: "desc" },
-          select: { version: true }
-        });
+        let latestSectionVersion = 0;
+        let sectionRevisionEnabled = true;
+        try {
+          const latestSection = await tx.sectionRevision.findFirst({
+            where: { pageId },
+            orderBy: { version: "desc" },
+            select: { version: true }
+          });
+          latestSectionVersion = latestSection?.version ?? 0;
+        } catch (error) {
+          if (isMissingSectionRevisionTable(error)) {
+            sectionRevisionEnabled = false;
+          } else {
+            throw error;
+          }
+        }
 
         await tx.pageRevision.create({
           data: {
@@ -330,14 +355,22 @@ export async function PUT(
           }
         });
 
-        await tx.sectionRevision.create({
-          data: {
-            pageId,
-            version: (latestSection?.version ?? 0) + 1,
-            note: "Sections autosaved",
-            snapshot: nextSections
+        if (sectionRevisionEnabled) {
+          try {
+            await tx.sectionRevision.create({
+              data: {
+                pageId,
+                version: latestSectionVersion + 1,
+                note: "Sections autosaved",
+                snapshot: nextSections
+              }
+            });
+          } catch (error) {
+            if (!isMissingSectionRevisionTable(error)) {
+              throw error;
+            }
           }
-        });
+        }
 
         const updated = await tx.page.update({
           where: { id: pageId },
