@@ -128,7 +128,12 @@ export const ResizableImage = Image.extend({
         const alignRaw =
           typeof attrs.align === "string" ? attrs.align : "center";
 
-        img.src = src;
+        const shouldProxy = /^https?:\/\//i.test(src);
+        const proxiedSrc = shouldProxy
+          ? `/api/admin/image-proxy?url=${encodeURIComponent(src)}`
+          : src;
+        img.src = proxiedSrc;
+        img.dataset.originalSrc = src;
         img.alt = alt;
         if (title) img.title = title;
         img.loading = "eager";
@@ -182,6 +187,13 @@ export const ResizableImage = Image.extend({
       };
 
       applyFromNode();
+
+      img.addEventListener("error", () => {
+        const original = img.dataset.originalSrc || "";
+        if (!original || img.src === original) return;
+        img.src = original;
+      });
+
       wrapper.appendChild(img);
       wrapper.appendChild(handle);
 

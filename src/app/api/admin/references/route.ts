@@ -8,21 +8,38 @@ import {
 import type { MediaItem } from "@/types/references";
 import type { SectionProps } from "@/types/sections";
 
+const MAX_MEDIA_HISTORY = 120;
+
+type MediaEntry = {
+  url: string;
+  label: string;
+  rank: number;
+  count: number;
+};
+
 function pushMediaFromValue(
   value: unknown,
-  out: Map<string, MediaItem>,
-  fallbackLabel: string
+  out: Map<string, MediaEntry>,
+  fallbackLabel: string,
+  rank: number
 ) {
   if (typeof value !== "string") return;
   const url = value.trim();
   if (!url) return;
   if (!/^https?:\/\//i.test(url) && !url.startsWith("/")) return;
-  if (out.has(url)) return;
+  const existing = out.get(url);
+  if (existing) {
+    existing.count += 1;
+    existing.rank = Math.min(existing.rank, rank);
+    return;
+  }
 
   const short = url.length > 72 ? `${url.slice(0, 69)}...` : url;
   out.set(url, {
     url,
-    label: `${fallbackLabel} · ${short}`
+    label: `${fallbackLabel} · ${short}`,
+    rank,
+    count: 1
   });
 }
 
@@ -31,14 +48,11 @@ export async function GET(request: NextRequest) {
     let cookieValue = request.cookies.get(SESSION_COOKIE_NAME)?.value;
     if (!cookieValue) {
       const cookieHeader = request.headers.get("cookie");
-      console.log("cookieHeader:", cookieHeader);
       if (cookieHeader) {
         const match = cookieHeader.match(/sb_admin_session=([^;]+)/);
         if (match) cookieValue = match[1];
-        console.log("parsedCookieValue:", cookieValue);
       }
     }
-    console.log("finalCookieValue:", cookieValue);
     const role = getRoleFromSessionCookie(cookieValue);
     if (!role) {
       return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
@@ -62,9 +76,11 @@ export async function GET(request: NextRequest) {
         props: true,
         page: {
           select: {
+            id: true,
             title: true,
             slug: true,
-            locale: true
+            locale: true,
+            updatedAt: true
           }
         }
       },
@@ -72,7 +88,12 @@ export async function GET(request: NextRequest) {
     })
   ]);
 
-  const mediaMap = new Map<string, MediaItem>();
+  const pageRankById = new Map<string, number>();
+  pages.forEach((page, index) => {
+    pageRankById.set(page.id, index);
+  });
+
+  const mediaMap = new Map<string, MediaEntry>();
 
   for (const section of sections) {
     const props =
@@ -86,20 +107,36 @@ export async function GET(request: NextRequest) {
         ? `/${section.page.locale}/${section.page.slug}`
         : section.type;
 
-    pushMediaFromValue(props.url, mediaMap, baseLabel);
-    pushMediaFromValue(props.src, mediaMap, baseLabel);
+    const rank =
+      section.page?.id && pageRankById.has(section.page.id)
+        ? (pageRankById.get(section.page.id) ?? Number.MAX_SAFE_INTEGER)
+        : Number.MAX_SAFE_INTEGER;
+
+    pushMediaFromValue(props.url, mediaMap, baseLabel, rank);
+    pushMediaFromValue(props.src, mediaMap, baseLabel, rank);
 
     const html = typeof props.html === "string" ? props.html : "";
     if (html) {
       const srcMatches = html.matchAll(/<img[^>]+src=["']([^"']+)["']/gi);
       for (const match of srcMatches) {
-        pushMediaFromValue(match[1], mediaMap, baseLabel);
+        pushMediaFromValue(match[1], mediaMap, baseLabel, rank);
       }
     }
   }
 
+  const sortedMedia = Array.from(mediaMap.values())
+    .sort((a, b) => {
+      if (a.rank !== b.rank) return a.rank - b.rank;
+      if (a.count !== b.count) return b.count - a.count;
+      return a.label.localeCompare(b.label);
+    })
+    .slice(0, MAX_MEDIA_HISTORY)
+    .map(({ url, label }) => ({ url, label } satisfies MediaItem));
+
   return NextResponse.json({
     pages,
-    media: Array.from(mediaMap.values())
+    media: sortedMedia,
+    mediaTotal: mediaMap.size,
+    mediaLimit: MAX_MEDIA_HISTORY
   });
 }

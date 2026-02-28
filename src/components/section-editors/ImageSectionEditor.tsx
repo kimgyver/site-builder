@@ -7,16 +7,27 @@ export function ImageSectionEditor({
   updateProps,
   libraryMedia,
   libraryPages,
-  isLibraryLoading
+  isLibraryLoading,
+  mediaTotal,
+  mediaLimit
 }: {
   props: Record<string, unknown>;
   updateProps: (props: Record<string, unknown>) => void;
   libraryMedia: MediaItem[];
   libraryPages: PageReferenceItem[];
   isLibraryLoading: boolean;
+  mediaTotal: number;
+  mediaLimit: number;
 }) {
   return (
     <div className="space-y-1">
+      {!isLibraryLoading && mediaLimit > 0 ? (
+        <p className="mb-1 text-[11px] text-zinc-500">
+          Showing recent {libraryMedia.length} image references
+          {mediaTotal > libraryMedia.length ? ` (of ${mediaTotal} total)` : ""}
+          {mediaTotal > mediaLimit ? ` · cap ${mediaLimit}` : ""}
+        </p>
+      ) : null}
       <div className="mb-2 grid grid-cols-2 gap-2">
         {isLibraryLoading
           ? Array.from({ length: 4 }).map((_, index) => (

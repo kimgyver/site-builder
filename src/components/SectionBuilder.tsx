@@ -63,6 +63,10 @@ export function SectionBuilder({
   const tempIdRef = useRef(0);
   const [libraryPages, setLibraryPages] = useState<PageReferenceItem[]>([]);
   const [libraryMedia, setLibraryMedia] = useState<MediaItem[]>([]);
+  const [libraryMediaMeta, setLibraryMediaMeta] = useState<{
+    total: number;
+    limit: number;
+  }>({ total: 0, limit: 0 });
   const [isReferenceLibraryLoading, setIsReferenceLibraryLoading] =
     useState(true);
 
@@ -115,10 +119,21 @@ export function SectionBuilder({
         const json = (await response.json()) as {
           pages?: PageReferenceItem[];
           media?: MediaItem[];
+          mediaTotal?: number;
+          mediaLimit?: number;
         };
         if (!active) return;
         setLibraryPages(Array.isArray(json.pages) ? json.pages : []);
         setLibraryMedia(Array.isArray(json.media) ? json.media : []);
+        setLibraryMediaMeta({
+          total:
+            typeof json.mediaTotal === "number"
+              ? json.mediaTotal
+              : Array.isArray(json.media)
+                ? json.media.length
+                : 0,
+          limit: typeof json.mediaLimit === "number" ? json.mediaLimit : 0
+        });
       } catch {
         // no-op
       } finally {
@@ -442,6 +457,8 @@ export function SectionBuilder({
                         libraryMedia={libraryMedia}
                         libraryPages={libraryPages}
                         isLibraryLoading={isReferenceLibraryLoading}
+                        mediaTotal={libraryMediaMeta.total}
+                        mediaLimit={libraryMediaMeta.limit}
                       />
                     ) : section.type === "faq" ? (
                       <FAQSectionEditor
