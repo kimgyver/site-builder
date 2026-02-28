@@ -139,13 +139,10 @@ export default function GlobalGroupEditorClient({
 
       <div className="space-y-1">
         <h2 className="text-sm font-medium text-zinc-900">Sections</h2>
-        <p className="text-xs text-zinc-500">
-          복잡한 +type::JSON 문법 없이, 아래에서 섹션을 추가/수정해서
-          저장하세요.
-        </p>
         {hiddenCount > 0 ? (
           <p className="text-xs text-amber-700">
-            숨김 섹션 {hiddenCount}개: 공개 페이지에는 표시되지 않습니다.
+            {hiddenCount} hidden section{hiddenCount > 1 ? "s" : ""}: not
+            visible on public pages.
           </p>
         ) : null}
       </div>

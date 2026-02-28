@@ -405,8 +405,8 @@ export function SectionBuilder({
                       {section.type}
                     </span>
                     {!section.enabled && (
-                      <span className="text-[10px] uppercase tracking-wide text-zinc-400">
-                        hidden
+                      <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-amber-700">
+                        hidden (public)
                       </span>
                     )}
                     <span
@@ -496,7 +496,7 @@ export function SectionBuilder({
                     className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
                     onClick={() => toggleEnabled(index)}
                   >
-                    {section.enabled ? "Hide" : "Show"}
+                    {section.enabled ? "Hide (public)" : "Show (public)"}
                   </button>
                   <button
                     type="button"
