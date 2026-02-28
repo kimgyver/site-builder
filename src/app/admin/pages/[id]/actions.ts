@@ -5,7 +5,7 @@ import { PageStatus, Prisma, RevisionSource } from "@prisma/client";
 import sanitizeHtml from "sanitize-html";
 import type { EditableSection, RawSectionInput } from "@/types/sections";
 
-function isMissingSectionRevisionTable(error: unknown) {
+function isMissingTable(error: unknown, tableName: string) {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
     return false;
   }
@@ -16,7 +16,20 @@ function isMissingSectionRevisionTable(error: unknown) {
     error.meta && typeof error.meta === "object" && "table" in error.meta
       ? String((error.meta as Record<string, unknown>).table ?? "")
       : "";
-  return table.toLowerCase().includes("sectionrevision");
+  return table.toLowerCase().includes(tableName.toLowerCase());
+}
+
+function isRevisionSchemaIssue(error: unknown) {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
+    return false;
+  }
+  if (error.code === "P2022") {
+    return true;
+  }
+  return (
+    isMissingTable(error, "pagerevision") ||
+    isMissingTable(error, "sectionrevision")
+  );
 }
 import {
   SESSION_COOKIE_NAME,
@@ -291,10 +304,21 @@ export async function saveSections(formData: FormData) {
       }))
     });
     // revision 생성 - note에 섹션 변경 요약 기록
-    const lastRevision = await prisma.pageRevision.findFirst({
-      where: { pageId: String(pageId) },
-      orderBy: { version: "desc" }
-    });
+    let nextVersion = 1;
+    let pageRevisionEnabled = true;
+    try {
+      const lastRevision = await prisma.pageRevision.findFirst({
+        where: { pageId: String(pageId) },
+        orderBy: { version: "desc" }
+      });
+      nextVersion = lastRevision ? lastRevision.version + 1 : 1;
+    } catch (error) {
+      if (isRevisionSchemaIssue(error)) {
+        pageRevisionEnabled = false;
+      } else {
+        throw error;
+      }
+    }
     let nextSectionVersion = 1;
     let sectionRevisionEnabled = true;
     try {
@@ -306,27 +330,34 @@ export async function saveSections(formData: FormData) {
         ? lastSectionRevision.version + 1
         : 1;
     } catch (error) {
-      if (isMissingSectionRevisionTable(error)) {
+      if (isRevisionSchemaIssue(error)) {
         sectionRevisionEnabled = false;
       } else {
         throw error;
       }
     }
-    const nextVersion = lastRevision ? lastRevision.version + 1 : 1;
     // 섹션 변경 요약 note 생성
     const sectionTypes = sections.map(s => s.type).join(", ");
     const sectionCount = sections.length;
     const note = `Changed ${sectionCount} section(s): ${sectionTypes}`;
-    await prisma.pageRevision.create({
-      data: {
-        pageId: String(pageId),
-        version: nextVersion,
-        source: "SECTIONS",
-        note,
-        snapshot: JSON.stringify(sections),
-        createdAt: new Date()
+    if (pageRevisionEnabled) {
+      try {
+        await prisma.pageRevision.create({
+          data: {
+            pageId: String(pageId),
+            version: nextVersion,
+            source: "SECTIONS",
+            note,
+            snapshot: JSON.stringify(sections),
+            createdAt: new Date()
+          }
+        });
+      } catch (error) {
+        if (!isRevisionSchemaIssue(error)) {
+          throw error;
+        }
       }
-    });
+    }
     if (sectionRevisionEnabled) {
       try {
         await prisma.sectionRevision.create({
@@ -339,7 +370,7 @@ export async function saveSections(formData: FormData) {
           }
         });
       } catch (error) {
-        if (!isMissingSectionRevisionTable(error)) {
+        if (!isRevisionSchemaIssue(error)) {
           throw error;
         }
       }

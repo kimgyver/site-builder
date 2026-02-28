@@ -10,7 +10,7 @@ import {
 } from "@/lib/adminAuth";
 import type { IncomingRawSectionInput } from "@/types/sections";
 
-function isMissingSectionRevisionTable(error: unknown) {
+function isMissingTable(error: unknown, tableName: string) {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
     return false;
   }
@@ -21,7 +21,20 @@ function isMissingSectionRevisionTable(error: unknown) {
     error.meta && typeof error.meta === "object" && "table" in error.meta
       ? String((error.meta as Record<string, unknown>).table ?? "")
       : "";
-  return table.toLowerCase().includes("sectionrevision");
+  return table.toLowerCase().includes(tableName.toLowerCase());
+}
+
+function isRevisionSchemaIssue(error: unknown) {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
+    return false;
+  }
+  if (error.code === "P2022") {
+    return true;
+  }
+  return (
+    isMissingTable(error, "pagerevision") ||
+    isMissingTable(error, "sectionrevision")
+  );
 }
 
 function sanitizeRichHtml(input: unknown) {
@@ -315,11 +328,22 @@ export async function PUT(
           }
         }
 
-        const latest = await tx.pageRevision.findFirst({
-          where: { pageId },
-          orderBy: { version: "desc" },
-          select: { version: true }
-        });
+        let latestPageRevisionVersion = 0;
+        let pageRevisionEnabled = true;
+        try {
+          const latest = await tx.pageRevision.findFirst({
+            where: { pageId },
+            orderBy: { version: "desc" },
+            select: { version: true }
+          });
+          latestPageRevisionVersion = latest?.version ?? 0;
+        } catch (error) {
+          if (isRevisionSchemaIssue(error)) {
+            pageRevisionEnabled = false;
+          } else {
+            throw error;
+          }
+        }
 
         let latestSectionVersion = 0;
         let sectionRevisionEnabled = true;
@@ -331,29 +355,37 @@ export async function PUT(
           });
           latestSectionVersion = latestSection?.version ?? 0;
         } catch (error) {
-          if (isMissingSectionRevisionTable(error)) {
+          if (isRevisionSchemaIssue(error)) {
             sectionRevisionEnabled = false;
           } else {
             throw error;
           }
         }
 
-        await tx.pageRevision.create({
-          data: {
-            pageId,
-            version: (latest?.version ?? 0) + 1,
-            source: RevisionSource.SECTIONS,
-            note: "Sections autosaved",
-            snapshot: {
-              title: page.title,
-              slug: page.slug,
-              status: page.status,
-              seoTitle: page.seoTitle,
-              seoDescription: page.seoDescription,
-              sections: nextSections
+        if (pageRevisionEnabled) {
+          try {
+            await tx.pageRevision.create({
+              data: {
+                pageId,
+                version: latestPageRevisionVersion + 1,
+                source: RevisionSource.SECTIONS,
+                note: "Sections autosaved",
+                snapshot: {
+                  title: page.title,
+                  slug: page.slug,
+                  status: page.status,
+                  seoTitle: page.seoTitle,
+                  seoDescription: page.seoDescription,
+                  sections: nextSections
+                }
+              }
+            });
+          } catch (error) {
+            if (!isRevisionSchemaIssue(error)) {
+              throw error;
             }
           }
-        });
+        }
 
         if (sectionRevisionEnabled) {
           try {
@@ -366,7 +398,7 @@ export async function PUT(
               }
             });
           } catch (error) {
-            if (!isMissingSectionRevisionTable(error)) {
+            if (!isRevisionSchemaIssue(error)) {
               throw error;
             }
           }

@@ -42,6 +42,16 @@ export default function SaveSectionsWithLoading({
   type PutSectionsErr = { ok: false; error: string };
   type PutSectionsResponse = PutSectionsOk | PutSectionsErr;
 
+  const toUserError = (code: string) => {
+    if (code === "DB_UNAVAILABLE") {
+      return "Database is unavailable. Please try again in a moment.";
+    }
+    if (code === "SAVE_FAILED") {
+      return "Autosave failed. Please click Save sections and retry.";
+    }
+    return code;
+  };
+
   const readJsonSafe = useCallback(
     async (response: Response): Promise<Record<string, unknown>> => {
       try {
@@ -145,7 +155,7 @@ export default function SaveSectionsWithLoading({
       }
 
       setAutosaveState("error");
-      setError(result.error ?? "Failed to autosave");
+      setError(toUserError(result.error ?? "Failed to autosave"));
     }, 1200);
 
     return () => {
@@ -198,7 +208,7 @@ export default function SaveSectionsWithLoading({
         if (onSuccess) onSuccess();
       } else {
         setAutosaveState("error");
-        setError(serverResult?.error || "Failed to save sections");
+        setError(toUserError(serverResult?.error || "Failed to save sections"));
       }
     } catch (e) {
       setAutosaveState("error");
