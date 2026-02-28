@@ -26,7 +26,10 @@ export async function GET(request: NextRequest) {
 
   const protocol = target.protocol.toLowerCase();
   if (protocol !== "http:" && protocol !== "https:") {
-    return NextResponse.json({ error: "UNSUPPORTED_PROTOCOL" }, { status: 400 });
+    return NextResponse.json(
+      { error: "UNSUPPORTED_PROTOCOL" },
+      { status: 400 }
+    );
   }
 
   if (isBlockedHost(target.hostname)) {
@@ -40,7 +43,8 @@ export async function GET(request: NextRequest) {
       cache: "force-cache",
       redirect: "follow",
       headers: {
-        accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        accept:
+          "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
         "user-agent": "SiteBuilderEditorImageProxy/1.0"
       }
     });

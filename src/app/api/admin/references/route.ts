@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
       return a.label.localeCompare(b.label);
     })
     .slice(0, MAX_MEDIA_HISTORY)
-    .map(({ url, label }) => ({ url, label } satisfies MediaItem));
+    .map(({ url, label }) => ({ url, label }) satisfies MediaItem);
 
   return NextResponse.json({
     pages,
