@@ -178,7 +178,13 @@ export default function SaveSectionsWithLoading({
         window.clearTimeout(autosaveTimerRef.current);
       }
     };
-  }, [expectedUpdatedAtLocal, readOnly, saveViaServerAction, sections]);
+  }, [
+    expectedUpdatedAtLocal,
+    onSuccess,
+    readOnly,
+    saveViaServerAction,
+    sections
+  ]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (readOnly) return;
