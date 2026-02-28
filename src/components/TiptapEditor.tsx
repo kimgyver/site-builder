@@ -199,6 +199,15 @@ export function TiptapEditor({
         class:
           "rich-content editor max-w-none focus:outline-none " +
           (editorClassName ?? "")
+      },
+      handleDOMEvents: {
+        dragstart: (_view, event) => {
+          const target = event.target;
+          if (!(target instanceof HTMLElement)) return false;
+          if (!target.closest("td, th")) return false;
+          event.preventDefault();
+          return true;
+        }
       }
     },
     onUpdate: ({ editor }) => {

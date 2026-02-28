@@ -299,3 +299,37 @@ export function insertTable(editor: Editor) {
     .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
     .run();
 }
+
+export function deleteCurrentTable(editor: Editor) {
+  const deletedByCommand = editor.chain().focus().deleteTable().run();
+  if (deletedByCommand) return;
+
+  const { state, view } = editor;
+  const selection = state.selection as typeof state.selection & {
+    $anchorCell?: {
+      pos: number;
+      depth: number;
+      node: (depth: number) => { type: { name: string }; nodeSize: number };
+      before: (depth: number) => number;
+    };
+  };
+
+  const $anchor = selection.$anchorCell ?? state.selection.$from;
+
+  for (let depth = $anchor.depth; depth > 0; depth -= 1) {
+    const node = $anchor.node(depth);
+    if (node.type.name !== "table") continue;
+
+    const from = $anchor.before(depth);
+    const to = from + node.nodeSize;
+    view.dispatch(state.tr.delete(from, to).scrollIntoView());
+    return;
+  }
+
+  const selectedTable = state.selection.$from.nodeAfter;
+  if (selectedTable?.type.name === "table") {
+    const from = state.selection.$from.pos;
+    const to = from + selectedTable.nodeSize;
+    view.dispatch(state.tr.delete(from, to).scrollIntoView());
+  }
+}

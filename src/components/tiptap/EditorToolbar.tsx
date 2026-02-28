@@ -1,5 +1,6 @@
 import type { EditorToolbarProps } from "@/types/tiptap";
 import { ToolbarButton } from "./ToolbarButton";
+import { deleteCurrentTable } from "./editorCommands";
 
 export function EditorToolbar({
   editor,
@@ -337,7 +338,7 @@ export function EditorToolbar({
           <ToolbarButton
             label="DelTbl"
             title="Delete Table"
-            onClick={() => editor.chain().focus().deleteTable().run()}
+            onClick={() => deleteCurrentTable(editor)}
           />
         </>
       ) : null}
