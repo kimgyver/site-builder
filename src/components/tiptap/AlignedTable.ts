@@ -33,7 +33,22 @@ export const AlignedTable = Table.extend({
         renderHTML: attributes => {
           const align = attributes.align as string | null;
           if (align === "left" || align === "center" || align === "right") {
-            return { "data-align": align };
+            if (align === "center") {
+              return {
+                "data-align": align,
+                style: "margin-left:auto;margin-right:auto;"
+              };
+            }
+            if (align === "right") {
+              return {
+                "data-align": align,
+                style: "margin-left:auto;margin-right:0;"
+              };
+            }
+            return {
+              "data-align": align,
+              style: "margin-left:0;margin-right:auto;"
+            };
           }
           return {};
         }

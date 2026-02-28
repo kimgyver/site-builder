@@ -124,19 +124,19 @@ export function EditorToolbar({
       />
       <span className="mx-1 h-5 w-px bg-zinc-300" />
       <ToolbarButton
-        label="⟸ Text"
+        label="Text L"
         title="Align Left"
         onClick={() => editor.chain().focus().setTextAlign("left").run()}
         active={editor.isActive({ textAlign: "left" })}
       />
       <ToolbarButton
-        label="↔ Text"
+        label="Text C"
         title="Align Center"
         onClick={() => editor.chain().focus().setTextAlign("center").run()}
         active={editor.isActive({ textAlign: "center" })}
       />
       <ToolbarButton
-        label="⟹ Text"
+        label="Text R"
         title="Align Right"
         onClick={() => editor.chain().focus().setTextAlign("right").run()}
         active={editor.isActive({ textAlign: "right" })}
@@ -211,21 +211,23 @@ export function EditorToolbar({
       {isTableActive ? (
         <>
           <span className="mx-1 h-5 w-px bg-zinc-300" />
+          <span className="px-1 text-[10px] text-zinc-500">Table</span>
           <ToolbarButton
-            label="Tbl ⟸"
+            label="L"
             title="Table Align: Left"
             onClick={() => onSetTableAlign("left")}
           />
           <ToolbarButton
-            label="Tbl ↔"
+            label="C"
             title="Table Align: Center"
             onClick={() => onSetTableAlign("center")}
           />
           <ToolbarButton
-            label="Tbl ⟹"
+            label="R"
             title="Table Align: Right"
             onClick={() => onSetTableAlign("right")}
           />
+          <span className="px-1 text-[10px] text-zinc-500">Cell</span>
           <ToolbarButton
             label="Merge"
             title="Merge Cells"
@@ -237,17 +239,17 @@ export function EditorToolbar({
             onClick={() => editor.chain().focus().splitCell().run()}
           />
           <ToolbarButton
-            label="Align Left"
+            label="L"
             title="Cell Align: Left"
             onClick={() => onSetCellAlign("left")}
           />
           <ToolbarButton
-            label="Align Center"
+            label="C"
             title="Cell Align: Center"
             onClick={() => onSetCellAlign("center")}
           />
           <ToolbarButton
-            label="Align Right"
+            label="R"
             title="Cell Align: Right"
             onClick={() => onSetCellAlign("right")}
           />

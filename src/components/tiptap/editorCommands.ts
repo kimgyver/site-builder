@@ -196,7 +196,28 @@ export function setTableAlign(
   align: "left" | "center" | "right"
 ) {
   if (!editor.isActive("table")) return;
-  editor.chain().focus().updateAttributes("table", { align }).run();
+
+  const { state, view } = editor;
+  const { $from } = state.selection;
+
+  let tablePos: number | null = null;
+  for (let depth = $from.depth; depth > 0; depth -= 1) {
+    const node = $from.node(depth);
+    if (node.type.name === "table") {
+      tablePos = $from.before(depth);
+      break;
+    }
+  }
+
+  if (tablePos === null) return;
+  const tableNode = state.doc.nodeAt(tablePos);
+  if (!tableNode) return;
+
+  const tr = state.tr.setNodeMarkup(tablePos, undefined, {
+    ...tableNode.attrs,
+    align
+  });
+  view.dispatch(tr);
 }
 
 export function insertImagePrompt(editor: Editor) {
