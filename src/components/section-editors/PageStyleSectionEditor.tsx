@@ -51,8 +51,83 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           placeholder="https://... or /images/bg.jpg"
         />
       </label>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+          Menu text color
+          <input
+            type="color"
+            className="mt-1 h-7 w-full cursor-pointer rounded border border-zinc-300 bg-white p-0"
+            value={
+              typeof props.menuTextColor === "string"
+                ? props.menuTextColor
+                : "#52525b"
+            }
+            onChange={e =>
+              updateProps({
+                ...props,
+                menuTextColor: e.target.value
+              })
+            }
+          />
+        </label>
+        <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+          Menu hover color
+          <input
+            type="color"
+            className="mt-1 h-7 w-full cursor-pointer rounded border border-zinc-300 bg-white p-0"
+            value={
+              typeof props.menuHoverColor === "string"
+                ? props.menuHoverColor
+                : "#18181b"
+            }
+            onChange={e =>
+              updateProps({
+                ...props,
+                menuHoverColor: e.target.value
+              })
+            }
+          />
+        </label>
+      </div>
+      <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+        Menu font size (px)
+        <input
+          type="number"
+          min={12}
+          max={24}
+          className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+          value={
+            typeof props.menuFontSizePx === "number" ? props.menuFontSizePx : 14
+          }
+          onChange={e =>
+            updateProps({
+              ...props,
+              menuFontSizePx: Number(e.target.value)
+            })
+          }
+        />
+      </label>
+      <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+        Header/Footer divider color
+        <input
+          type="color"
+          className="mt-1 h-7 w-full cursor-pointer rounded border border-zinc-300 bg-white p-0"
+          value={
+            typeof props.dividerColor === "string"
+              ? props.dividerColor
+              : "#e4e4e7"
+          }
+          onChange={e =>
+            updateProps({
+              ...props,
+              dividerColor: e.target.value
+            })
+          }
+        />
+      </label>
       <p className="text-[10px] text-zinc-500">
-        Keep one enabled Page Style section. Can be used in pages and globals.
+        Keep one enabled Page Style section. Use the same controls in pages and
+        shared header/footer blocks for consistent look.
       </p>
     </div>
   );

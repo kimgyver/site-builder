@@ -46,9 +46,11 @@ export default async function GlobalsListPage() {
   return (
     <div className="w-full max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Globals</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Shared Header/Footer Blocks
+        </h1>
         <p className="mt-1 text-sm text-zinc-600">
-          Manage global section groups by location.
+          Manage reusable section groups for header and footer areas.
         </p>
       </div>
 
@@ -63,7 +65,7 @@ export default async function GlobalsListPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm font-semibold text-zinc-900">
-                    {location}
+                    {location === "header" ? "Header" : "Footer"}
                   </div>
                   <div className="mt-1 text-xs text-zinc-500">
                     {group ? `Group ID: ${group.id}` : "Not created yet"}

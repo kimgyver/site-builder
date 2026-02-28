@@ -25,6 +25,14 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.site-menu-link {
+  transition: color 150ms ease;
+}
+
+.site-menu-link:hover {
+  color: var(--menu-hover-color, #18181b);
+}
+
 /*
   Rich text styling
   Tailwind CSS preflight resets headings, lists, and links to inherit styles.

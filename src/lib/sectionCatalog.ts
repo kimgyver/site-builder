@@ -117,11 +117,20 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
     keywords: ["style", "background", "theme"],
     createDefaultProps: () => ({
       backgroundColor: "#f8fafc",
-      backgroundImageUrl: ""
+      backgroundImageUrl: "",
+      menuTextColor: "#52525b",
+      menuHoverColor: "#18181b",
+      menuFontSizePx: 14,
+      dividerColor: "#e4e4e7"
     }),
     convertProps: from => ({
       backgroundColor: (from.backgroundColor as string) ?? "#f8fafc",
-      backgroundImageUrl: (from.backgroundImageUrl as string) ?? ""
+      backgroundImageUrl: (from.backgroundImageUrl as string) ?? "",
+      menuTextColor: (from.menuTextColor as string) ?? "#52525b",
+      menuHoverColor: (from.menuHoverColor as string) ?? "#18181b",
+      menuFontSizePx:
+        typeof from.menuFontSizePx === "number" ? from.menuFontSizePx : 14,
+      dividerColor: (from.dividerColor as string) ?? "#e4e4e7"
     })
   },
   callout: {

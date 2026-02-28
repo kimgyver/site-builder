@@ -50,10 +50,10 @@ export default async function GlobalGroupEditPage({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Edit globals
+            Edit Shared Blocks
           </h1>
           <p className="mt-1 text-sm text-zinc-600">
-            Location: <span className="font-medium">{group.location}</span>
+            Area: <span className="font-medium">{group.location}</span>
           </p>
         </div>
         <Link

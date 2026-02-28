@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import type {
   DynamicLocaleSlugParams,
@@ -15,6 +16,7 @@ import {
 import {
   getPageBackgroundColor,
   getSectionBackgroundStyle,
+  getSectionNavigationStyle,
   isExternalHref,
   localizeInternalHref,
   renderSections,
@@ -203,6 +205,28 @@ export default async function LocaleDynamicPage({
       )
     : undefined;
 
+  const headerNavigationStyle = headerGlobals?.sections
+    ? getSectionNavigationStyle(
+        headerGlobals.sections as unknown as RenderableSection[]
+      )
+    : {
+        menuTextColor: undefined,
+        menuHoverColor: undefined,
+        menuFontSizePx: undefined,
+        dividerColor: undefined
+      };
+
+  const footerNavigationStyle = footerGlobals?.sections
+    ? getSectionNavigationStyle(
+        footerGlobals.sections as unknown as RenderableSection[]
+      )
+    : {
+        menuTextColor: undefined,
+        menuHoverColor: undefined,
+        menuFontSizePx: undefined,
+        dividerColor: undefined
+      };
+
   return (
     <div
       className="min-h-screen bg-zinc-50 text-zinc-900"
@@ -212,12 +236,30 @@ export default async function LocaleDynamicPage({
           : undefined
       }
     >
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
-          <Link href="/" className="text-sm font-semibold tracking-tight">
-            Home
-          </Link>
-          <nav className="flex flex-wrap items-center gap-4 text-sm text-zinc-600">
+      <header
+        className="bg-white"
+        style={{
+          ...(headerGlobalsStyle ?? {}),
+          borderBottom: `1px solid ${headerNavigationStyle.dividerColor ?? "#e4e4e7"}`
+        }}
+      >
+        <div className="mx-auto flex max-w-3xl items-center justify-end px-4 py-4">
+          <nav
+            className="flex flex-wrap items-center gap-4 text-sm text-zinc-600"
+            style={
+              {
+                color: headerNavigationStyle.menuTextColor,
+                fontSize: headerNavigationStyle.menuFontSizePx
+                  ? `${headerNavigationStyle.menuFontSizePx}px`
+                  : undefined,
+                ...(headerNavigationStyle.menuHoverColor
+                  ? {
+                      "--menu-hover-color": headerNavigationStyle.menuHoverColor
+                    }
+                  : {})
+              } as CSSProperties
+            }
+          >
             {(headerMenu?.items ?? []).map(
               (item: {
                 id: string;
@@ -231,7 +273,7 @@ export default async function LocaleDynamicPage({
                   <a
                     key={item.id}
                     href={href}
-                    className="hover:text-zinc-900"
+                    className="site-menu-link"
                     target={openInNewTab ? "_blank" : undefined}
                     rel={openInNewTab ? "noopener noreferrer" : undefined}
                   >
@@ -241,7 +283,7 @@ export default async function LocaleDynamicPage({
                   <Link
                     key={item.id}
                     href={href}
-                    className="hover:text-zinc-900"
+                    className="site-menu-link"
                     target={openInNewTab ? "_blank" : undefined}
                     rel={openInNewTab ? "noopener noreferrer" : undefined}
                   >
@@ -253,7 +295,7 @@ export default async function LocaleDynamicPage({
           </nav>
         </div>
         {(headerGlobals?.sections?.length ?? 0) > 0 ? (
-          <div className="pb-6 pt-2" style={headerGlobalsStyle}>
+          <div className="pb-6 pt-2">
             <div className="mx-auto max-w-3xl px-4">
               <div className="space-y-8 text-zinc-800">
                 {renderSections(
@@ -276,9 +318,15 @@ export default async function LocaleDynamicPage({
         </div>
       </main>
 
-      <footer className="border-t bg-white">
+      <footer
+        className="bg-white"
+        style={{
+          ...(footerGlobalsStyle ?? {}),
+          borderTop: `1px solid ${footerNavigationStyle.dividerColor ?? "#e4e4e7"}`
+        }}
+      >
         {(footerGlobals?.sections?.length ?? 0) > 0 ? (
-          <div className="py-8" style={footerGlobalsStyle}>
+          <div className="py-8">
             <div className="mx-auto max-w-3xl px-4">
               <div className="space-y-8 text-zinc-800">
                 {renderSections(
@@ -291,7 +339,23 @@ export default async function LocaleDynamicPage({
         ) : null}
         {(footerMenu?.items?.length ?? 0) > 0 ? (
           <div className="mx-auto max-w-3xl px-4 py-6">
-            <nav className="flex flex-wrap items-center gap-4 text-sm text-zinc-600">
+            <nav
+              className="flex flex-wrap items-center gap-4 text-sm text-zinc-600"
+              style={
+                {
+                  color: footerNavigationStyle.menuTextColor,
+                  fontSize: footerNavigationStyle.menuFontSizePx
+                    ? `${footerNavigationStyle.menuFontSizePx}px`
+                    : undefined,
+                  ...(footerNavigationStyle.menuHoverColor
+                    ? {
+                        "--menu-hover-color":
+                          footerNavigationStyle.menuHoverColor
+                      }
+                    : {})
+                } as CSSProperties
+              }
+            >
               {footerMenu!.items.map(
                 (item: {
                   id: string;
@@ -305,7 +369,7 @@ export default async function LocaleDynamicPage({
                     <a
                       key={item.id}
                       href={href}
-                      className="hover:text-zinc-900"
+                      className="site-menu-link"
                       target={openInNewTab ? "_blank" : undefined}
                       rel={openInNewTab ? "noopener noreferrer" : undefined}
                     >
@@ -315,7 +379,7 @@ export default async function LocaleDynamicPage({
                     <Link
                       key={item.id}
                       href={href}
-                      className="hover:text-zinc-900"
+                      className="site-menu-link"
                       target={openInNewTab ? "_blank" : undefined}
                       rel={openInNewTab ? "noopener noreferrer" : undefined}
                     >

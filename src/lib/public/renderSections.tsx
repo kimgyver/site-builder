@@ -64,6 +64,33 @@ export function getSectionBackgroundStyle(
   return style;
 }
 
+function getSafeFontSizePx(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.min(24, Math.max(12, value));
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value.trim());
+    if (Number.isFinite(parsed)) {
+      return Math.min(24, Math.max(12, parsed));
+    }
+  }
+  return undefined;
+}
+
+export function getSectionNavigationStyle(sections: RenderableSection[]) {
+  const pageStyleSection = sections.find(
+    section => section.enabled !== false && section.type === "pageStyle"
+  );
+  const pageStyleProps = (pageStyleSection?.props ?? {}) as SectionProps;
+
+  return {
+    menuTextColor: getSafeColor(pageStyleProps.menuTextColor),
+    menuHoverColor: getSafeColor(pageStyleProps.menuHoverColor),
+    menuFontSizePx: getSafeFontSizePx(pageStyleProps.menuFontSizePx),
+    dividerColor: getSafeColor(pageStyleProps.dividerColor)
+  };
+}
+
 function getYouTubeEmbedSrc(value: unknown): string | null {
   if (typeof value !== "string") return null;
   try {

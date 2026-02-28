@@ -48,9 +48,11 @@ export default async function MenusAdmin() {
   return (
     <div className="w-full max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Menus</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Navigation Menus
+        </h1>
         <p className="mt-1 text-sm text-zinc-600">
-          Manage header and footer navigation menus.
+          Manage navigation links shown in the header and footer.
         </p>
       </div>
 
@@ -65,7 +67,9 @@ export default async function MenusAdmin() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-medium text-zinc-900">
-                    {location}
+                    {location === "header"
+                      ? "Header navigation"
+                      : "Footer navigation"}
                   </div>
                   <div className="text-xs text-zinc-600">
                     {menu ? menu.name : "No menu yet"}
