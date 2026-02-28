@@ -156,9 +156,9 @@ export default function AdminPageClientWrapper({
             <div>
               <h2 className="text-sm font-medium text-zinc-900">Sections</h2>
               <p className="text-xs text-zinc-500">
-                These blocks define the content of the page. Add hero, text,
-                image, or FAQ sections, reorder them, and toggle their
-                visibility.
+                These blocks define the content of the page. Add hero/text/image
+                sections or HTML Structure blocks to preserve external CMS
+                markup, then reorder and toggle visibility.
               </p>
             </div>
           </div>

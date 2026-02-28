@@ -2,6 +2,7 @@
 import { ImageSectionEditor } from "./section-editors/ImageSectionEditor";
 
 import FAQSectionEditor from "./section-editors/FAQSectionEditor";
+import HtmlStructureSectionEditor from "./section-editors/HtmlStructureSectionEditor";
 
 import EmbedSectionEditor from "./section-editors/EmbedSectionEditor";
 
@@ -382,7 +383,8 @@ export function SectionBuilder({
 
         {sections.length === 0 ? (
           <p className="text-xs text-zinc-500">
-            No sections yet. Add a hero, text, image, or FAQ block.
+            No sections yet. Add hero/text blocks, or use HTML Structure for
+            external CMS markup.
           </p>
         ) : null}
 
@@ -449,6 +451,11 @@ export function SectionBuilder({
                         props={props}
                         updateProps={next => updateProps(index, next)}
                         type={section.type}
+                      />
+                    ) : section.type === "rawHtml" ? (
+                      <HtmlStructureSectionEditor
+                        props={props}
+                        updateProps={next => updateProps(index, next)}
                       />
                     ) : section.type === "image" ? (
                       <ImageSectionEditor

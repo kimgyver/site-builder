@@ -2,8 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { sanitizeCmsHtml } from "@/lib/sanitizeCmsHtml";
 import { PageStatus, Prisma, RevisionSource } from "@prisma/client";
-import sanitizeHtml from "sanitize-html";
 
 function isMissingTable(error: unknown, tableName: string) {
   if (!(error instanceof Prisma.PrismaClientKnownRequestError)) {
@@ -109,151 +109,7 @@ export function normalizeSnapshotSections(rawSections: unknown): Array<{
 }
 
 export function sanitizeRichHtml(input: unknown) {
-  const html = typeof input === "string" ? input : "";
-  return sanitizeHtml(html, {
-    allowedTags: [
-      "h1",
-      "p",
-      "br",
-      "hr",
-      "strong",
-      "em",
-      "u",
-      "s",
-      "span",
-      "mark",
-      "blockquote",
-      "code",
-      "pre",
-      "h2",
-      "h3",
-      "h4",
-      "ul",
-      "ol",
-      "li",
-      "a",
-      "img",
-      "table",
-      "thead",
-      "tbody",
-      "tr",
-      "th",
-      "td",
-      "colgroup",
-      "col"
-    ],
-    allowedAttributes: {
-      a: ["href", "name", "target", "rel"],
-      p: ["style"],
-      h1: ["style"],
-      h2: ["style"],
-      h3: ["style"],
-      h4: ["style"],
-      span: ["style"],
-      mark: ["data-color", "style"],
-      img: [
-        "src",
-        "alt",
-        "title",
-        "loading",
-        "data-width",
-        "data-width-px",
-        "data-in-table",
-        "data-align",
-        "style"
-      ],
-      table: ["style", "data-align"],
-      th: [
-        "colspan",
-        "rowspan",
-        "data-bg",
-        "data-colwidth",
-        "data-height-px",
-        "data-border",
-        "data-border-color",
-        "data-border-width",
-        "data-align",
-        "style"
-      ],
-      td: [
-        "colspan",
-        "rowspan",
-        "data-bg",
-        "data-colwidth",
-        "data-height-px",
-        "data-border",
-        "data-border-color",
-        "data-border-width",
-        "data-align",
-        "style"
-      ],
-      col: ["span", "style"]
-    },
-    allowedSchemes: ["http", "https", "mailto"],
-    allowedSchemesByTag: {
-      img: ["http", "https", "data"]
-    },
-    allowProtocolRelative: false,
-    allowedStyles: {
-      p: {
-        "text-align": [/^(left|center|right)$/]
-      },
-      h1: {
-        "text-align": [/^(left|center|right)$/]
-      },
-      h2: {
-        "text-align": [/^(left|center|right)$/]
-      },
-      h3: {
-        "text-align": [/^(left|center|right)$/]
-      },
-      h4: {
-        "text-align": [/^(left|center|right)$/]
-      },
-      span: {
-        color: [/^#[0-9a-fA-F]{3,8}$/, /^rgb\(/, /^rgba\(/]
-      },
-      mark: {
-        "background-color": [/^#[0-9a-fA-F]{3,8}$/, /^rgb\(/, /^rgba\(/]
-      },
-      img: {
-        width: [/^\d+(\.\d+)?%$/, /^\d+(\.\d+)?px$/]
-      },
-      table: {
-        "text-align": [/^(left|center|right)$/],
-        "margin-left": [/^auto$/, /^0(px)?$/],
-        "margin-right": [/^auto$/, /^0(px)?$/],
-        width: [
-          /^\d+(\.\d+)?px$/,
-          /^\d+(\.\d+)?%$/,
-          /^auto$/,
-          /^fit-content$/,
-          /^max-content$/
-        ]
-      },
-      col: {
-        width: [/^\d+(\.\d+)?px$/, /^\d+(\.\d+)?%$/]
-      },
-      th: {
-        "background-color": [/^#[0-9a-fA-F]{3,8}$/, /^rgb\(/, /^rgba\(/],
-        width: [/^\d+(\.\d+)?px$/, /^\d+(\.\d+)?%$/],
-        height: [/^\d+(\.\d+)?px$/],
-        "text-align": [/^(left|center|right)$/],
-        "border-color": [/^#[0-9a-fA-F]{3,8}$/, /^rgb\(/, /^rgba\(/],
-        "border-width": [/^\d+(\.\d+)?px$/],
-        "border-style": [/^(solid|dashed)$/]
-      },
-      td: {
-        "background-color": [/^#[0-9a-fA-F]{3,8}$/, /^rgb\(/, /^rgba\(/],
-        width: [/^\d+(\.\d+)?px$/, /^\d+(\.\d+)?%$/],
-        height: [/^\d+(\.\d+)?px$/],
-        "text-align": [/^(left|center|right)$/],
-        "border-color": [/^#[0-9a-fA-F]{3,8}$/, /^rgb\(/, /^rgba\(/],
-        "border-width": [/^\d+(\.\d+)?px$/],
-        "border-style": [/^(solid|dashed)$/]
-      }
-    }
-  });
+  return sanitizeCmsHtml(input);
 }
 
 function parseJsonStringMaybe(value: unknown): unknown {

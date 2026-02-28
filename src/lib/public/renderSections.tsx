@@ -294,7 +294,11 @@ export function renderSection(
     );
   }
 
-  if (section.type === "richText" || section.type === "text") {
+  if (
+    section.type === "richText" ||
+    section.type === "text" ||
+    section.type === "rawHtml"
+  ) {
     return (
       <div
         key={section.id}

@@ -23,6 +23,7 @@ type Props = {
 const ALLOWED_SECTION_TYPES: SectionType[] = [
   "hero",
   "text",
+  "rawHtml",
   "image",
   "faq",
   "richText",

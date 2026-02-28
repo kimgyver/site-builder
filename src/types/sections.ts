@@ -1,6 +1,7 @@
 export type SectionType =
   | "hero"
   | "text"
+  | "rawHtml"
   | "image"
   | "faq"
   | "richText"

@@ -46,6 +46,21 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
       html: (from.html as string) ?? "<p>New text block</p>"
     })
   },
+  rawHtml: {
+    type: "rawHtml",
+    label: "HTML Structure",
+    description: "Preserve external CMS HTML structure",
+    icon: "🧩",
+    keywords: ["html", "structure", "legacy", "cms", "markup"],
+    createDefaultProps: () => ({
+      html: "<section><h2>Imported structure</h2><p>Paste external CMS HTML here.</p></section>"
+    }),
+    convertProps: from => ({
+      html:
+        (from.html as string) ??
+        "<section><h2>Imported structure</h2><p>Paste external CMS HTML here.</p></section>"
+    })
+  },
   richText: {
     type: "richText",
     label: "Rich Text",
@@ -186,6 +201,7 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
 export const SECTION_TYPES_IN_ORDER: SectionType[] = [
   "hero",
   "text",
+  "rawHtml",
   "image",
   "faq",
   "accordion",
