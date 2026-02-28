@@ -13,6 +13,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import { Highlight } from "@tiptap/extension-highlight";
@@ -106,10 +107,13 @@ export function TiptapEditor({
     () => [
       StarterKit.configure({
         heading: {
-          levels: [2, 3]
+          levels: [1, 2, 3, 4]
         },
         link: false,
         underline: false
+      }),
+      TextAlign.configure({
+        types: ["heading", "paragraph"]
       }),
       WebPasteTables,
       ClickSelectImage,

@@ -102,6 +102,11 @@ export function EditorToolbar({
         active={editor.isActive("paragraph")}
       />
       <ToolbarButton
+        label="H1"
+        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        active={editor.isActive("heading", { level: 1 })}
+      />
+      <ToolbarButton
         label="H2"
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         active={editor.isActive("heading", { level: 2 })}
@@ -110,6 +115,30 @@ export function EditorToolbar({
         label="H3"
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
         active={editor.isActive("heading", { level: 3 })}
+      />
+      <ToolbarButton
+        label="H4"
+        onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
+        active={editor.isActive("heading", { level: 4 })}
+      />
+      <span className="mx-1 h-5 w-px bg-zinc-300" />
+      <ToolbarButton
+        label="⟸ Text"
+        title="Align Left"
+        onClick={() => editor.chain().focus().setTextAlign("left").run()}
+        active={editor.isActive({ textAlign: "left" })}
+      />
+      <ToolbarButton
+        label="↔ Text"
+        title="Align Center"
+        onClick={() => editor.chain().focus().setTextAlign("center").run()}
+        active={editor.isActive({ textAlign: "center" })}
+      />
+      <ToolbarButton
+        label="⟹ Text"
+        title="Align Right"
+        onClick={() => editor.chain().focus().setTextAlign("right").run()}
+        active={editor.isActive({ textAlign: "right" })}
       />
       <span className="mx-1 h-5 w-px bg-zinc-300" />
       <ToolbarButton

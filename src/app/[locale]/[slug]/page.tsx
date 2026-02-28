@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
+import Image from "next/image";
 import type {
   DynamicLocaleSlugParams,
   DynamicSlugSearchParams
@@ -15,6 +16,7 @@ import {
 } from "@/lib/i18n";
 import {
   getPageBackgroundColor,
+  getSectionBrandingConfig,
   getSectionBackgroundStyle,
   getSectionNavigationStyle,
   isExternalHref,
@@ -227,6 +229,17 @@ export default async function LocaleDynamicPage({
         dividerColor: undefined
       };
 
+  const headerBranding = headerGlobals?.sections
+    ? getSectionBrandingConfig(
+        headerGlobals.sections as unknown as RenderableSection[]
+      )
+    : { brandName: "", brandHref: undefined, brandLogoUrl: undefined };
+
+  const BrandWrapper =
+    headerBranding.brandHref && isExternalHref(headerBranding.brandHref)
+      ? "a"
+      : Link;
+
   return (
     <div
       className="min-h-screen bg-zinc-50 text-zinc-900"
@@ -243,7 +256,39 @@ export default async function LocaleDynamicPage({
           borderBottom: `1px solid ${headerNavigationStyle.dividerColor ?? "#e4e4e7"}`
         }}
       >
-        <div className="mx-auto flex max-w-3xl items-center justify-end px-4 py-4">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 gap-3">
+          {headerBranding.brandName || headerBranding.brandLogoUrl ? (
+            <BrandWrapper
+              href={headerBranding.brandHref ?? "/"}
+              className="inline-flex min-w-0 items-center gap-2 text-zinc-900"
+              {...(BrandWrapper === "a"
+                ? {
+                    target: "_blank",
+                    rel: "noopener noreferrer"
+                  }
+                : {})}
+            >
+              {headerBranding.brandLogoUrl ? (
+                <span className="relative h-7 w-7 overflow-hidden rounded">
+                  <Image
+                    src={headerBranding.brandLogoUrl}
+                    alt={headerBranding.brandName || "Site logo"}
+                    fill
+                    unoptimized
+                    sizes="28px"
+                    className="object-contain"
+                  />
+                </span>
+              ) : null}
+              {headerBranding.brandName ? (
+                <span className="truncate text-sm font-semibold tracking-tight">
+                  {headerBranding.brandName}
+                </span>
+              ) : null}
+            </BrandWrapper>
+          ) : (
+            <div />
+          )}
           <nav
             className="flex flex-wrap items-center gap-4 text-sm text-zinc-600"
             style={

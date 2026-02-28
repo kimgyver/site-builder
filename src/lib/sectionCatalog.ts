@@ -118,6 +118,9 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
     createDefaultProps: () => ({
       backgroundColor: "#f8fafc",
       backgroundImageUrl: "",
+      brandName: "",
+      brandHref: "/",
+      brandLogoUrl: "",
       menuTextColor: "#52525b",
       menuHoverColor: "#18181b",
       menuFontSizePx: 14,
@@ -126,6 +129,9 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
     convertProps: from => ({
       backgroundColor: (from.backgroundColor as string) ?? "#f8fafc",
       backgroundImageUrl: (from.backgroundImageUrl as string) ?? "",
+      brandName: (from.brandName as string) ?? "",
+      brandHref: (from.brandHref as string) ?? "/",
+      brandLogoUrl: (from.brandLogoUrl as string) ?? "",
       menuTextColor: (from.menuTextColor as string) ?? "#52525b",
       menuHoverColor: (from.menuHoverColor as string) ?? "#18181b",
       menuFontSizePx:

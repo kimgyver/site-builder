@@ -35,6 +35,21 @@ function getSafeBackgroundImageUrl(value: unknown): string | undefined {
   }
 }
 
+function getSafeHref(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const raw = value.trim();
+  if (!raw) return undefined;
+  if (raw.startsWith("/")) return raw;
+  try {
+    const url = new URL(raw);
+    const protocol = url.protocol.toLowerCase();
+    if (protocol !== "http:" && protocol !== "https:") return undefined;
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+}
+
 export function getSectionBackgroundStyle(
   sections: RenderableSection[]
 ): CSSProperties | undefined {
@@ -88,6 +103,24 @@ export function getSectionNavigationStyle(sections: RenderableSection[]) {
     menuHoverColor: getSafeColor(pageStyleProps.menuHoverColor),
     menuFontSizePx: getSafeFontSizePx(pageStyleProps.menuFontSizePx),
     dividerColor: getSafeColor(pageStyleProps.dividerColor)
+  };
+}
+
+export function getSectionBrandingConfig(sections: RenderableSection[]) {
+  const pageStyleSection = sections.find(
+    section => section.enabled !== false && section.type === "pageStyle"
+  );
+  const pageStyleProps = (pageStyleSection?.props ?? {}) as SectionProps;
+
+  const brandName =
+    typeof pageStyleProps.brandName === "string"
+      ? pageStyleProps.brandName.trim()
+      : "";
+
+  return {
+    brandName,
+    brandHref: getSafeHref(pageStyleProps.brandHref),
+    brandLogoUrl: getSafeBackgroundImageUrl(pageStyleProps.brandLogoUrl)
   };
 }
 

@@ -14,8 +14,10 @@ function sanitizeRichHtml(input: unknown) {
   const html = typeof input === "string" ? input : "";
   return sanitizeHtml(html, {
     allowedTags: [
+      "h1",
       "p",
       "br",
+      "hr",
       "strong",
       "em",
       "u",
@@ -27,6 +29,7 @@ function sanitizeRichHtml(input: unknown) {
       "pre",
       "h2",
       "h3",
+      "h4",
       "ul",
       "ol",
       "li",
@@ -43,6 +46,11 @@ function sanitizeRichHtml(input: unknown) {
     ],
     allowedAttributes: {
       a: ["href", "name", "target", "rel"],
+      p: ["style"],
+      h1: ["style"],
+      h2: ["style"],
+      h3: ["style"],
+      h4: ["style"],
       span: ["style"],
       mark: ["data-color", "style"],
       img: [
@@ -89,6 +97,21 @@ function sanitizeRichHtml(input: unknown) {
     },
     allowProtocolRelative: false,
     allowedStyles: {
+      p: {
+        "text-align": [/^(left|center|right)$/]
+      },
+      h1: {
+        "text-align": [/^(left|center|right)$/]
+      },
+      h2: {
+        "text-align": [/^(left|center|right)$/]
+      },
+      h3: {
+        "text-align": [/^(left|center|right)$/]
+      },
+      h4: {
+        "text-align": [/^(left|center|right)$/]
+      },
       span: {
         color: [/^#[0-9a-fA-F]{3,8}$/, /^rgb\(/, /^rgba\(/]
       },

@@ -53,6 +53,55 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
       </label>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+          Brand name (header slot)
+          <input
+            type="text"
+            className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+            value={typeof props.brandName === "string" ? props.brandName : ""}
+            onChange={e =>
+              updateProps({
+                ...props,
+                brandName: e.target.value
+              })
+            }
+            placeholder="My Site"
+          />
+        </label>
+        <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+          Brand link URL
+          <input
+            type="text"
+            className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+            value={typeof props.brandHref === "string" ? props.brandHref : "/"}
+            onChange={e =>
+              updateProps({
+                ...props,
+                brandHref: e.target.value
+              })
+            }
+            placeholder="/ or https://example.com"
+          />
+        </label>
+      </div>
+      <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+        Brand logo URL (optional)
+        <input
+          type="url"
+          className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+          value={
+            typeof props.brandLogoUrl === "string" ? props.brandLogoUrl : ""
+          }
+          onChange={e =>
+            updateProps({
+              ...props,
+              brandLogoUrl: e.target.value
+            })
+          }
+          placeholder="https://... or /images/logo.png"
+        />
+      </label>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
           Menu text color
           <input
             type="color"

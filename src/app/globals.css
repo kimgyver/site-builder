@@ -70,10 +70,24 @@ body {
   font-weight: 700;
 }
 
+.rich-content :where(h1) {
+  margin: 1.4rem 0 0.6rem;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+}
+
 .rich-content :where(h3) {
   margin: var(--rich-h3-margin-top) 0 var(--rich-h3-margin-bottom);
   font-size: 1.25rem;
   line-height: 1.75rem;
+  font-weight: 700;
+}
+
+.rich-content :where(h4) {
+  margin: 0.9rem 0 0.45rem;
+  font-size: 1.125rem;
+  line-height: 1.5rem;
   font-weight: 700;
 }
 
