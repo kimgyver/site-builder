@@ -188,10 +188,22 @@ export default async function LocaleDynamicPage({
           </Link>
           <nav className="flex flex-wrap items-center gap-4 text-sm text-zinc-600">
             {(headerMenu?.items ?? []).map(
-              (item: { id: string; href: string; label: string }) => {
+              (item: {
+                id: string;
+                href: string;
+                label: string;
+                openInNewTab?: boolean | null;
+              }) => {
                 const href = localizeInternalHref(item.href, localeForLinks);
+                const openInNewTab = item.openInNewTab === true;
                 return isExternalHref(href) ? (
-                  <a key={item.id} href={href} className="hover:text-zinc-900">
+                  <a
+                    key={item.id}
+                    href={href}
+                    className="hover:text-zinc-900"
+                    target={openInNewTab ? "_blank" : undefined}
+                    rel={openInNewTab ? "noopener noreferrer" : undefined}
+                  >
                     {item.label}
                   </a>
                 ) : (
@@ -199,6 +211,8 @@ export default async function LocaleDynamicPage({
                     key={item.id}
                     href={href}
                     className="hover:text-zinc-900"
+                    target={openInNewTab ? "_blank" : undefined}
+                    rel={openInNewTab ? "noopener noreferrer" : undefined}
                   >
                     {item.label}
                   </Link>
@@ -208,15 +222,14 @@ export default async function LocaleDynamicPage({
           </nav>
         </div>
         {(headerGlobals?.sections?.length ?? 0) > 0 ? (
-          <div
-            className="mx-auto max-w-3xl px-4 pb-6 pt-2"
-            style={headerGlobalsStyle}
-          >
-            <div className="space-y-8 text-zinc-800">
-              {renderSections(
-                headerGlobals!.sections as unknown as RenderableSection[],
-                page.title
-              )}
+          <div className="pb-6 pt-2" style={headerGlobalsStyle}>
+            <div className="mx-auto max-w-3xl px-4">
+              <div className="space-y-8 text-zinc-800">
+                {renderSections(
+                  headerGlobals!.sections as unknown as RenderableSection[],
+                  page.title
+                )}
+              </div>
             </div>
           </div>
         ) : null}
@@ -234,15 +247,14 @@ export default async function LocaleDynamicPage({
 
       <footer className="border-t bg-white">
         {(footerGlobals?.sections?.length ?? 0) > 0 ? (
-          <div
-            className="mx-auto max-w-3xl px-4 py-8"
-            style={footerGlobalsStyle}
-          >
-            <div className="space-y-8 text-zinc-800">
-              {renderSections(
-                footerGlobals!.sections as unknown as RenderableSection[],
-                page.title
-              )}
+          <div className="py-8" style={footerGlobalsStyle}>
+            <div className="mx-auto max-w-3xl px-4">
+              <div className="space-y-8 text-zinc-800">
+                {renderSections(
+                  footerGlobals!.sections as unknown as RenderableSection[],
+                  page.title
+                )}
+              </div>
             </div>
           </div>
         ) : null}
@@ -250,13 +262,21 @@ export default async function LocaleDynamicPage({
           <div className="mx-auto max-w-3xl px-4 py-6">
             <nav className="flex flex-wrap items-center gap-4 text-sm text-zinc-600">
               {footerMenu!.items.map(
-                (item: { id: string; href: string; label: string }) => {
+                (item: {
+                  id: string;
+                  href: string;
+                  label: string;
+                  openInNewTab?: boolean | null;
+                }) => {
                   const href = localizeInternalHref(item.href, localeForLinks);
+                  const openInNewTab = item.openInNewTab === true;
                   return isExternalHref(href) ? (
                     <a
                       key={item.id}
                       href={href}
                       className="hover:text-zinc-900"
+                      target={openInNewTab ? "_blank" : undefined}
+                      rel={openInNewTab ? "noopener noreferrer" : undefined}
                     >
                       {item.label}
                     </a>
@@ -265,6 +285,8 @@ export default async function LocaleDynamicPage({
                       key={item.id}
                       href={href}
                       className="hover:text-zinc-900"
+                      target={openInNewTab ? "_blank" : undefined}
+                      rel={openInNewTab ? "noopener noreferrer" : undefined}
                     >
                       {item.label}
                     </Link>

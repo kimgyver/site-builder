@@ -21,7 +21,13 @@ async function ensureRole(nextPath: string) {
   return role;
 }
 
-function parseItems(raw: string): Array<{ label: string; href: string }> {
+type MenuItemInput = { label: string; href: string; openInNewTab: boolean };
+type SaveState =
+  | { status: "idle" }
+  | { status: "saved"; savedAt: number }
+  | { status: "error"; message: string };
+
+function parseItems(raw: string): MenuItemInput[] {
   return raw
     .split("\n")
     .map(line => line.trim())
@@ -32,23 +38,30 @@ function parseItems(raw: string): Array<{ label: string; href: string }> {
       const href = (hrefRaw ?? "").trim();
       return {
         label: label || href || "Link",
-        href: href || "/"
+        href: href || "/",
+        openInNewTab: false
       };
     });
 }
 
-function parseItemsJson(raw: string): Array<{ label: string; href: string }> {
+function parseItemsJson(raw: string): MenuItemInput[] {
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
     return parsed
       .map(item => {
-        const maybe = item as { label?: unknown; href?: unknown };
+        const maybe = item as {
+          label?: unknown;
+          href?: unknown;
+          openInNewTab?: unknown;
+        };
         const label = typeof maybe.label === "string" ? maybe.label.trim() : "";
         const href = typeof maybe.href === "string" ? maybe.href.trim() : "";
+        const openInNewTab = Boolean(maybe.openInNewTab);
         return {
           label: label || href || "Link",
-          href: href || "/"
+          href: href || "/",
+          openInNewTab
         };
       })
       .filter(item => Boolean(item.href));
@@ -57,12 +70,19 @@ function parseItemsJson(raw: string): Array<{ label: string; href: string }> {
   }
 }
 
-async function saveMenu(formData: FormData) {
+async function saveMenu(
+  _prevState: SaveState,
+  formData: FormData
+): Promise<SaveState> {
   "use server";
   const id = String(formData.get("id") ?? "").trim();
   const role = await ensureRole(`/admin/menus/${id}`);
-  if (!canEditContent(role)) return;
-  if (!id) return;
+  if (!canEditContent(role)) {
+    return { status: "error", message: "Unauthorized" };
+  }
+  if (!id) {
+    return { status: "error", message: "Missing menu id" };
+  }
 
   const name = String(formData.get("name") ?? "").trim();
   const itemsJsonRaw = String(formData.get("itemsJson") ?? "").trim();
@@ -71,23 +91,33 @@ async function saveMenu(formData: FormData) {
     ? parseItemsJson(itemsJsonRaw)
     : parseItems(itemsRaw);
 
-  await prisma.$transaction(async tx => {
-    await tx.menu.update({
-      where: { id },
-      data: { name }
-    });
-    await tx.menuItem.deleteMany({ where: { menuId: id } });
-    if (nextItems.length) {
-      await tx.menuItem.createMany({
-        data: nextItems.map((item, index) => ({
-          menuId: id,
-          label: item.label,
-          href: item.href,
-          order: index
-        }))
+  try {
+    await prisma.$transaction(async tx => {
+      await tx.menu.update({
+        where: { id },
+        data: { name }
       });
-    }
-  });
+      await tx.menuItem.deleteMany({ where: { menuId: id } });
+      if (nextItems.length) {
+        await tx.menuItem.createMany({
+          data: nextItems.map((item, index) => ({
+            menuId: id,
+            label: item.label,
+            href: item.href,
+            openInNewTab: item.openInNewTab,
+            order: index
+          }))
+        });
+      }
+    });
+  } catch (e) {
+    return {
+      status: "error",
+      message: e instanceof Error ? e.message : "Save failed"
+    };
+  }
+
+  return { status: "saved", savedAt: Date.now() };
 }
 
 async function getMenu(id: string) {
@@ -133,7 +163,8 @@ export default async function MenuEditPage({
         initialName={menu.name}
         initialItems={menu.items.map(item => ({
           label: item.label,
-          href: item.href
+          href: item.href,
+          openInNewTab: item.openInNewTab ?? false
         }))}
         saveAction={saveMenu}
         canEdit={canEdit}

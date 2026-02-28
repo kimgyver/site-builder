@@ -83,6 +83,7 @@ model MenuItem {
   menu      Menu     @relation(fields: [menuId], references: [id], onDelete: Cascade)
   label     String
   href      String
+  openInNewTab Boolean @default(false)
   order     Int
   parentId  String?
   parent    MenuItem? @relation("MenuItemChildren", fields: [parentId], references: [id], onDelete: Cascade)

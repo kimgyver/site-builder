@@ -1,11 +1,31 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 
 type MenuItemInput = {
   label: string;
   href: string;
+  openInNewTab: boolean;
 };
+
+type SaveState =
+  | { status: "idle" }
+  | { status: "saved"; savedAt: number }
+  | { status: "error"; message: string };
+
+function SubmitButton({ disabled }: { disabled: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
+      disabled={disabled || pending}
+    >
+      {pending ? "Saving..." : "Save menu"}
+    </button>
+  );
+}
 
 export default function MenuEditorClient({
   menuId,
@@ -19,14 +39,17 @@ export default function MenuEditorClient({
   location: string;
   initialName: string;
   initialItems: MenuItemInput[];
-  saveAction: (formData: FormData) => void | Promise<void>;
+  saveAction: (prevState: SaveState, formData: FormData) => Promise<SaveState>;
   canEdit: boolean;
 }) {
   const [name, setName] = useState(initialName);
+  const [state, formAction] = useFormState<SaveState, FormData>(saveAction, {
+    status: "idle"
+  });
   const [items, setItems] = useState<MenuItemInput[]>(
     Array.isArray(initialItems) && initialItems.length
       ? initialItems
-      : [{ label: "Home", href: "/" }]
+      : [{ label: "Home", href: "/", openInNewTab: false }]
   );
 
   const itemsJson = useMemo(() => JSON.stringify(items), [items]);
@@ -53,11 +76,14 @@ export default function MenuEditorClient({
   };
 
   const addItem = () => {
-    setItems(prev => [...prev, { label: "Link", href: "/" }]);
+    setItems(prev => [
+      ...prev,
+      { label: "Link", href: "/", openInNewTab: false }
+    ]);
   };
 
   return (
-    <form action={saveAction} className="space-y-5">
+    <form action={formAction} className="space-y-5">
       <input type="hidden" name="id" value={menuId} />
       <input type="hidden" name="itemsJson" value={itemsJson} />
 
@@ -127,6 +153,18 @@ export default function MenuEditorClient({
                       />
                     </div>
                   </div>
+
+                  <label className="inline-flex items-center gap-2 text-xs text-zinc-700">
+                    <input
+                      type="checkbox"
+                      checked={item.openInNewTab}
+                      onChange={e =>
+                        patchItem(index, { openInNewTab: e.target.checked })
+                      }
+                      disabled={!canEdit}
+                    />
+                    Open in new tab
+                  </label>
                 </div>
 
                 <div className="flex flex-col items-end gap-1 pt-5 text-[10px]">
@@ -161,13 +199,15 @@ export default function MenuEditorClient({
         </div>
       </div>
 
-      <button
-        type="submit"
-        className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
-        disabled={!canEdit}
-      >
-        Save menu
-      </button>
+      <div className="flex items-center gap-3">
+        <SubmitButton disabled={!canEdit} />
+        {state.status === "saved" ? (
+          <span className="text-xs text-emerald-700">Saved</span>
+        ) : null}
+        {state.status === "error" ? (
+          <span className="text-xs text-red-700">{state.message}</span>
+        ) : null}
+      </div>
 
       {!canEdit ? (
         <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
