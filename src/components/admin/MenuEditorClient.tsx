@@ -76,7 +76,10 @@ export default function MenuEditorClient({
   };
 
   const addItem = () => {
-    setItems(prev => [...prev, { label: "Link", href: "/", openInNewTab: false }]);
+    setItems(prev => [
+      ...prev,
+      { label: "Link", href: "/", openInNewTab: false }
+    ]);
   };
 
   return (
