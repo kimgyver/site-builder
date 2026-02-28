@@ -18,6 +18,7 @@ import {
   getPageBackgroundColor,
   getSectionBrandingConfig,
   getSectionBackgroundStyle,
+  getSectionLayoutConfig,
   getSectionNavigationStyle,
   isExternalHref,
   localizeInternalHref,
@@ -243,6 +244,34 @@ export default async function LocaleDynamicPage({
   const pageBranding = getSectionBrandingConfig(
     page.sections as unknown as RenderableSection[]
   );
+  const pageLayout = getSectionLayoutConfig(
+    page.sections as unknown as RenderableSection[]
+  );
+  const headerLayout = headerGlobals?.sections
+    ? getSectionLayoutConfig(
+        headerGlobals.sections as unknown as RenderableSection[]
+      )
+    : pageLayout;
+  const footerLayout = footerGlobals?.sections
+    ? getSectionLayoutConfig(
+        footerGlobals.sections as unknown as RenderableSection[]
+      )
+    : pageLayout;
+
+  const widthClassByPreset: Record<string, string> = {
+    narrow: "max-w-2xl",
+    default: "max-w-3xl",
+    wide: "max-w-5xl",
+    wider: "max-w-6xl",
+    full: "max-w-none"
+  };
+
+  const mainWidthClass =
+    widthClassByPreset[pageLayout.contentWidth] ?? "max-w-3xl";
+  const headerWidthClass =
+    widthClassByPreset[headerLayout.contentWidth] ?? mainWidthClass;
+  const footerWidthClass =
+    widthClassByPreset[footerLayout.contentWidth] ?? mainWidthClass;
 
   const BrandWrapper =
     headerBranding.brandHref && isExternalHref(headerBranding.brandHref)
@@ -265,7 +294,9 @@ export default async function LocaleDynamicPage({
           borderBottom: `1px solid ${headerNavigationStyle.dividerColor ?? "#e4e4e7"}`
         }}
       >
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 gap-3">
+        <div
+          className={`mx-auto flex items-center justify-between gap-3 px-4 py-4 ${headerWidthClass}`}
+        >
           {headerBranding.brandName || headerBranding.brandLogoUrl ? (
             <BrandWrapper
               href={headerBranding.brandHref ?? "/"}
@@ -356,8 +387,14 @@ export default async function LocaleDynamicPage({
         </div>
         {(headerGlobals?.sections?.length ?? 0) > 0 ? (
           <div className="pb-6 pt-2">
-            <div className="mx-auto max-w-3xl px-4">
-              <div className="space-y-8 text-zinc-800">
+            <div className={`mx-auto px-4 ${headerWidthClass}`}>
+              <div
+                className="text-zinc-800"
+                style={{
+                  display: "grid",
+                  rowGap: `${headerLayout.sectionGapPx}px`
+                }}
+              >
                 {renderSections(
                   headerGlobals!.sections as unknown as RenderableSection[],
                   page.title
@@ -368,7 +405,7 @@ export default async function LocaleDynamicPage({
         ) : null}
       </header>
 
-      <main className="mx-auto max-w-3xl px-4 py-12">
+      <main className={`mx-auto px-4 py-12 ${mainWidthClass}`}>
         {pageBranding.brandName || pageBranding.brandLogoUrl ? (
           <div className="mb-6 rounded-xl border border-zinc-200 bg-white/80 px-4 py-3 backdrop-blur-sm">
             {pageBranding.brandHref &&
@@ -435,8 +472,19 @@ export default async function LocaleDynamicPage({
             )}
           </div>
         ) : null}
-        <h1 className="text-3xl font-semibold tracking-tight">{page.title}</h1>
-        <div className="mt-6 space-y-8 text-zinc-800">
+        {pageLayout.showPageTitle ? (
+          <h1 className="text-3xl font-semibold tracking-tight">
+            {page.title}
+          </h1>
+        ) : null}
+        <div
+          className="text-zinc-800"
+          style={{
+            marginTop: pageLayout.showPageTitle ? "1.5rem" : "0",
+            display: "grid",
+            rowGap: `${pageLayout.sectionGapPx}px`
+          }}
+        >
           {renderSections(
             page.sections as unknown as RenderableSection[],
             page.title
@@ -453,8 +501,14 @@ export default async function LocaleDynamicPage({
       >
         {(footerGlobals?.sections?.length ?? 0) > 0 ? (
           <div className="py-8">
-            <div className="mx-auto max-w-3xl px-4">
-              <div className="space-y-8 text-zinc-800">
+            <div className={`mx-auto px-4 ${footerWidthClass}`}>
+              <div
+                className="text-zinc-800"
+                style={{
+                  display: "grid",
+                  rowGap: `${footerLayout.sectionGapPx}px`
+                }}
+              >
                 {renderSections(
                   footerGlobals!.sections as unknown as RenderableSection[],
                   page.title
@@ -464,7 +518,7 @@ export default async function LocaleDynamicPage({
           </div>
         ) : null}
         {(footerMenu?.items?.length ?? 0) > 0 ? (
-          <div className="mx-auto max-w-3xl px-4 py-6">
+          <div className={`mx-auto px-4 py-6 ${footerWidthClass}`}>
             <nav
               className="flex flex-wrap items-center gap-4 text-sm text-zinc-600"
               style={

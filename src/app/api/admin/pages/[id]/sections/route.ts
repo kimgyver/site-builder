@@ -97,29 +97,35 @@ export async function PUT(
       const nextProps =
         rawType === "richText" || rawType === "text" || rawType === "rawHtml"
           ? { ...props, html: sanitizeRichHtml(props.html) }
-          : rawType === "hero"
+          : rawType === "columns"
             ? {
                 ...props,
-                title:
-                  typeof props.title === "string" ? props.title : props.title,
-                subtitle:
-                  typeof props.subtitle === "string"
-                    ? props.subtitle
-                    : props.subtitle,
-                backgroundColor:
-                  typeof props.backgroundColor === "string"
-                    ? props.backgroundColor
-                    : "#18181b",
-                textColor:
-                  typeof props.textColor === "string"
-                    ? props.textColor
-                    : "#fafafa",
-                subtitleColor:
-                  typeof props.subtitleColor === "string"
-                    ? props.subtitleColor
-                    : "#d4d4d8"
+                leftHtml: sanitizeRichHtml(props.leftHtml),
+                rightHtml: sanitizeRichHtml(props.rightHtml)
               }
-            : props;
+            : rawType === "hero"
+              ? {
+                  ...props,
+                  title:
+                    typeof props.title === "string" ? props.title : props.title,
+                  subtitle:
+                    typeof props.subtitle === "string"
+                      ? props.subtitle
+                      : props.subtitle,
+                  backgroundColor:
+                    typeof props.backgroundColor === "string"
+                      ? props.backgroundColor
+                      : "#18181b",
+                  textColor:
+                    typeof props.textColor === "string"
+                      ? props.textColor
+                      : "#fafafa",
+                  subtitleColor:
+                    typeof props.subtitleColor === "string"
+                      ? props.subtitleColor
+                      : "#d4d4d8"
+                }
+              : props;
 
       const normalizedProps = JSON.parse(
         JSON.stringify(nextProps)

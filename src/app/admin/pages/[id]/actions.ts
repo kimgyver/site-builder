@@ -76,6 +76,8 @@ export function normalizeSnapshotSections(rawSections: unknown): Array<{
       const nextProps = {
         ...rawProps,
         html: sanitizeRichHtml(rawProps.html),
+        leftHtml: sanitizeRichHtml(rawProps.leftHtml),
+        rightHtml: sanitizeRichHtml(rawProps.rightHtml),
         url:
           typeof rawProps.url === "string"
             ? String(rawProps.url)

@@ -25,14 +25,26 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
       subtitle: "Hero subtitle",
       backgroundColor: "#18181b",
       textColor: "#fafafa",
-      subtitleColor: "#d4d4d8"
+      subtitleColor: "#d4d4d8",
+      primaryCtaLabel: "",
+      primaryCtaHref: "",
+      primaryCtaNewTab: false,
+      secondaryCtaLabel: "",
+      secondaryCtaHref: "",
+      secondaryCtaNewTab: false
     }),
     convertProps: from => ({
       title: (from.title as string) ?? "Hero title",
       subtitle: (from.subtitle as string) ?? "Hero subtitle",
       backgroundColor: (from.backgroundColor as string) ?? "#18181b",
       textColor: (from.textColor as string) ?? "#fafafa",
-      subtitleColor: (from.subtitleColor as string) ?? "#d4d4d8"
+      subtitleColor: (from.subtitleColor as string) ?? "#d4d4d8",
+      primaryCtaLabel: (from.primaryCtaLabel as string) ?? "",
+      primaryCtaHref: (from.primaryCtaHref as string) ?? "",
+      primaryCtaNewTab: from.primaryCtaNewTab === true,
+      secondaryCtaLabel: (from.secondaryCtaLabel as string) ?? "",
+      secondaryCtaHref: (from.secondaryCtaHref as string) ?? "",
+      secondaryCtaNewTab: from.secondaryCtaNewTab === true
     })
   },
   text: {
@@ -44,6 +56,25 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
     createDefaultProps: () => ({ html: "<p>New text block</p>" }),
     convertProps: from => ({
       html: (from.html as string) ?? "<p>New text block</p>"
+    })
+  },
+  columns: {
+    type: "columns",
+    label: "Columns",
+    description: "Two-column content layout",
+    icon: "🧱",
+    keywords: ["columns", "two-column", "grid", "layout"],
+    createDefaultProps: () => ({
+      leftHtml: "<p>Left column content</p>",
+      rightHtml: "<p>Right column content</p>",
+      ratio: "1:1",
+      reverseOnMobile: false
+    }),
+    convertProps: from => ({
+      leftHtml: (from.leftHtml as string) ?? "<p>Left column content</p>",
+      rightHtml: (from.rightHtml as string) ?? "<p>Right column content</p>",
+      ratio: from.ratio === "2:1" || from.ratio === "1:2" ? from.ratio : "1:1",
+      reverseOnMobile: from.reverseOnMobile === true
     })
   },
   rawHtml: {
@@ -140,6 +171,9 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
       brandHref: "/",
       brandLogoUrl: "",
       brandLogoHeightPx: 32,
+      contentWidth: "default",
+      sectionGapPx: 32,
+      showPageTitle: true,
       menuTextColor: "#52525b",
       menuHoverColor: "#18181b",
       menuFontSizePx: 14,
@@ -155,6 +189,18 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
         typeof from.brandLogoHeightPx === "number"
           ? from.brandLogoHeightPx
           : 32,
+      contentWidth:
+        from.contentWidth === "narrow" ||
+        from.contentWidth === "default" ||
+        from.contentWidth === "wide" ||
+        from.contentWidth === "wider" ||
+        from.contentWidth === "full"
+          ? from.contentWidth
+          : "default",
+      sectionGapPx:
+        typeof from.sectionGapPx === "number" ? from.sectionGapPx : 32,
+      showPageTitle:
+        typeof from.showPageTitle === "boolean" ? from.showPageTitle : true,
       menuTextColor: (from.menuTextColor as string) ?? "#52525b",
       menuHoverColor: (from.menuHoverColor as string) ?? "#18181b",
       menuFontSizePx:
@@ -201,6 +247,7 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
 export const SECTION_TYPES_IN_ORDER: SectionType[] = [
   "hero",
   "text",
+  "columns",
   "rawHtml",
   "image",
   "faq",

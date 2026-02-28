@@ -50,6 +50,56 @@ function getSafeHref(value: unknown): string | undefined {
   }
 }
 
+function getSafeBoolean(value: unknown, fallback: boolean): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const trimmed = value.trim().toLowerCase();
+    if (trimmed === "true") return true;
+    if (trimmed === "false") return false;
+  }
+  return fallback;
+}
+
+function getSafeSectionGap(value: unknown): number {
+  const fallback = 32;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.min(96, Math.max(8, Math.round(value)));
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value.trim());
+    if (Number.isFinite(parsed)) {
+      return Math.min(96, Math.max(8, Math.round(parsed)));
+    }
+  }
+  return fallback;
+}
+
+export function getSectionLayoutConfig(sections: RenderableSection[]) {
+  const pageStyleSection = sections.find(
+    section => section.enabled !== false && section.type === "pageStyle"
+  );
+  const pageStyleProps = (pageStyleSection?.props ?? {}) as SectionProps;
+
+  const rawWidth =
+    typeof pageStyleProps.contentWidth === "string"
+      ? pageStyleProps.contentWidth
+      : "default";
+
+  const contentWidth =
+    rawWidth === "narrow" ||
+    rawWidth === "wide" ||
+    rawWidth === "wider" ||
+    rawWidth === "full"
+      ? rawWidth
+      : "default";
+
+  return {
+    contentWidth,
+    sectionGapPx: getSafeSectionGap(pageStyleProps.sectionGapPx),
+    showPageTitle: getSafeBoolean(pageStyleProps.showPageTitle, true)
+  };
+}
+
 export function getSectionBackgroundStyle(
   sections: RenderableSection[]
 ): CSSProperties | undefined {
@@ -226,6 +276,21 @@ export function renderSection(
     const heroBackgroundColor = getSafeColor(props.backgroundColor);
     const heroTextColor = getSafeColor(props.textColor);
     const heroSubtitleColor = getSafeColor(props.subtitleColor);
+    const primaryCtaLabel =
+      typeof props.primaryCtaLabel === "string"
+        ? props.primaryCtaLabel.trim()
+        : "";
+    const primaryCtaHref = getSafeHref(props.primaryCtaHref);
+    const secondaryCtaLabel =
+      typeof props.secondaryCtaLabel === "string"
+        ? props.secondaryCtaLabel.trim()
+        : "";
+    const secondaryCtaHref = getSafeHref(props.secondaryCtaHref);
+    const primaryOpenInNewTab = getSafeBoolean(props.primaryCtaNewTab, false);
+    const secondaryOpenInNewTab = getSafeBoolean(
+      props.secondaryCtaNewTab,
+      false
+    );
 
     return (
       <section
@@ -252,6 +317,31 @@ export function renderSection(
           >
             {subtitle}
           </p>
+        ) : null}
+        {(primaryCtaLabel && primaryCtaHref) ||
+        (secondaryCtaLabel && secondaryCtaHref) ? (
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            {primaryCtaLabel && primaryCtaHref ? (
+              <a
+                href={primaryCtaHref}
+                className="inline-flex rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-zinc-900"
+                target={primaryOpenInNewTab ? "_blank" : undefined}
+                rel={primaryOpenInNewTab ? "noopener noreferrer" : undefined}
+              >
+                {primaryCtaLabel}
+              </a>
+            ) : null}
+            {secondaryCtaLabel && secondaryCtaHref ? (
+              <a
+                href={secondaryCtaHref}
+                className="inline-flex rounded-md border border-white/70 px-3 py-1.5 text-xs font-medium text-white"
+                target={secondaryOpenInNewTab ? "_blank" : undefined}
+                rel={secondaryOpenInNewTab ? "noopener noreferrer" : undefined}
+              >
+                {secondaryCtaLabel}
+              </a>
+            ) : null}
+          </div>
         ) : null}
       </section>
     );
@@ -305,6 +395,38 @@ export function renderSection(
         className="rich-content max-w-none"
         dangerouslySetInnerHTML={{ __html: html }}
       />
+    );
+  }
+
+  if (section.type === "columns") {
+    const leftHtml = typeof props.leftHtml === "string" ? props.leftHtml : "";
+    const rightHtml =
+      typeof props.rightHtml === "string" ? props.rightHtml : "";
+    const ratio =
+      props.ratio === "2:1" || props.ratio === "1:2" ? props.ratio : "1:1";
+    const reverseOnMobile = props.reverseOnMobile === true;
+
+    const gridClass =
+      ratio === "2:1"
+        ? "lg:grid-cols-[2fr_1fr]"
+        : ratio === "1:2"
+          ? "lg:grid-cols-[1fr_2fr]"
+          : "lg:grid-cols-2";
+
+    return (
+      <section
+        key={section.id}
+        className={`grid grid-cols-1 gap-4 ${gridClass} ${reverseOnMobile ? "[&>*:first-child]:order-2 [&>*:last-child]:order-1 lg:[&>*:first-child]:order-1 lg:[&>*:last-child]:order-2" : ""}`}
+      >
+        <div
+          className="rich-content max-w-none"
+          dangerouslySetInnerHTML={{ __html: leftHtml }}
+        />
+        <div
+          className="rich-content max-w-none"
+          dangerouslySetInnerHTML={{ __html: rightHtml }}
+        />
+      </section>
     );
   }
 

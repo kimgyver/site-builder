@@ -3,6 +3,7 @@ import { ImageSectionEditor } from "./section-editors/ImageSectionEditor";
 
 import FAQSectionEditor from "./section-editors/FAQSectionEditor";
 import HtmlStructureSectionEditor from "./section-editors/HtmlStructureSectionEditor";
+import ColumnsSectionEditor from "./section-editors/ColumnsSectionEditor";
 
 import EmbedSectionEditor from "./section-editors/EmbedSectionEditor";
 
@@ -454,6 +455,11 @@ export function SectionBuilder({
                       />
                     ) : section.type === "rawHtml" ? (
                       <HtmlStructureSectionEditor
+                        props={props}
+                        updateProps={next => updateProps(index, next)}
+                      />
+                    ) : section.type === "columns" ? (
+                      <ColumnsSectionEditor
                         props={props}
                         updateProps={next => updateProps(index, next)}
                       />

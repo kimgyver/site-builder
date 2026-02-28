@@ -63,7 +63,13 @@ export async function PUT(
       const nextProps =
         rawType === "richText" || rawType === "text" || rawType === "rawHtml"
           ? { ...props, html: sanitizeRichHtml(props.html) }
-          : props;
+          : rawType === "columns"
+            ? {
+                ...props,
+                leftHtml: sanitizeRichHtml(props.leftHtml),
+                rightHtml: sanitizeRichHtml(props.rightHtml)
+              }
+            : props;
 
       const normalizedProps = JSON.parse(
         JSON.stringify(nextProps)

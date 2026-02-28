@@ -122,6 +122,66 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
       </label>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+          Content width
+          <select
+            className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+            value={
+              props.contentWidth === "narrow" ||
+              props.contentWidth === "default" ||
+              props.contentWidth === "wide" ||
+              props.contentWidth === "wider" ||
+              props.contentWidth === "full"
+                ? String(props.contentWidth)
+                : "default"
+            }
+            onChange={e =>
+              updateProps({
+                ...props,
+                contentWidth: e.target.value
+              })
+            }
+          >
+            <option value="narrow">Narrow</option>
+            <option value="default">Default</option>
+            <option value="wide">Wide</option>
+            <option value="wider">Wider</option>
+            <option value="full">Full</option>
+          </select>
+        </label>
+        <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+          Section gap (px)
+          <input
+            type="number"
+            min={8}
+            max={96}
+            className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+            value={
+              typeof props.sectionGapPx === "number" ? props.sectionGapPx : 32
+            }
+            onChange={e =>
+              updateProps({
+                ...props,
+                sectionGapPx: Number(e.target.value)
+              })
+            }
+          />
+        </label>
+      </div>
+      <label className="flex items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-2 text-[10px] text-zinc-600">
+        <input
+          type="checkbox"
+          checked={props.showPageTitle !== false}
+          onChange={e =>
+            updateProps({
+              ...props,
+              showPageTitle: e.target.checked
+            })
+          }
+        />
+        <span>Show page title heading</span>
+      </label>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
           Menu text color
           <input
             type="color"
