@@ -2,6 +2,79 @@
 
 ## 주요 변경 기능 요약
 
+## 신규 기능 빠른 찾기 (관리자 UI 기준)
+
+- 페이지 편집 진입: `/admin/pages/[id]`
+- 섹션 추가 버튼: 페이지 편집 화면의 **Sections** 영역 상단 `Add section`
+- `Page Style` 위치: `Add section`에서 **Page Style** 추가 후 해당 섹션 카드에서 설정
+- `Hero CTA` 위치: `Hero` 섹션 카드 하단 입력 필드
+- `Columns` 위치: `Add section`에서 **Columns** 추가
+
+## 신규 기능 매뉴얼 테스트 (레이아웃/CTA/컬럼)
+
+### T-NEW-01 Page Style 레이아웃 제어
+
+- 전제조건: `/admin/pages/[id]` 진입
+- 절차:
+  1. `Add section`에서 `Page Style` 추가
+  2. `Content width`를 `narrow/default/wide/wider/full`로 순차 변경
+  3. `Section gap (px)` 값을 `8`, `32`, `64`로 변경
+  4. `Show page title heading` 체크 해제/재체크
+  5. 저장 후 퍼블릭 페이지(`/{locale}/{slug}`) 새로고침
+- 기대 결과:
+  - 콘텐츠 최대 폭이 선택값에 맞게 변경됨
+  - 섹션 간 세로 간격이 숫자 값에 맞게 변경됨
+  - 페이지 제목(H1) 표시/숨김이 즉시 반영됨
+
+### T-NEW-02 Hero 1차/2차 CTA
+
+- 전제조건: 페이지에 `Hero` 섹션 존재
+- 절차:
+  1. `Hero` 섹션에서 `Primary CTA label/href` 입력
+  2. `Open primary CTA in new tab` 체크/해제 테스트
+  3. `Secondary CTA label/href` 입력
+  4. `Open secondary CTA in new tab` 체크/해제 테스트
+  5. 저장 후 퍼블릭 페이지에서 버튼 클릭
+- 기대 결과:
+  - Hero 하단에 CTA 버튼 1~2개가 노출됨
+  - 새탭 옵션 체크 시 `target="_blank"` 동작
+  - URL이 내부/외부 링크 모두 정상 이동
+
+### T-NEW-03 Columns(2컬럼) 레이아웃
+
+- 전제조건: `/admin/pages/[id]` 진입
+- 절차:
+  1. `Add section`에서 `Columns` 추가
+  2. `Column ratio`를 `1:1`, `2:1`, `1:2`로 각각 변경
+  3. `Left column HTML`, `Right column HTML`에 서로 다른 내용 입력
+  4. `Reverse column order on mobile` 체크/해제
+  5. 저장 후 데스크톱/모바일 폭에서 퍼블릭 페이지 확인
+- 기대 결과:
+  - 데스크톱에서 비율에 맞는 2컬럼 배치가 반영됨
+  - 모바일에서 1컬럼 스택으로 표시됨
+  - reverse 옵션 체크 시 모바일 순서가 역전됨
+
+### T-NEW-04 Globals에서도 동일 동작 확인
+
+- 전제조건: `/admin/globals/[id]` 진입
+- 절차:
+  1. Header 또는 Footer 글로벌 섹션에 `Page Style`, `Columns`, `Hero` 추가
+  2. 위 T-NEW-01~03과 동일하게 값 설정 후 저장
+  3. 퍼블릭 페이지 진입
+- 기대 결과:
+  - Header/Footer 글로벌 영역에서도 동일한 렌더링 규칙으로 반영됨
+
+### T-NEW-05 회귀 테스트 (기존 섹션 영향)
+
+- 전제조건: 기존 페이지 1개
+- 절차:
+  1. 기존 `text/richText/image/faq/embed` 섹션만 있는 페이지 열기
+  2. 아무 값 변경 없이 저장
+  3. 퍼블릭 페이지 비교
+- 기대 결과:
+  - 기존 섹션 렌더와 데이터가 깨지지 않음
+  - 새 기능 추가로 인한 기존 페이지 구조 변경이 없음
+
 ### 1. 글로벌 헤더/푸터 섹션 관리
 
 - `/admin/globals`에서 헤더/푸터 글로벌 섹션 그룹 생성 및 편집 가능

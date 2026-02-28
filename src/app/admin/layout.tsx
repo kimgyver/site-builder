@@ -21,8 +21,16 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             Site Builder Admin
           </Link>
           <nav className="flex gap-4 text-sm text-zinc-600">
-            <Link href="/" className="hover:text-zinc-900">
-              View site
+            <Link href="/admin/pages" className="hover:text-zinc-900">
+              Page Management
+            </Link>
+            <Link
+              href="/"
+              className="hover:text-zinc-900"
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              Public Home
             </Link>
             <Link href="/admin/menus" className="hover:text-zinc-900">
               Menus
