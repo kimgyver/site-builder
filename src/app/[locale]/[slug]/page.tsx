@@ -137,16 +137,47 @@ export default async function LocaleDynamicPage({
 
   const localeForLinks = rawLocale;
 
+  const getMenuByLocation = async (location: "header" | "footer") => {
+    try {
+      return await prisma.menu.findFirst({
+        where: { location },
+        select: {
+          id: true,
+          name: true,
+          location: true,
+          items: {
+            orderBy: { order: "asc" },
+            select: { id: true, href: true, label: true, openInNewTab: true }
+          }
+        }
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      if (
+        message.includes("openInNewTab") ||
+        message.includes("OpenInNewTab")
+      ) {
+        return await prisma.menu.findFirst({
+          where: { location },
+          select: {
+            id: true,
+            name: true,
+            location: true,
+            items: {
+              orderBy: { order: "asc" },
+              select: { id: true, href: true, label: true }
+            }
+          }
+        });
+      }
+      throw e;
+    }
+  };
+
   const [headerMenu, footerMenu, headerGlobals, footerGlobals] =
     await Promise.all([
-      prisma.menu.findFirst({
-        where: { location: "header" },
-        include: { items: { orderBy: { order: "asc" } } }
-      }),
-      prisma.menu.findFirst({
-        where: { location: "footer" },
-        include: { items: { orderBy: { order: "asc" } } }
-      }),
+      getMenuByLocation("header"),
+      getMenuByLocation("footer"),
       prisma.globalSectionGroup.findFirst({
         where: { location: "header" },
         include: { sections: { orderBy: { order: "asc" } } }

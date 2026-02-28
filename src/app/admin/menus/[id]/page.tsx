@@ -111,9 +111,43 @@ async function saveMenu(
       }
     });
   } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    // Production safety: tolerate missing column during phased migrations.
+    if (message.includes("openInNewTab") || message.includes("OpenInNewTab")) {
+      try {
+        await prisma.$transaction(async tx => {
+          await tx.menu.update({
+            where: { id },
+            data: { name }
+          });
+          await tx.menuItem.deleteMany({ where: { menuId: id } });
+          if (nextItems.length) {
+            await tx.menuItem.createMany({
+              data: nextItems.map((item, index) => ({
+                menuId: id,
+                label: item.label,
+                href: item.href,
+                order: index
+              }))
+            });
+          }
+        });
+
+        return { status: "saved", savedAt: Date.now() };
+      } catch (fallbackError) {
+        return {
+          status: "error",
+          message:
+            fallbackError instanceof Error
+              ? fallbackError.message
+              : "Save failed"
+        };
+      }
+    }
+
     return {
       status: "error",
-      message: e instanceof Error ? e.message : "Save failed"
+      message
     };
   }
 
@@ -121,10 +155,45 @@ async function saveMenu(
 }
 
 async function getMenu(id: string) {
-  const menu = await prisma.menu.findUnique({
-    where: { id },
-    include: { items: { orderBy: { order: "asc" } } }
-  });
+  let menu: {
+    id: string;
+    name: string;
+    location: string;
+    items: Array<{ label: string; href: string; openInNewTab?: boolean }>;
+  } | null = null;
+
+  try {
+    menu = await prisma.menu.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        location: true,
+        items: {
+          orderBy: { order: "asc" },
+          select: { label: true, href: true, openInNewTab: true }
+        }
+      }
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    if (message.includes("openInNewTab") || message.includes("OpenInNewTab")) {
+      menu = await prisma.menu.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          location: true,
+          items: {
+            orderBy: { order: "asc" },
+            select: { label: true, href: true }
+          }
+        }
+      });
+    } else {
+      throw e;
+    }
+  }
   if (!menu) notFound();
   return menu;
 }
