@@ -226,7 +226,7 @@ export default async function LocaleDynamicPage({
                 openInNewTab?: boolean | null;
               }) => {
                 const href = localizeInternalHref(item.href, localeForLinks);
-                const openInNewTab = isExternalHref(href);
+                const openInNewTab = item.openInNewTab === true;
                 return isExternalHref(href) ? (
                   <a
                     key={item.id}
@@ -300,7 +300,7 @@ export default async function LocaleDynamicPage({
                   openInNewTab?: boolean | null;
                 }) => {
                   const href = localizeInternalHref(item.href, localeForLinks);
-                  const openInNewTab = isExternalHref(href);
+                  const openInNewTab = item.openInNewTab === true;
                   return isExternalHref(href) ? (
                     <a
                       key={item.id}

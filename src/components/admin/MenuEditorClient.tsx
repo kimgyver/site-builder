@@ -6,6 +6,7 @@ import { useFormState, useFormStatus } from "react-dom";
 type MenuItemInput = {
   label: string;
   href: string;
+  openInNewTab: boolean;
 };
 
 type SaveState =
@@ -48,7 +49,7 @@ export default function MenuEditorClient({
   const [items, setItems] = useState<MenuItemInput[]>(
     Array.isArray(initialItems) && initialItems.length
       ? initialItems
-      : [{ label: "Home", href: "/" }]
+      : [{ label: "Home", href: "/", openInNewTab: false }]
   );
 
   const itemsJson = useMemo(() => JSON.stringify(items), [items]);
@@ -75,7 +76,7 @@ export default function MenuEditorClient({
   };
 
   const addItem = () => {
-    setItems(prev => [...prev, { label: "Link", href: "/" }]);
+    setItems(prev => [...prev, { label: "Link", href: "/", openInNewTab: false }]);
   };
 
   return (
@@ -149,6 +150,18 @@ export default function MenuEditorClient({
                       />
                     </div>
                   </div>
+
+                  <label className="inline-flex items-center gap-2 text-xs text-zinc-700">
+                    <input
+                      type="checkbox"
+                      checked={item.openInNewTab}
+                      onChange={e =>
+                        patchItem(index, { openInNewTab: e.target.checked })
+                      }
+                      disabled={!canEdit}
+                    />
+                    Open in new tab
+                  </label>
                 </div>
 
                 <div className="flex flex-col items-end gap-1 pt-5 text-[10px]">

@@ -22,7 +22,7 @@ async function ensureRole(nextPath: string) {
   return role;
 }
 
-type MenuItemInput = { label: string; href: string };
+type MenuItemInput = { label: string; href: string; openInNewTab: boolean };
 type SaveState =
   | { status: "idle" }
   | { status: "saved"; savedAt: number }
@@ -39,7 +39,8 @@ function parseItems(raw: string): MenuItemInput[] {
       const href = (hrefRaw ?? "").trim();
       return {
         label: label || href || "Link",
-        href: href || "/"
+        href: href || "/",
+        openInNewTab: false
       };
     });
 }
@@ -53,12 +54,15 @@ function parseItemsJson(raw: string): MenuItemInput[] {
         const maybe = item as {
           label?: unknown;
           href?: unknown;
+          openInNewTab?: unknown;
         };
         const label = typeof maybe.label === "string" ? maybe.label.trim() : "";
         const href = typeof maybe.href === "string" ? maybe.href.trim() : "";
+        const openInNewTab = Boolean(maybe.openInNewTab);
         return {
           label: label || href || "Link",
-          href: href || "/"
+          href: href || "/",
+          openInNewTab
         };
       })
       .filter(item => Boolean(item.href));
@@ -85,6 +89,20 @@ async function hasMenuItemOpenInNewTabColumn() {
   }
 }
 
+async function ensureMenuItemOpenInNewTabColumn() {
+  const exists = await hasMenuItemOpenInNewTabColumn();
+  if (exists) return true;
+  try {
+    await prisma.$executeRaw`
+      ALTER TABLE "MenuItem"
+      ADD COLUMN IF NOT EXISTS "openInNewTab" BOOLEAN NOT NULL DEFAULT false;
+    `;
+  } catch {
+    // Ignore and re-check; if this fails, we'll fall back to writes without the column.
+  }
+  return await hasMenuItemOpenInNewTabColumn();
+}
+
 async function saveMenu(
   _prevState: SaveState,
   formData: FormData
@@ -106,7 +124,7 @@ async function saveMenu(
     ? parseItemsJson(itemsJsonRaw)
     : parseItems(itemsRaw);
 
-  const supportsOpenInNewTab = await hasMenuItemOpenInNewTabColumn();
+  const supportsOpenInNewTab = await ensureMenuItemOpenInNewTabColumn();
 
   try {
     await prisma.$transaction(async tx => {
@@ -124,7 +142,7 @@ async function saveMenu(
             menuId: id,
             label: item.label,
             href: item.href,
-            openInNewTab: false,
+            openInNewTab: item.openInNewTab,
             order: index
           }))
         });
@@ -158,7 +176,7 @@ async function getMenu(id: string) {
     id: string;
     name: string;
     location: string;
-    items: Array<{ label: string; href: string }>;
+    items: Array<{ label: string; href: string; openInNewTab?: boolean }>;
   } | null = null;
 
   try {
@@ -171,7 +189,7 @@ async function getMenu(id: string) {
         items: {
           orderBy: { order: "asc" },
           select: supportsOpenInNewTab
-            ? { label: true, href: true }
+            ? { label: true, href: true, openInNewTab: true }
             : { label: true, href: true }
         }
       }
@@ -233,7 +251,8 @@ export default async function MenuEditPage({
         initialName={menu.name}
         initialItems={menu.items.map(item => ({
           label: item.label,
-          href: item.href
+          href: item.href,
+          openInNewTab: item.openInNewTab ?? false
         }))}
         saveAction={saveMenu}
         canEdit={canEdit}
