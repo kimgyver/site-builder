@@ -7,7 +7,6 @@ import {
   getRoleFromSessionCookie,
   isAdminAuthEnabled
 } from "@/lib/adminAuth";
-import { use } from "react";
 import GlobalGroupEditorClient from "@/components/admin/GlobalGroupEditorClient";
 
 async function ensureRole(nextPath: string) {
@@ -36,15 +35,15 @@ async function getGroup(id: string) {
   return group;
 }
 
-export default function GlobalGroupEditPage({
+export default async function GlobalGroupEditPage({
   params
 }: {
   params: Promise<{ id?: string }>;
 }) {
-  const { id } = use(params);
+  const { id } = await params;
   if (!id) notFound();
-  use(ensureRole(`/admin/globals/${id}`));
-  const group = use(getGroup(id));
+  await ensureRole(`/admin/globals/${id}`);
+  const group = await getGroup(id);
 
   return (
     <div className="w-full max-w-3xl space-y-6">
