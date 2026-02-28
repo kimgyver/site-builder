@@ -221,7 +221,9 @@ export function setTableAlign(
 
   const domAtPos = view.domAtPos(state.selection.from);
   const baseNode =
-    domAtPos.node instanceof Element ? domAtPos.node : domAtPos.node.parentElement;
+    domAtPos.node instanceof Element
+      ? domAtPos.node
+      : domAtPos.node.parentElement;
   const tableEl = baseNode?.closest("table");
   if (tableEl) {
     tableEl.setAttribute("data-align", align);

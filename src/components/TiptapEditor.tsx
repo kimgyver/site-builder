@@ -8,6 +8,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent
 } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
+import type { Editor as CoreEditor } from "@tiptap/core";
 import type { TiptapEditorProps } from "@/types/components";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -62,6 +63,42 @@ export function TiptapEditor({
   className,
   editorClassName
 }: TiptapEditorProps) {
+  const syncTableAlignmentInDom = (activeEditor: CoreEditor) => {
+    activeEditor.state.doc.descendants((node, pos) => {
+      if (node.type.name !== "table") return;
+
+      const domNode = activeEditor.view.nodeDOM(pos);
+      const tableEl =
+        domNode instanceof HTMLTableElement
+          ? domNode
+          : domNode instanceof HTMLElement
+            ? domNode.querySelector("table")
+            : null;
+
+      if (!tableEl) return;
+
+      const align = node.attrs.align as "left" | "center" | "right" | null;
+      if (align !== "left" && align !== "center" && align !== "right") {
+        tableEl.removeAttribute("data-align");
+        tableEl.style.marginLeft = "";
+        tableEl.style.marginRight = "";
+        return;
+      }
+
+      tableEl.setAttribute("data-align", align);
+      if (align === "center") {
+        tableEl.style.marginLeft = "auto";
+        tableEl.style.marginRight = "auto";
+      } else if (align === "right") {
+        tableEl.style.marginLeft = "auto";
+        tableEl.style.marginRight = "0";
+      } else {
+        tableEl.style.marginLeft = "0";
+        tableEl.style.marginRight = "auto";
+      }
+    });
+  };
+
   const lastEmittedHtmlRef = useRef<string>(defaultValue || "");
   const lastPropagatedHtmlRef = useRef<string>(defaultValue || "");
   const lastDefaultValueRef = useRef<string>(defaultValue || "");
@@ -166,6 +203,7 @@ export function TiptapEditor({
     },
     onUpdate: ({ editor }) => {
       updateSlashMatch(getSlashMatchFromEditor(editor));
+      syncTableAlignmentInDom(editor);
       const html = editor.getHTML();
       const doc = editor.getJSON();
       lastEmittedHtmlRef.current = html;
@@ -181,6 +219,7 @@ export function TiptapEditor({
     },
     onTransaction: ({ editor, transaction }) => {
       updateSlashMatch(getSlashMatchFromEditor(editor));
+      syncTableAlignmentInDom(editor);
       if (
         !transaction.docChanged &&
         !transaction.getMeta("rowResize") &&
@@ -215,6 +254,7 @@ export function TiptapEditor({
   // so we need to re-render to show context toolbars.
   useEffect(() => {
     if (!editor) return;
+    syncTableAlignmentInDom(editor);
     const rerender = () => {
       const { from, to } = editor.state.selection;
       if (from !== to) {
