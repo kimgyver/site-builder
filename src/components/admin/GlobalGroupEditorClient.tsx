@@ -61,6 +61,7 @@ export default function GlobalGroupEditorClient({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const hiddenCount = sections.filter(section => !section.enabled).length;
 
   const save = async () => {
     setSaving(true);
@@ -142,6 +143,11 @@ export default function GlobalGroupEditorClient({
           복잡한 +type::JSON 문법 없이, 아래에서 섹션을 추가/수정해서
           저장하세요.
         </p>
+        {hiddenCount > 0 ? (
+          <p className="text-xs text-amber-700">
+            숨김 섹션 {hiddenCount}개: 공개 페이지에는 표시되지 않습니다.
+          </p>
+        ) : null}
       </div>
 
       <SectionBuilder
