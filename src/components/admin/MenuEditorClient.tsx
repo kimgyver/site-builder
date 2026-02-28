@@ -106,6 +106,12 @@ export default function MenuEditorClient({
           <div>
             <div className="text-sm font-medium text-zinc-900">Items</div>
             <div className="text-xs text-zinc-600">Location: {location}</div>
+            {!supportsOpenInNewTab ? (
+              <div className="mt-1 text-xs text-zinc-600">
+                “Open in new tab” is unavailable until the DB schema is updated
+                (no existing data migration needed).
+              </div>
+            ) : null}
           </div>
           <button
             type="button"
@@ -167,11 +173,6 @@ export default function MenuEditorClient({
                     />
                     Open in new tab
                   </label>
-                  {!supportsOpenInNewTab && (
-                    <div className="text-xs text-muted-foreground">
-                      Requires DB migration.
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex flex-col items-end gap-1 pt-5 text-[10px]">
