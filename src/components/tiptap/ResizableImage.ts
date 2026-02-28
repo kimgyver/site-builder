@@ -131,7 +131,10 @@ export const ResizableImage = Image.extend({
         img.src = src;
         img.alt = alt;
         if (title) img.title = title;
-        img.loading = "lazy";
+        img.loading = "eager";
+        img.referrerPolicy = "no-referrer";
+        img.decoding = "async";
+        img.style.display = "block";
         img.setAttribute("data-align", alignRaw);
         img.style.width = "100%";
         img.style.height = "auto";

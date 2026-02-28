@@ -183,29 +183,47 @@ export function EditorToolbar({
         onClick={onInsertTable}
         active={isTableActive}
       />
-
-      {isImageActive ? (
-        <>
-          <span className="mx-1 h-5 w-px bg-zinc-300" />
-          <span className="px-1 text-[11px] text-zinc-500">
-            Img {effectiveImageWidth ? `${effectiveImageWidth}%` : "Auto"}
-          </span>
-          <input
-            type="range"
-            min={5}
-            max={100}
-            step={1}
-            value={effectiveImageWidth ?? 100}
-            onChange={e => onSetImageWidth(Number(e.target.value))}
-            className="mx-1 h-5 w-28 accent-zinc-900"
-            aria-label="Image width"
-          />
-          <ToolbarButton label="Auto" onClick={() => onSetImageWidth(null)} />
-          <ToolbarButton label="⟸" onClick={() => onSetImageAlign("left")} />
-          <ToolbarButton label="↔" onClick={() => onSetImageAlign("center")} />
-          <ToolbarButton label="⟹" onClick={() => onSetImageAlign("right")} />
-        </>
-      ) : null}
+      <span className="mx-1 h-5 w-px bg-zinc-300" />
+      <span className="px-1 text-[10px] text-zinc-500">Image</span>
+      <span className="px-1 text-[11px] text-zinc-500">
+        {isImageActive
+          ? `Width ${effectiveImageWidth ? `${effectiveImageWidth}%` : "Auto"}`
+          : "Select image"}
+      </span>
+      <input
+        type="range"
+        min={5}
+        max={100}
+        step={1}
+        value={effectiveImageWidth ?? 100}
+        onChange={e => onSetImageWidth(Number(e.target.value))}
+        className="mx-1 h-5 w-28 accent-zinc-900"
+        aria-label="Image width"
+        disabled={!isImageActive}
+      />
+      <ToolbarButton
+        label="Auto"
+        onClick={() => onSetImageWidth(null)}
+        disabled={!isImageActive}
+      />
+      <ToolbarButton
+        label="Img L"
+        title="Image Align Left"
+        onClick={() => onSetImageAlign("left")}
+        disabled={!isImageActive}
+      />
+      <ToolbarButton
+        label="Img C"
+        title="Image Align Center"
+        onClick={() => onSetImageAlign("center")}
+        disabled={!isImageActive}
+      />
+      <ToolbarButton
+        label="Img R"
+        title="Image Align Right"
+        onClick={() => onSetImageAlign("right")}
+        disabled={!isImageActive}
+      />
 
       {isTableActive ? (
         <>
