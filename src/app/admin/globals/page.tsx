@@ -37,7 +37,7 @@ async function createGroup(formData: FormData) {
   redirect(`/admin/globals/${group.id}`);
 }
 
-export default async function GlobalsListPage() {
+export default async function GlobalSectionsListPage() {
   await ensureRole("/admin/globals");
 
   const groups = await prisma.globalSectionGroup.findMany();
@@ -85,7 +85,7 @@ export default async function GlobalsListPage() {
                     <input
                       name="name"
                       className="mr-2 w-40 rounded-md border border-zinc-300 px-2 py-1 text-xs"
-                      placeholder={`${location} globals`}
+                      placeholder={`${location} global sections`}
                       required
                     />
                     <button

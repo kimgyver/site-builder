@@ -36,7 +36,7 @@ async function createMenu(formData: FormData) {
   });
 }
 
-export default async function MenusAdmin() {
+export default async function MenuManagementAdmin() {
   await ensureRole("/admin/menus");
   const menus = await prisma.menu.findMany({
     orderBy: { location: "asc" }
@@ -49,7 +49,7 @@ export default async function MenusAdmin() {
     <div className="w-full max-w-2xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">
-          Navigation Menus
+          Menu Management
         </h1>
         <p className="mt-1 text-sm text-zinc-600">
           Manage navigation links shown in the header and footer.

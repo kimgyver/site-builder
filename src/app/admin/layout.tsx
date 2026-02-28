@@ -24,11 +24,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <Link href="/admin/pages" className="hover:text-zinc-900">
               Page Management
             </Link>
-            <Link href="/admin/menus" className="hover:text-zinc-900">
-              Menus
+              <Link href="/admin/menus" className="hover:text-zinc-900">
+                Menu Management
             </Link>
             <Link href="/admin/globals" className="hover:text-zinc-900">
-              Globals
+              Global Sections
             </Link>
             <form action={logout}>
               <button type="submit" className="hover:text-zinc-900">
