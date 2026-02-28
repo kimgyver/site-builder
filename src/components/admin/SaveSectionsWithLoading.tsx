@@ -37,6 +37,9 @@ export default function SaveSectionsWithLoading({
   const autosaveTimerRef = useRef<number | null>(null);
   const firstRenderRef = useRef(true);
   const lastSavedJsonRef = useRef<string>(JSON.stringify(initialSections));
+  const lastInitialSectionsJsonRef = useRef<string>(
+    JSON.stringify(initialSections)
+  );
 
   type PutSectionsOk = { ok: true; updatedAt: string };
   type PutSectionsErr = { ok: false; error: string };
@@ -127,11 +130,12 @@ export default function SaveSectionsWithLoading({
   };
 
   useEffect(() => {
-    const nextJson = JSON.stringify(initialSections);
-    if (nextJson === lastSavedJsonRef.current) {
-      setExpectedUpdatedAtLocal(expectedUpdatedAt);
+    const incomingJson = JSON.stringify(initialSections);
+    if (incomingJson === lastInitialSectionsJsonRef.current) {
       return;
     }
+
+    lastInitialSectionsJsonRef.current = incomingJson;
 
     if (autosaveTimerRef.current) {
       window.clearTimeout(autosaveTimerRef.current);
@@ -139,12 +143,11 @@ export default function SaveSectionsWithLoading({
     }
 
     setSections(initialSections);
-    setExpectedUpdatedAtLocal(expectedUpdatedAt);
-    lastSavedJsonRef.current = nextJson;
+    lastSavedJsonRef.current = incomingJson;
     setAutosaveState("idle");
     setError(null);
     firstRenderRef.current = true;
-  }, [expectedUpdatedAt, initialSections]);
+  }, [initialSections]);
 
   useEffect(() => {
     setExpectedUpdatedAtLocal(expectedUpdatedAt);
