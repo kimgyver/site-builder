@@ -100,6 +100,26 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           placeholder="https://... or /images/logo.png"
         />
       </label>
+      <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+        Brand logo height (px)
+        <input
+          type="number"
+          min={20}
+          max={96}
+          className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+          value={
+            typeof props.brandLogoHeightPx === "number"
+              ? props.brandLogoHeightPx
+              : 32
+          }
+          onChange={e =>
+            updateProps({
+              ...props,
+              brandLogoHeightPx: Number(e.target.value)
+            })
+          }
+        />
+      </label>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
           Menu text color

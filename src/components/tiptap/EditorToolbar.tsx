@@ -27,6 +27,7 @@ export function EditorToolbar({
   onSetImageWidth,
   onSetImageAlign,
   onSetCellAlign,
+  onSetTableAlign,
   onSetCellBackgroundColor,
   onClearCellBackgroundColor,
   onSetCellBorderTransparent,
@@ -210,6 +211,21 @@ export function EditorToolbar({
       {isTableActive ? (
         <>
           <span className="mx-1 h-5 w-px bg-zinc-300" />
+          <ToolbarButton
+            label="Tbl ⟸"
+            title="Table Align: Left"
+            onClick={() => onSetTableAlign("left")}
+          />
+          <ToolbarButton
+            label="Tbl ↔"
+            title="Table Align: Center"
+            onClick={() => onSetTableAlign("center")}
+          />
+          <ToolbarButton
+            label="Tbl ⟹"
+            title="Table Align: Right"
+            onClick={() => onSetTableAlign("right")}
+          />
           <ToolbarButton
             label="Merge"
             title="Merge Cells"

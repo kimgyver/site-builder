@@ -17,10 +17,11 @@ import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import { Highlight } from "@tiptap/extension-highlight";
-import { Table, TableRow } from "@tiptap/extension-table";
+import { TableRow } from "@tiptap/extension-table";
 import { ResizableImage } from "./tiptap/ResizableImage";
 import { ColoredTableCell } from "./tiptap/ColoredTableCell";
 import { ResizableTableHeader } from "./tiptap/ResizableTableHeader";
+import { AlignedTable } from "./tiptap/AlignedTable";
 import { WebPasteTables } from "./tiptap/WebPasteTables";
 import { ClickSelectImage } from "./tiptap/ClickSelectImage";
 import { EditorToolbar } from "./tiptap/EditorToolbar";
@@ -48,6 +49,7 @@ import {
   setHighlightColor as setHighlightColorCommand,
   setImageAlign as setImageAlignCommand,
   setImageWidth as setImageWidthCommand,
+  setTableAlign as setTableAlignCommand,
   setOrUnsetLink as setOrUnsetLinkCommand,
   setTextColor as setTextColorCommand
 } from "./tiptap/editorCommands";
@@ -128,7 +130,7 @@ export function TiptapEditor({
           loading: "lazy"
         }
       }),
-      Table.configure({
+      AlignedTable.configure({
         resizable: true
       }),
       TableRow,
@@ -426,6 +428,9 @@ export function TiptapEditor({
       lastSelectedTableCellPositionsRef.current
     );
 
+  const setTableAlign = (align: "left" | "center" | "right") =>
+    setTableAlignCommand(editor, align);
+
   const runSlashCommand = (command: SlashCommand) => {
     if (!slashMatch) return;
 
@@ -542,6 +547,7 @@ export function TiptapEditor({
         onSetImageWidth={setImageWidth}
         onSetImageAlign={setImageAlign}
         onSetCellAlign={setCellAlign}
+        onSetTableAlign={setTableAlign}
         onSetCellBackgroundColor={color => {
           setCellBgColorValue(color);
           setCellBackgroundColor(color);

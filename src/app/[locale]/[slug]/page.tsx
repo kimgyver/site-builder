@@ -233,7 +233,16 @@ export default async function LocaleDynamicPage({
     ? getSectionBrandingConfig(
         headerGlobals.sections as unknown as RenderableSection[]
       )
-    : { brandName: "", brandHref: undefined, brandLogoUrl: undefined };
+    : {
+        brandName: "",
+        brandHref: undefined,
+        brandLogoUrl: undefined,
+        brandLogoHeightPx: 32
+      };
+
+  const pageBranding = getSectionBrandingConfig(
+    page.sections as unknown as RenderableSection[]
+  );
 
   const BrandWrapper =
     headerBranding.brandHref && isExternalHref(headerBranding.brandHref)
@@ -269,13 +278,19 @@ export default async function LocaleDynamicPage({
                 : {})}
             >
               {headerBranding.brandLogoUrl ? (
-                <span className="relative h-7 w-7 overflow-hidden rounded">
+                <span
+                  className="relative overflow-hidden rounded"
+                  style={{
+                    height: `${headerBranding.brandLogoHeightPx}px`,
+                    width: `${Math.round(headerBranding.brandLogoHeightPx * 3.5)}px`
+                  }}
+                >
                   <Image
                     src={headerBranding.brandLogoUrl}
                     alt={headerBranding.brandName || "Site logo"}
                     fill
                     unoptimized
-                    sizes="28px"
+                    sizes={`${Math.round(headerBranding.brandLogoHeightPx * 3.5)}px`}
                     className="object-contain"
                   />
                 </span>
@@ -354,6 +369,72 @@ export default async function LocaleDynamicPage({
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-12">
+        {pageBranding.brandName || pageBranding.brandLogoUrl ? (
+          <div className="mb-6 rounded-xl border border-zinc-200 bg-white/80 px-4 py-3 backdrop-blur-sm">
+            {pageBranding.brandHref &&
+            isExternalHref(pageBranding.brandHref) ? (
+              <a
+                href={pageBranding.brandHref}
+                className="inline-flex min-w-0 items-center gap-2 text-zinc-900"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {pageBranding.brandLogoUrl ? (
+                  <span
+                    className="relative overflow-hidden rounded"
+                    style={{
+                      height: `${pageBranding.brandLogoHeightPx}px`,
+                      width: `${Math.round(pageBranding.brandLogoHeightPx * 3.5)}px`
+                    }}
+                  >
+                    <Image
+                      src={pageBranding.brandLogoUrl}
+                      alt={pageBranding.brandName || "Page brand logo"}
+                      fill
+                      unoptimized
+                      sizes={`${Math.round(pageBranding.brandLogoHeightPx * 3.5)}px`}
+                      className="object-contain"
+                    />
+                  </span>
+                ) : null}
+                {pageBranding.brandName ? (
+                  <span className="truncate text-base font-semibold tracking-tight">
+                    {pageBranding.brandName}
+                  </span>
+                ) : null}
+              </a>
+            ) : (
+              <Link
+                href={pageBranding.brandHref ?? "/"}
+                className="inline-flex min-w-0 items-center gap-2 text-zinc-900"
+              >
+                {pageBranding.brandLogoUrl ? (
+                  <span
+                    className="relative overflow-hidden rounded"
+                    style={{
+                      height: `${pageBranding.brandLogoHeightPx}px`,
+                      width: `${Math.round(pageBranding.brandLogoHeightPx * 3.5)}px`
+                    }}
+                  >
+                    <Image
+                      src={pageBranding.brandLogoUrl}
+                      alt={pageBranding.brandName || "Page brand logo"}
+                      fill
+                      unoptimized
+                      sizes={`${Math.round(pageBranding.brandLogoHeightPx * 3.5)}px`}
+                      className="object-contain"
+                    />
+                  </span>
+                ) : null}
+                {pageBranding.brandName ? (
+                  <span className="truncate text-base font-semibold tracking-tight">
+                    {pageBranding.brandName}
+                  </span>
+                ) : null}
+              </Link>
+            )}
+          </div>
+        ) : null}
         <h1 className="text-3xl font-semibold tracking-tight">{page.title}</h1>
         <div className="mt-6 space-y-8 text-zinc-800">
           {renderSections(

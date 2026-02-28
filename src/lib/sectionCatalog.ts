@@ -65,14 +65,17 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
     keywords: ["image", "photo", "picture"],
     createDefaultProps: () => ({
       url: "https://placehold.co/1200x600",
-      alt: "Placeholder image"
+      alt: "Placeholder image",
+      align: "center"
     }),
     convertProps: from => ({
       url:
         (from.url as string) ??
         (from.src as string) ??
         "https://placehold.co/1200x600",
-      alt: (from.alt as string) ?? "Placeholder image"
+      alt: (from.alt as string) ?? "Placeholder image",
+      align:
+        from.align === "left" || from.align === "right" ? from.align : "center"
     })
   },
   faq: {
@@ -121,6 +124,7 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
       brandName: "",
       brandHref: "/",
       brandLogoUrl: "",
+      brandLogoHeightPx: 32,
       menuTextColor: "#52525b",
       menuHoverColor: "#18181b",
       menuFontSizePx: 14,
@@ -132,6 +136,10 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
       brandName: (from.brandName as string) ?? "",
       brandHref: (from.brandHref as string) ?? "/",
       brandLogoUrl: (from.brandLogoUrl as string) ?? "",
+      brandLogoHeightPx:
+        typeof from.brandLogoHeightPx === "number"
+          ? from.brandLogoHeightPx
+          : 32,
       menuTextColor: (from.menuTextColor as string) ?? "#52525b",
       menuHoverColor: (from.menuHoverColor as string) ?? "#18181b",
       menuFontSizePx:

@@ -108,6 +108,27 @@ export function ImageSectionEditor({
       />
       <select
         className="w-full rounded-md border border-zinc-300 px-2 py-1 text-[11px]"
+        value={
+          props.align === "left" || props.align === "right"
+            ? String(props.align)
+            : "center"
+        }
+        onChange={e =>
+          updateProps({
+            ...props,
+            align:
+              e.target.value === "left" || e.target.value === "right"
+                ? e.target.value
+                : "center"
+          })
+        }
+      >
+        <option value="left">Align image left</option>
+        <option value="center">Align image center</option>
+        <option value="right">Align image right</option>
+      </select>
+      <select
+        className="w-full rounded-md border border-zinc-300 px-2 py-1 text-[11px]"
         value={typeof props.href === "string" ? props.href : ""}
         disabled={isLibraryLoading}
         onChange={e =>

@@ -116,11 +116,19 @@ export function getSectionBrandingConfig(sections: RenderableSection[]) {
     typeof pageStyleProps.brandName === "string"
       ? pageStyleProps.brandName.trim()
       : "";
+  const logoHeightRaw = pageStyleProps.brandLogoHeightPx;
+  const brandLogoHeightPx =
+    typeof logoHeightRaw === "number" && Number.isFinite(logoHeightRaw)
+      ? Math.min(96, Math.max(20, logoHeightRaw))
+      : typeof logoHeightRaw === "string"
+        ? Math.min(96, Math.max(20, Number(logoHeightRaw) || 32))
+        : 32;
 
   return {
     brandName,
     brandHref: getSafeHref(pageStyleProps.brandHref),
-    brandLogoUrl: getSafeBackgroundImageUrl(pageStyleProps.brandLogoUrl)
+    brandLogoUrl: getSafeBackgroundImageUrl(pageStyleProps.brandLogoUrl),
+    brandLogoHeightPx
   };
 }
 
@@ -211,6 +219,8 @@ export function renderSection(
       : undefined;
   const imageCaption =
     typeof props.caption === "string" ? props.caption : undefined;
+  const imageAlign =
+    props.align === "left" || props.align === "right" ? props.align : "center";
 
   if (section.type === "hero") {
     const heroBackgroundColor = getSafeColor(props.backgroundColor);
@@ -344,8 +354,18 @@ export function renderSection(
       />
     );
 
+    const figureAlignClass =
+      imageAlign === "left"
+        ? "mr-auto"
+        : imageAlign === "right"
+          ? "ml-auto"
+          : "mx-auto";
+
     return (
-      <figure key={section.id} className="space-y-2">
+      <figure
+        key={section.id}
+        className={`w-full max-w-full space-y-2 ${figureAlignClass}`}
+      >
         {imageHref ? (
           <a
             href={imageHref}

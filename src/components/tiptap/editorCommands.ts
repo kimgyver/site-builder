@@ -191,6 +191,14 @@ export function setCellAlign(
   );
 }
 
+export function setTableAlign(
+  editor: Editor,
+  align: "left" | "center" | "right"
+) {
+  if (!editor.isActive("table")) return;
+  editor.chain().focus().updateAttributes("table", { align }).run();
+}
+
 export function insertImagePrompt(editor: Editor) {
   const url = window.prompt("Image URL", "https://");
   if (!url) return;

@@ -33,6 +33,10 @@ body {
   color: var(--menu-hover-color, #18181b);
 }
 
+.section-image-figure {
+  width: min(100%, 100%);
+}
+
 /*
   Rich text styling
   Tailwind CSS preflight resets headings, lists, and links to inherit styles.
@@ -206,6 +210,21 @@ body {
   /* Keep the sum of resized column widths (may overflow; container scrolls). */
   width: max-content;
   max-width: none;
+}
+
+.rich-content :where(table[data-align="center"]) {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.rich-content :where(table[data-align="right"]) {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.rich-content :where(table[data-align="left"]) {
+  margin-left: 0;
+  margin-right: auto;
 }
 
 .rich-content :where(th, td) {

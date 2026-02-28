@@ -104,7 +104,7 @@ function sanitizeRichHtml(input: unknown) {
         "data-align",
         "style"
       ],
-      table: ["style"],
+      table: ["style", "data-align"],
       th: [
         "colspan",
         "rowspan",
@@ -162,6 +162,9 @@ function sanitizeRichHtml(input: unknown) {
         width: [/^\d+(\.\d+)?%$/, /^\d+(\.\d+)?px$/]
       },
       table: {
+        "text-align": [/^(left|center|right)$/],
+        "margin-left": [/^auto$/, /^0(px)?$/],
+        "margin-right": [/^auto$/, /^0(px)?$/],
         width: [
           /^\d+(\.\d+)?px$/,
           /^\d+(\.\d+)?%$/,
