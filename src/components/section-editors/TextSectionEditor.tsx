@@ -19,12 +19,16 @@ export function TextSectionEditor({
             ? "Write and format rich text for this block"
             : "Write text for this block (you can format with the toolbar)"
         }
-        onChangeHtml={html =>
+        onChangeHtml={html => {
+          const current = typeof props.html === "string" ? props.html : "";
+          if (current === html) {
+            return;
+          }
           updateProps({
             ...props,
             html
-          })
-        }
+          });
+        }}
       />
     </div>
   );

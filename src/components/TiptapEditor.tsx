@@ -61,6 +61,8 @@ export function TiptapEditor({
   editorClassName
 }: TiptapEditorProps) {
   const lastEmittedHtmlRef = useRef<string>(defaultValue || "");
+  const lastPropagatedHtmlRef = useRef<string>(defaultValue || "");
+  const lastDefaultValueRef = useRef<string>(defaultValue || "");
   const debounceTimerRef = useRef<number | null>(null);
   const slashListRef = useRef<HTMLDivElement | null>(null);
   const lastTextSelectionRef = useRef<{ from: number; to: number } | null>(
@@ -81,6 +83,15 @@ export function TiptapEditor({
   const [, bumpSelectionTick] = useState(0);
 
   const normalize = (html: string) => html.replace(/\s+/g, " ").trim();
+
+  const emitChange = (html: string, doc: unknown) => {
+    if (!onChangeHtml) return;
+    if (normalize(html) === normalize(lastPropagatedHtmlRef.current)) {
+      return;
+    }
+    lastPropagatedHtmlRef.current = html;
+    onChangeHtml(html, doc as Parameters<NonNullable<typeof onChangeHtml>>[1]);
+  };
 
   const updateSlashMatch = (next: SlashMatch | null) => {
     setSlashMatch(prev => {
@@ -150,7 +161,6 @@ export function TiptapEditor({
     },
     onUpdate: ({ editor }) => {
       updateSlashMatch(getSlashMatchFromEditor(editor));
-      if (!onChangeHtml) return;
       const html = editor.getHTML();
       const doc = editor.getJSON();
       lastEmittedHtmlRef.current = html;
@@ -161,12 +171,11 @@ export function TiptapEditor({
         window.clearTimeout(debounceTimerRef.current);
       }
       debounceTimerRef.current = window.setTimeout(() => {
-        onChangeHtml(html, doc);
+        emitChange(html, doc);
       }, 150);
     },
     onTransaction: ({ editor, transaction }) => {
       updateSlashMatch(getSlashMatchFromEditor(editor));
-      if (!onChangeHtml) return;
       if (
         !transaction.docChanged &&
         !transaction.getMeta("rowResize") &&
@@ -182,11 +191,10 @@ export function TiptapEditor({
         window.clearTimeout(debounceTimerRef.current);
         debounceTimerRef.current = null;
       }
-      onChangeHtml(html, doc);
+      emitChange(html, doc);
     },
     onBlur: ({ editor }) => {
       updateSlashMatch(getSlashMatchFromEditor(editor));
-      if (!onChangeHtml) return;
       const html = editor.getHTML();
       const doc = editor.getJSON();
       lastEmittedHtmlRef.current = html;
@@ -194,7 +202,7 @@ export function TiptapEditor({
         window.clearTimeout(debounceTimerRef.current);
         debounceTimerRef.current = null;
       }
-      onChangeHtml(html, doc);
+      emitChange(html, doc);
     }
   });
 
@@ -280,16 +288,24 @@ export function TiptapEditor({
   useEffect(() => {
     if (!editor) return;
     const next = defaultValue || "";
+    const previousProp = lastDefaultValueRef.current;
+
+    if (normalize(next) === normalize(previousProp)) {
+      return;
+    }
+
+    lastDefaultValueRef.current = next;
     const current = editor.getHTML();
 
-    // If the parent is just reflecting what we already emitted, don't reset.
-    if (normalize(next) === normalize(lastEmittedHtmlRef.current)) return;
-    if (normalize(current) === normalize(next)) return;
-
-    // Avoid resetting content while the user is actively editing.
-    if (editor.isFocused) return;
+    if (normalize(current) === normalize(next)) {
+      lastEmittedHtmlRef.current = next;
+      lastPropagatedHtmlRef.current = next;
+      return;
+    }
 
     editor.commands.setContent(next, { emitUpdate: false });
+    lastEmittedHtmlRef.current = next;
+    lastPropagatedHtmlRef.current = next;
   }, [defaultValue, editor]);
 
   useEffect(() => {
