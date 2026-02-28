@@ -161,6 +161,14 @@ export default function SaveSectionsWithLoading({
         return;
       }
 
+      if (serverResult.error === "STALE_PAGE") {
+        setAutosaveState("conflict");
+        setError(
+          "Conflict detected: this page was updated elsewhere. Reload to continue editing."
+        );
+        return;
+      }
+
       setAutosaveState("error");
       setError(toUserError(serverResult.error ?? "Failed to autosave"));
     }, 1200);

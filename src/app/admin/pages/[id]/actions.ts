@@ -306,6 +306,9 @@ export async function saveSections(formData: FormData) {
     // 인증 체크
     const pageId = formData.get("pageId");
     const sectionsRaw = formData.get("sections");
+    const expectedUpdatedAt = String(
+      formData.get("expectedUpdatedAt") ?? ""
+    ).trim();
     if (!pageId || !sectionsRaw) {
       return { ok: false, error: "Missing pageId or sections" };
     }
@@ -320,6 +323,20 @@ export async function saveSections(formData: FormData) {
     } catch (e) {
       return { ok: false, error: "Invalid sections format" };
     }
+
+    if (expectedUpdatedAt) {
+      const page = await prisma.page.findUnique({
+        where: { id: String(pageId) },
+        select: { updatedAt: true }
+      });
+      if (!page) {
+        return { ok: false, error: "Page not found" };
+      }
+      if (page.updatedAt.toISOString() !== expectedUpdatedAt) {
+        return { ok: false, error: "STALE_PAGE" };
+      }
+    }
+
     // 기존 섹션 삭제 후 새 섹션 추가
     await prisma.section.deleteMany({ where: { pageId: String(pageId) } });
     await prisma.section.createMany({
