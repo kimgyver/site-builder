@@ -157,6 +157,7 @@ export default function SaveSectionsWithLoading({
         lastSavedJsonRef.current = nextJson;
         setAutosaveState("saved");
         setError(null);
+        if (onSuccess) onSuccess();
         return;
       }
 

@@ -12,22 +12,39 @@ export default function RestoreRevisionWithLoading({
   pageId,
   revisionId,
   version,
-  action
+  action,
+  onSuccess
 }: {
   pageId: string;
   revisionId: string;
   version: number;
-  action: (formData: FormData) => Promise<unknown>;
+  action: (
+    formData: FormData
+  ) => Promise<{ ok?: boolean; error?: string } | unknown>;
+  onSuccess?: () => void;
 }) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   return (
     <form
       ref={formRef}
       action={async (formData: FormData) => {
         setLoading(true);
+        setError(null);
         await new Promise(r => setTimeout(r, 100));
-        await action(formData);
+        const result = (await action(formData)) as
+          | { ok?: boolean; error?: string }
+          | undefined;
+        if (result && typeof result === "object" && "ok" in result) {
+          if (result.ok) {
+            onSuccess?.();
+          } else {
+            setError(result.error ?? "Failed to restore revision");
+          }
+        } else {
+          onSuccess?.();
+        }
         setLoading(false);
       }}
       className="relative"
@@ -45,6 +62,9 @@ export default function RestoreRevisionWithLoading({
       >
         {loading ? <Spinner /> : "Restore"}
       </ConfirmSubmitButton>
+      {error ? (
+        <span className="ml-2 text-[11px] text-red-600">{error}</span>
+      ) : null}
     </form>
   );
 }

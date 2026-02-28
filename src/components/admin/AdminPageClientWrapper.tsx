@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Toast } from "@/components/Toast";
 import SaveSectionsClientWrapper from "@/components/admin/SaveSectionsClientWrapper";
 import UpdatePageWithLoading from "@/components/admin/UpdatePageWithLoading";
@@ -47,6 +48,7 @@ export default function AdminPageClientWrapper({
   deletePage: (formData: FormData) => Promise<unknown>;
   restoreRevision: (formData: FormData) => Promise<unknown>;
 }) {
+  const router = useRouter();
   const [sectionsExpectedUpdatedAt, setSectionsExpectedUpdatedAt] = useState(
     page.updatedAt.toISOString()
   );
@@ -107,6 +109,7 @@ export default function AdminPageClientWrapper({
               setSectionsExpectedUpdatedAt(updatedAt);
             }
             handleShowToast("Page info saved!");
+            router.refresh();
           }}
         />
         <div className="space-y-2 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-3">
@@ -141,7 +144,9 @@ export default function AdminPageClientWrapper({
             initialSections={page.sections as unknown as EditableSection[]}
             action={saveSections}
             readOnly={!canEdit}
-            onSuccess={() => handleShowToast("Sections saved!")}
+            onSuccess={() => {
+              router.refresh();
+            }}
           />
         </div>
         <div className="space-y-2 border-t border-dashed border-zinc-200 pt-4">
@@ -176,6 +181,10 @@ export default function AdminPageClientWrapper({
                         revisionId={revision.id}
                         version={revision.version}
                         action={restoreRevision}
+                        onSuccess={() => {
+                          handleShowToast(`Restored v${revision.version}`);
+                          router.refresh();
+                        }}
                       />
                     ) : null}
                   </div>

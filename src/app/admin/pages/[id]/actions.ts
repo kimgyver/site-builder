@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { PageStatus, Prisma, RevisionSource } from "@prisma/client";
 import sanitizeHtml from "sanitize-html";
@@ -46,7 +47,9 @@ function isIgnorableRevisionError(error: unknown) {
 }
 import {
   SESSION_COOKIE_NAME,
+  canDeleteContent,
   canEditContent,
+  canPublishContent,
   getRoleFromSessionCookie,
   isAdminAuthEnabled,
   type AdminRole
@@ -282,7 +285,19 @@ export async function updatePage(formData: FormData) {
 
 export async function deletePage(formData: FormData) {
   "use server";
-  // ...existing code from deletePage...
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) {
+    return { ok: false, error: "Missing id" };
+  }
+
+  const role = await getAdminRoleForAction(`/admin/pages/${id}`);
+  if (!canDeleteContent(role)) {
+    return { ok: false, error: "Unauthorized" };
+  }
+
+  await prisma.page.delete({ where: { id } });
+  revalidatePath("/admin");
+  redirect("/admin");
 }
 
 export async function saveSections(formData: FormData) {
@@ -405,5 +420,116 @@ export async function saveSections(formData: FormData) {
 
 export async function restoreRevision(formData: FormData) {
   "use server";
-  // ...existing code from restoreRevision...
+  try {
+    const pageId = String(formData.get("pageId") ?? "").trim();
+    const revisionId = String(formData.get("revisionId") ?? "").trim();
+    if (!pageId || !revisionId) {
+      return { ok: false, error: "Missing pageId or revisionId" };
+    }
+
+    const role = await getAdminRoleForAction(`/admin/pages/${pageId}`);
+    if (!canPublishContent(role)) {
+      return { ok: false, error: "Unauthorized" };
+    }
+
+    const revision = await prisma.pageRevision.findUnique({
+      where: { id: revisionId }
+    });
+    if (!revision || revision.pageId !== pageId) {
+      return { ok: false, error: "Revision not found" };
+    }
+
+    const rawSnapshot =
+      typeof revision.snapshot === "string"
+        ? JSON.parse(revision.snapshot)
+        : revision.snapshot;
+
+    const snapshot =
+      rawSnapshot && typeof rawSnapshot === "object"
+        ? (rawSnapshot as Record<string, unknown>)
+        : {};
+
+    const restoredSectionsInput =
+      "sections" in snapshot ? snapshot.sections : rawSnapshot;
+    const restoredSections = normalizeSnapshotSections(restoredSectionsInput);
+
+    await prisma.$transaction(async tx => {
+      const currentPage = await tx.page.findUnique({
+        where: { id: pageId },
+        select: { id: true, locale: true }
+      });
+      if (!currentPage) {
+        throw new Error("PAGE_NOT_FOUND");
+      }
+
+      await tx.page.update({
+        where: { id: pageId },
+        data: {
+          title:
+            typeof snapshot.title === "string" ? snapshot.title : undefined,
+          slug: typeof snapshot.slug === "string" ? snapshot.slug : undefined,
+          status:
+            snapshot.status === "DRAFT" || snapshot.status === "PUBLISHED"
+              ? (snapshot.status as PageStatus)
+              : undefined,
+          seoTitle:
+            typeof snapshot.seoTitle === "string" ? snapshot.seoTitle : null,
+          seoDescription:
+            typeof snapshot.seoDescription === "string"
+              ? snapshot.seoDescription
+              : null,
+          updatedAt: new Date()
+        }
+      });
+
+      await tx.section.deleteMany({ where: { pageId } });
+      if (restoredSections.length > 0) {
+        await tx.section.createMany({
+          data: restoredSections.map(section => ({
+            pageId,
+            type: section.type,
+            order: section.order,
+            enabled: section.enabled,
+            props: section.props
+          }))
+        });
+      }
+
+      try {
+        const last = await tx.pageRevision.findFirst({
+          where: { pageId },
+          orderBy: { version: "desc" },
+          select: { version: true }
+        });
+        await tx.pageRevision.create({
+          data: {
+            pageId,
+            version: (last?.version ?? 0) + 1,
+            source: RevisionSource.MANUAL,
+            note: `Restored revision v${revision.version}`,
+            snapshot: {
+              ...snapshot,
+              sections: restoredSections
+            }
+          }
+        });
+      } catch (error) {
+        if (!isIgnorableRevisionError(error)) {
+          throw error;
+        }
+      }
+    });
+
+    revalidatePath(`/admin/pages/${pageId}`);
+    revalidatePath("/admin");
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof Error && error.message === "PAGE_NOT_FOUND") {
+      notFound();
+    }
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
 }
