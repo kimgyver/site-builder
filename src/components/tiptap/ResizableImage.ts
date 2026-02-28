@@ -127,9 +127,8 @@ export const ResizableImage = Image.extend({
         }
         const encoded = encodeURIComponent(src);
         return [
-          `/api/admin/image-proxy?url=${encoded}`,
-          `/api/image-proxy?url=${encoded}`,
-          src
+          src,
+          `/api/admin/image-proxy?url=${encoded}`
         ];
       };
 

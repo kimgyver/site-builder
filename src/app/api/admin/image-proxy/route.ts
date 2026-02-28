@@ -65,14 +65,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(target.toString(), 307);
   }
 
+  let payload: ArrayBuffer;
+  try {
+    payload = await upstream.arrayBuffer();
+  } catch {
+    return NextResponse.redirect(target.toString(), 307);
+  }
+
   const headers = new Headers();
   headers.set("content-type", contentType);
+  headers.set("content-disposition", "inline");
   headers.set("cache-control", "public, max-age=3600, s-maxage=3600");
 
-  const contentLength = upstream.headers.get("content-length");
-  if (contentLength) headers.set("content-length", contentLength);
+  headers.set("content-length", String(payload.byteLength));
 
-  return new NextResponse(upstream.body, {
+  return new NextResponse(payload, {
     status: 200,
     headers
   });
