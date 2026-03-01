@@ -5,6 +5,7 @@
 ## 신규 기능 빠른 찾기 (관리자 UI 기준)
 
 - 페이지 편집 진입: `/admin/pages/[id]`
+- 설정 진입: `/admin/settings`
 - 섹션 추가 버튼: 페이지 편집 화면의 **Sections** 영역 상단 `Add section`
 - `Page Style` 위치: `Add section`에서 **Page Style** 추가 후 해당 섹션 카드에서 설정
 - `Hero CTA` 위치: `Hero` 섹션 카드 하단 입력 필드
@@ -75,6 +76,32 @@
   - 기존 섹션 렌더와 데이터가 깨지지 않음
   - 새 기능 추가로 인한 기존 페이지 구조 변경이 없음
 
+### T-NEW-06 Settings 저장 및 반영
+
+- 전제조건: `/admin/settings` 접근 가능 권한(`admin`/`publisher`/`editor`)
+- 절차:
+  1. `Site name`, `Site tagline`, `Admin brand label` 값을 입력
+  2. `Canonical site URL`을 도메인으로 입력
+  3. `Default SEO title/description` 입력 후 저장
+  4. `/` 홈 화면과 `/admin/pages` 상단 브랜드 라벨 확인
+  5. 브라우저 페이지 소스에서 기본 메타(title/description) 확인
+- 기대 결과:
+  - 저장 성공 메시지가 표시됨
+  - 홈 타이틀/소개 문구, 관리자 상단 브랜드 라벨이 설정값으로 반영됨
+  - 기본 메타데이터가 설정값으로 반영됨
+
+### T-NEW-07 Search indexing 제어
+
+- 전제조건: `/admin/settings` 접근 가능
+- 절차:
+  1. `Disable search indexing` 체크 후 저장
+  2. `/robots.txt` 확인
+  3. 체크 해제 후 저장
+  4. `/robots.txt` 재확인
+- 기대 결과:
+  - 체크 시 robots 규칙이 전체 disallow로 변경됨
+  - 해제 시 기존 allow 규칙으로 복귀함
+
 ### 1. 글로벌 헤더/푸터 섹션 관리
 
 - `/admin/globals`에서 헤더/푸터 글로벌 섹션 그룹 생성 및 편집 가능
@@ -118,6 +145,7 @@
 - locale 페이지 메타데이터(canonical/alternates/OG/Twitter) 생성
 - `/robots.txt`, `/sitemap.xml` 제공
 - 기본 slug 경로(`/[slug]`)는 기본 locale 경로로 리다이렉트
+- `/admin/settings`에서 기본 SEO/인덱싱 정책을 조정 가능
 
 ## 매뉴얼 테스트 체크리스트
 
@@ -147,6 +175,13 @@
 - [ ] `publisher` 로그인: 메타/섹션 저장, publish, delete, restore 모두 가능
 - [ ] `editor` 로그인: 메타/섹션 저장 가능, publish/delete/restore 버튼 또는 동작 제한 확인
 - [ ] `reviewer` 로그인: 메타/섹션 편집 입력/저장 비활성화(읽기 전용) 확인
+
+### 설정(Settings)
+
+- [ ] `/admin/settings` 진입 후 Site name/tagline/admin brand 변경 저장 확인
+- [ ] 저장 후 `/` 및 `/admin/*`에 설정 반영(홈 타이틀/설명, 상단 브랜드 라벨) 확인
+- [ ] `Disable search indexing` on/off에 따라 `/robots.txt` 규칙 변경 확인
+- [ ] `reviewer` 권한에서 Settings 저장 불가(읽기 전용) 확인
 
 ### 다국어/네비게이션
 
