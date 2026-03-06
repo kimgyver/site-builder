@@ -116,7 +116,8 @@ export default function UpdatePageWithLoading({
           SEO title (optional)
         </label>
         <p className="text-xs text-zinc-500">
-          비워두면 페이지 Title을 그대로 사용합니다. 권장 길이: 30–60자
+          If left empty, the page Title is used. Recommended length: 30–60
+          characters.
         </p>
         <input
           name="seoTitle"
@@ -132,8 +133,9 @@ export default function UpdatePageWithLoading({
           SEO description (optional)
         </label>
         <p className="text-xs text-zinc-500">
-          검색/공유 미리보기 설명에 사용됩니다. 비워두면 description 메타태그를
-          생략합니다. 권장 길이: 70–160자
+          Used for search and social preview descriptions. If empty, the
+          description meta tag is omitted. Recommended length: 70–160
+          characters.
         </p>
         <textarea
           name="seoDescription"

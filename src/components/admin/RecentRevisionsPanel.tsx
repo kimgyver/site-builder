@@ -251,16 +251,24 @@ export default function RecentRevisionsPanel({
                 revision,
                 diff: diff ?? null
               });
+              const headlineTooltip = summary
+                ? `${headline}\n${summary}`
+                : headline;
 
               return (
                 <li
                   key={revision.id}
                   className="flex items-center justify-between rounded border border-zinc-200 bg-white px-2 py-1"
                 >
-                  <div className="w-full space-y-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <span>{headline}</span>
-                      <div className="flex items-center gap-2">
+                  <div className="w-full space-y-1">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="min-w-0 flex-1 truncate"
+                        title={headlineTooltip}
+                      >
+                        {headline}
+                      </span>
+                      <div className="flex shrink-0 items-center gap-2">
                         <span className="text-zinc-500">
                           {typeof revision.createdAt === "string"
                             ? revision.createdAt
@@ -299,11 +307,6 @@ export default function RecentRevisionsPanel({
                         ) : null}
                       </div>
                     </div>
-                    {summary ? (
-                      <p className="rounded border border-zinc-200 bg-zinc-50 px-2 py-1 text-[11px] text-zinc-600">
-                        {summary}
-                      </p>
-                    ) : null}
                     {expandedRevisionId === revision.id ? (
                       <div className="rounded border border-zinc-200 bg-zinc-50 p-2 text-[11px] text-zinc-700">
                         {(() => {
