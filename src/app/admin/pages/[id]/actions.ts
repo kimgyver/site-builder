@@ -256,14 +256,22 @@ export async function updatePage(formData: FormData) {
     if (!canEditContent(role)) {
       return { ok: false, error: "Unauthorized" };
     }
+    const normalizeOptionalText = (value: FormDataEntryValue | null) => {
+      if (typeof value !== "string") {
+        return null;
+      }
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    };
+
     const updated = await prisma.page.update({
       where: { id: String(id) },
       data: {
         title: String(title),
         slug: String(slug),
         locale: locale ? String(locale) : undefined,
-        seoTitle: seoTitle ? String(seoTitle) : undefined,
-        seoDescription: seoDescription ? String(seoDescription) : undefined,
+        seoTitle: normalizeOptionalText(seoTitle),
+        seoDescription: normalizeOptionalText(seoDescription),
         status: status as PageStatus
       },
       select: { updatedAt: true }

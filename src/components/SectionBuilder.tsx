@@ -351,16 +351,29 @@ export function SectionBuilder({
           <span className="text-zinc-500">Add section:</span>
           {SECTION_TYPES_IN_ORDER.map(type => {
             const meta = SECTION_CATALOG[type];
+            const description = meta?.description ?? "";
             return (
-              <button
-                key={type}
-                type="button"
-                className="inline-flex items-center gap-1 rounded-full border border-zinc-200 px-2 py-0.5 text-[11px] font-medium text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 md:px-2.5 md:py-1 md:text-xs"
-                onClick={() => addSection(type)}
-              >
-                {meta?.icon ? <span>{meta.icon}</span> : null}
-                <span>{meta?.label ?? type}</span>
-              </button>
+              <div key={type} className="group relative">
+                <button
+                  type="button"
+                  title={description || undefined}
+                  aria-label={
+                    description
+                      ? `${meta?.label ?? type}: ${description}`
+                      : (meta?.label ?? type)
+                  }
+                  className="inline-flex items-center gap-1 rounded-full border border-zinc-200 px-2 py-0.5 text-[11px] font-medium text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 md:px-2.5 md:py-1 md:text-xs"
+                  onClick={() => addSection(type)}
+                >
+                  {meta?.icon ? <span>{meta.icon}</span> : null}
+                  <span>{meta?.label ?? type}</span>
+                </button>
+                {description ? (
+                  <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-1 hidden w-max max-w-[220px] -translate-x-1/2 rounded border border-zinc-200 bg-white px-2 py-1 text-[11px] text-zinc-600 shadow-sm group-hover:block group-focus-within:block">
+                    {description}
+                  </div>
+                ) : null}
+              </div>
             );
           })}
         </div>
