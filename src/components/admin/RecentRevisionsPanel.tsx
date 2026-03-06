@@ -19,6 +19,57 @@ type RevisionItem = {
   snapshot: unknown;
 };
 
+function formatRevisionSummary(
+  diff: ReturnType<typeof buildRevisionDiffSummary>
+) {
+  const parts: string[] = [];
+
+  if (diff.sections.changed > 0) {
+    parts.push(
+      `${diff.sections.changed} section${diff.sections.changed > 1 ? "s" : ""} updated`
+    );
+  }
+  if (diff.sections.added > 0) {
+    parts.push(`${diff.sections.added} added`);
+  }
+  if (diff.sections.removed > 0) {
+    parts.push(`${diff.sections.removed} removed`);
+  }
+  if (diff.sections.visibilityChanged > 0) {
+    parts.push(
+      `${diff.sections.visibilityChanged} visibility change${diff.sections.visibilityChanged > 1 ? "s" : ""}`
+    );
+  }
+
+  if (diff.metaChanges.length > 0) {
+    const metaLabels = diff.metaChanges.map(change => change.label);
+    const preview = metaLabels.slice(0, 2).join(", ");
+    parts.push(
+      `metadata updated (${preview}${metaLabels.length > 2 ? ", …" : ""})`
+    );
+  }
+
+  const changedTypes = Array.from(
+    new Set(
+      diff.sectionChanges
+        .map(change => change.afterType ?? change.beforeType ?? null)
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+
+  if (changedTypes.length > 0) {
+    parts.push(
+      `types: ${changedTypes.slice(0, 4).join(", ")}${changedTypes.length > 4 ? ", …" : ""}`
+    );
+  }
+
+  if (parts.length === 0) {
+    return "No effective content change from previous revision.";
+  }
+
+  return parts.join(" · ");
+}
+
 export default function RecentRevisionsPanel({
   revisions,
   hasMore,
@@ -126,15 +177,7 @@ export default function RecentRevisionsPanel({
           <ul className="space-y-1 text-xs text-zinc-700">
             {revisions.map(revision => {
               const diff = revisionDiffMap.get(revision.id);
-              const changedTypes = diff
-                ? Array.from(
-                    new Set(
-                      diff.sectionChanges
-                        .map(change => change.afterType ?? change.beforeType)
-                        .filter((value): value is string => Boolean(value))
-                    )
-                  )
-                : [];
+              const summary = diff ? formatRevisionSummary(diff) : null;
 
               return (
                 <li
@@ -186,30 +229,10 @@ export default function RecentRevisionsPanel({
                         ) : null}
                       </div>
                     </div>
-                    {diff ? (
-                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-zinc-600">
-                        <span className="rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5">
-                          Meta {diff.metaChanges.length}
-                        </span>
-                        <span className="rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5">
-                          Changed {diff.sections.changed}
-                        </span>
-                        <span className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-emerald-700">
-                          +{diff.sections.added}
-                        </span>
-                        <span className="rounded border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-rose-700">
-                          -{diff.sections.removed}
-                        </span>
-                        <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-amber-700">
-                          Visibility {diff.sections.visibilityChanged}
-                        </span>
-                        {changedTypes.length > 0 ? (
-                          <span className="text-zinc-500">
-                            Types: {changedTypes.slice(0, 4).join(", ")}
-                            {changedTypes.length > 4 ? "…" : ""}
-                          </span>
-                        ) : null}
-                      </div>
+                    {summary ? (
+                      <p className="rounded border border-zinc-200 bg-zinc-50 px-2 py-1 text-[11px] text-zinc-600">
+                        {summary}
+                      </p>
                     ) : null}
                     {expandedRevisionId === revision.id ? (
                       <div className="rounded border border-zinc-200 bg-zinc-50 p-2 text-[11px] text-zinc-700">
