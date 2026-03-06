@@ -7,7 +7,10 @@ import UpdatePageWithLoading from "@/components/admin/UpdatePageWithLoading";
 import RestoreRevisionWithLoading from "@/components/admin/RestoreRevisionWithLoading";
 import type { EditableSection } from "@/types/sections";
 import type { Prisma } from "@prisma/client";
-import { buildRevisionDiffSummary } from "@/lib/revisionDiff";
+import {
+  buildRevisionDiffSummary,
+  parseRevisionSnapshot
+} from "@/lib/revisionDiff";
 
 function getChangeTone(kind: "added" | "removed" | "modified") {
   if (kind === "added") {
@@ -86,7 +89,7 @@ export default function AdminPageClientWrapper({
   const handleShowToast = (message: string) =>
     setToast({ show: true, message });
   const previewHref = `/${page.locale}/${page.slug}?preview=${page.previewToken}`;
-  const revisionDiffMap = useMemo(() => {
+  const revisionDiffVsCurrentMap = useMemo(() => {
     return new Map(
       page.revisions.map(revision => [
         revision.id,
@@ -121,8 +124,66 @@ export default function AdminPageClientWrapper({
     page.seoDescription
   ]);
 
+  const revisionDiffMap = useMemo(() => {
+    return new Map(
+      page.revisions.map((revision, index) => {
+        const previousRevision = page.revisions[index + 1];
+        if (!previousRevision) {
+          return [
+            revision.id,
+            buildRevisionDiffSummary({
+              currentPage: {
+                title: page.title,
+                slug: page.slug,
+                status: page.status,
+                seoTitle: page.seoTitle,
+                seoDescription: page.seoDescription
+              },
+              currentSections: page.sections.map(section => ({
+                type: section.type,
+                order: section.order,
+                enabled: section.enabled,
+                props:
+                  section.props && typeof section.props === "object"
+                    ? (section.props as Record<string, unknown>)
+                    : {}
+              })),
+              snapshotRaw: revision.snapshot
+            })
+          ] as const;
+        }
+
+        const previousSnapshot = parseRevisionSnapshot(
+          previousRevision.snapshot
+        );
+        return [
+          revision.id,
+          buildRevisionDiffSummary({
+            currentPage: {
+              title: previousSnapshot.title ?? "",
+              slug: previousSnapshot.slug ?? "",
+              status: previousSnapshot.status ?? page.status,
+              seoTitle: previousSnapshot.seoTitle ?? null,
+              seoDescription: previousSnapshot.seoDescription ?? null
+            },
+            currentSections: previousSnapshot.sections,
+            snapshotRaw: revision.snapshot
+          })
+        ] as const;
+      })
+    );
+  }, [
+    page.revisions,
+    page.sections,
+    page.slug,
+    page.status,
+    page.title,
+    page.seoTitle,
+    page.seoDescription
+  ]);
+
   const getRestoreConfirmMessage = (version: number, revisionId: string) => {
-    const diff = revisionDiffMap.get(revisionId);
+    const diff = revisionDiffVsCurrentMap.get(revisionId);
     if (!diff) {
       return `Restore revision v${version}? Current unpublished changes will be replaced.`;
     }
@@ -251,8 +312,8 @@ export default function AdminPageClientWrapper({
               }
               if (mode === "manual") {
                 handleShowToast("Sections saved!");
-                router.refresh();
               }
+              router.refresh();
             }}
           />
         </div>

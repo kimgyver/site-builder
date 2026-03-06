@@ -16,7 +16,7 @@ type SnapshotPayload = {
   sections: SnapshotSection[];
 };
 
-type CurrentPageMeta = {
+export type CurrentPageMeta = {
   title: string;
   slug: string;
   status: SnapshotPageStatus;
@@ -24,7 +24,7 @@ type CurrentPageMeta = {
   seoDescription: string | null;
 };
 
-type CurrentSection = {
+export type CurrentSection = {
   type: string;
   order: number;
   enabled: boolean;
@@ -167,6 +167,18 @@ function extractRevisionPayload(snapshotRaw: unknown): SnapshotPayload {
       snapshotObject && typeof snapshotObject.seoDescription === "string"
         ? snapshotObject.seoDescription
         : undefined
+  };
+}
+
+export function parseRevisionSnapshot(snapshotRaw: unknown) {
+  const payload = extractRevisionPayload(snapshotRaw);
+  return {
+    title: payload.title,
+    slug: payload.slug,
+    status: payload.status,
+    seoTitle: payload.seoTitle,
+    seoDescription: payload.seoDescription,
+    sections: payload.sections
   };
 }
 
