@@ -78,6 +78,18 @@ export function updateCurrentTableCells(
     applyCellRange(from, to);
   }
 
+  // When the whole table node is selected, ensure attrs apply to every cell.
+  if (!changed) {
+    const selectionNode = (
+      state.selection as typeof state.selection & {
+        node?: { type?: { name?: string }; nodeSize?: number };
+      }
+    ).node;
+    if (selectionNode?.type?.name === "table") {
+      applyCellRange(from, from + (selectionNode.nodeSize ?? 0));
+    }
+  }
+
   // Fallback for caret selections where `nodesBetween(from, to)` may not
   // include the containing table cell in some cases.
   if (!changed && from === to) {

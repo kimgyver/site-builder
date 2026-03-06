@@ -399,7 +399,18 @@ export function SectionBuilder({
                 tabIndex={0}
                 className={`flex items-start justify-between gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs ${draggedIndex === index ? "opacity-50" : ""}`}
                 draggable
-                onDragStart={() => setDraggedIndex(index)}
+                onDragStart={event => {
+                  const target = event.target;
+                  const dragHandle =
+                    target instanceof HTMLElement
+                      ? target.closest('[data-section-drag-handle="true"]')
+                      : null;
+                  if (!dragHandle) {
+                    event.preventDefault();
+                    return;
+                  }
+                  setDraggedIndex(index);
+                }}
                 onDragOver={e => {
                   e.preventDefault();
                   setDragOverIndex(index);
@@ -434,6 +445,7 @@ export function SectionBuilder({
                       </span>
                     )}
                     <span
+                      data-section-drag-handle="true"
                       className="ml-2 cursor-grab text-zinc-400"
                       title="Drag to reorder"
                     >

@@ -211,7 +211,8 @@ export const ColoredTableCell = TableCell.extend({
             !bg &&
             heightNumber === null &&
             !borderColor &&
-            borderWidthNumber === null
+            borderWidthNumber === null &&
+            borderMode !== "transparent"
           ) {
             return {};
           }

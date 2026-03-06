@@ -202,9 +202,15 @@ export function TiptapEditor({
       },
       handleDOMEvents: {
         dragstart: (_view, event) => {
-          const target = event.target;
-          if (!(target instanceof HTMLElement)) return false;
-          if (!target.closest("td, th")) return false;
+          const targetNode = event.target;
+          const targetElement =
+            targetNode instanceof HTMLElement
+              ? targetNode
+              : targetNode instanceof Text
+                ? targetNode.parentElement
+                : null;
+          if (!targetElement) return false;
+          if (!targetElement.closest("td, th")) return false;
           event.preventDefault();
           return true;
         }
