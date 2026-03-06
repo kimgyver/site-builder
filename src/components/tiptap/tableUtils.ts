@@ -90,6 +90,19 @@ export function updateCurrentTableCells(
     }
   }
 
+  // Final fallback: apply to the current table that contains the selection.
+  // This covers edge cases where a table-level visual selection isn't exposed
+  // as CellSelection/NodeSelection but the user intent is table formatting.
+  if (!changed) {
+    for (let depth = $from.depth; depth >= 0; depth -= 1) {
+      const node = $from.node(depth);
+      if (node.type.name !== "table") continue;
+      const tableFrom = $from.before(depth);
+      applyCellRange(tableFrom, tableFrom + node.nodeSize);
+      break;
+    }
+  }
+
   // Fallback for caret selections where `nodesBetween(from, to)` may not
   // include the containing table cell in some cases.
   if (!changed && from === to) {
