@@ -1,10 +1,12 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Toast } from "@/components/Toast";
 import SaveSectionsClientWrapper from "@/components/admin/SaveSectionsClientWrapper";
 import UpdatePageWithLoading from "@/components/admin/UpdatePageWithLoading";
 import RecentRevisionsPanel from "@/components/admin/RecentRevisionsPanel";
+import PagePreviewPanel from "@/components/admin/PagePreviewPanel";
+import { usePagedRevisions } from "@/components/admin/hooks/usePagedRevisions";
 import type { EditableSection } from "@/types/sections";
 import type { Prisma } from "@prisma/client";
 
@@ -53,7 +55,6 @@ export default function AdminPageClientWrapper({
   ) => Promise<{ ok?: boolean; error?: string; updatedAt?: string } | unknown>;
 }) {
   const router = useRouter();
-  const [showInlinePreview, setShowInlinePreview] = useState(false);
   const [sectionsExpectedUpdatedAt, setSectionsExpectedUpdatedAt] = useState(
     page.updatedAt.toISOString()
   );
@@ -61,107 +62,19 @@ export default function AdminPageClientWrapper({
     show: false,
     message: ""
   });
-  const [revisions, setRevisions] = useState(page.revisions);
-  const [hasMoreRevisions, setHasMoreRevisions] = useState(
-    page.revisions.length >= REVISION_PAGE_SIZE
-  );
-  const [isLoadingMoreRevisions, setIsLoadingMoreRevisions] = useState(false);
-  const revisionsRefreshSequenceRef = useRef(0);
-  const handleShowToast = (message: string) =>
-    setToast({ show: true, message });
-
-  const fetchRevisions = useCallback(
-    async ({ skip, take }: { skip: number; take: number }) => {
-      const response = await fetch(
-        `/api/admin/pages/${page.id}/revisions?skip=${skip}&take=${take}`,
-        {
-          cache: "no-store",
-          credentials: "same-origin"
-        }
-      );
-      if (!response.ok) {
-        return null;
-      }
-
-      const payload = (await response.json()) as {
-        revisions?: unknown;
-        hasMore?: unknown;
-      };
-
-      if (!Array.isArray(payload.revisions)) {
-        return null;
-      }
-
-      return {
-        revisions:
-          payload.revisions as PageWithSectionsAndRevisions["revisions"],
-        hasMore:
-          typeof payload.hasMore === "boolean"
-            ? payload.hasMore
-            : (payload.revisions as unknown[]).length >= take
-      };
-    },
-    [page.id]
-  );
-
-  const refreshRecentRevisions = useCallback(async () => {
-    const refreshSequence = revisionsRefreshSequenceRef.current + 1;
-    revisionsRefreshSequenceRef.current = refreshSequence;
-
-    try {
-      const result = await fetchRevisions({
-        skip: 0,
-        take: REVISION_PAGE_SIZE
-      });
-      if (!result) {
-        return;
-      }
-
-      if (refreshSequence !== revisionsRefreshSequenceRef.current) {
-        return;
-      }
-
-      setRevisions(result.revisions);
-      setHasMoreRevisions(result.hasMore);
-    } catch {}
-  }, [fetchRevisions]);
-
-  const loadMoreRevisions = useCallback(async () => {
-    if (isLoadingMoreRevisions || !hasMoreRevisions) {
-      return;
-    }
-
-    setIsLoadingMoreRevisions(true);
-    try {
-      const result = await fetchRevisions({
-        skip: revisions.length,
-        take: REVISION_PAGE_SIZE
-      });
-      if (!result) {
-        return;
-      }
-
-      setRevisions(prev => {
-        const existingIds = new Set(prev.map(item => item.id));
-        const uniqueNext = result.revisions.filter(
-          item => !existingIds.has(item.id)
-        );
-        return uniqueNext.length > 0 ? [...prev, ...uniqueNext] : prev;
-      });
-      setHasMoreRevisions(result.hasMore);
-    } finally {
-      setIsLoadingMoreRevisions(false);
-    }
-  }, [
-    fetchRevisions,
+  const {
+    revisions,
     hasMoreRevisions,
     isLoadingMoreRevisions,
-    revisions.length
-  ]);
-
-  useEffect(() => {
-    void refreshRecentRevisions();
-  }, [refreshRecentRevisions]);
+    refreshRecentRevisions,
+    loadMoreRevisions
+  } = usePagedRevisions<PageWithSectionsAndRevisions["revisions"][number]>({
+    pageId: page.id,
+    initialRevisions: page.revisions,
+    pageSize: REVISION_PAGE_SIZE
+  });
+  const handleShowToast = (message: string) =>
+    setToast({ show: true, message });
 
   const refreshPreservingScroll = () => {
     if (typeof window === "undefined") {
@@ -253,41 +166,7 @@ export default function AdminPageClientWrapper({
             refreshPreservingScroll();
           }}
         />
-        <div className="space-y-2 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-3">
-          <h2 className="text-sm font-medium text-zinc-900">Preview</h2>
-          <p className="text-xs text-zinc-600">
-            Share this private preview URL to review draft content before
-            publishing.
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <a
-              href={previewHref}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="inline-flex rounded-md border border-blue-500 bg-blue-600 px-3 py-1.5 text-xs text-white font-semibold shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
-            >
-              Open preview in new tab
-            </a>
-            <button
-              type="button"
-              onClick={() => setShowInlinePreview(prev => !prev)}
-              className="inline-flex rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
-            >
-              {showInlinePreview
-                ? "Hide inline preview"
-                : "Show inline preview"}
-            </button>
-          </div>
-          {showInlinePreview ? (
-            <div className="overflow-hidden rounded-md border border-zinc-200 bg-white">
-              <iframe
-                src={previewHref}
-                title="Inline preview"
-                className="h-[520px] w-full"
-              />
-            </div>
-          ) : null}
-        </div>
+        <PagePreviewPanel previewHref={previewHref} />
         <div className="space-y-3 border-t border-dashed border-zinc-200 pt-4">
           <div className="flex items-center justify-between">
             <div>
