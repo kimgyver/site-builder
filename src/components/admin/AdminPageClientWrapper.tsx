@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Toast } from "@/components/Toast";
 import SaveSectionsClientWrapper from "@/components/admin/SaveSectionsClientWrapper";
@@ -93,8 +93,12 @@ export default function AdminPageClientWrapper({
       }
 
       return {
-        revisions: payload.revisions as PageWithSectionsAndRevisions["revisions"],
-        hasMore: payload.hasMore === true
+        revisions:
+          payload.revisions as PageWithSectionsAndRevisions["revisions"],
+        hasMore:
+          typeof payload.hasMore === "boolean"
+            ? payload.hasMore
+            : (payload.revisions as unknown[]).length >= take
       };
     },
     [page.id]
@@ -105,7 +109,10 @@ export default function AdminPageClientWrapper({
     revisionsRefreshSequenceRef.current = refreshSequence;
 
     try {
-      const result = await fetchRevisions({ skip: 0, take: REVISION_PAGE_SIZE });
+      const result = await fetchRevisions({
+        skip: 0,
+        take: REVISION_PAGE_SIZE
+      });
       if (!result) {
         return;
       }
@@ -136,14 +143,26 @@ export default function AdminPageClientWrapper({
 
       setRevisions(prev => {
         const existingIds = new Set(prev.map(item => item.id));
-        const uniqueNext = result.revisions.filter(item => !existingIds.has(item.id));
+        const uniqueNext = result.revisions.filter(
+          item => !existingIds.has(item.id)
+        );
         return uniqueNext.length > 0 ? [...prev, ...uniqueNext] : prev;
       });
       setHasMoreRevisions(result.hasMore);
     } finally {
       setIsLoadingMoreRevisions(false);
     }
-  }, [fetchRevisions, hasMoreRevisions, isLoadingMoreRevisions, revisions.length]);
+  }, [
+    fetchRevisions,
+    hasMoreRevisions,
+    isLoadingMoreRevisions,
+    revisions.length
+  ]);
+
+  useEffect(() => {
+    void refreshRecentRevisions();
+  }, [refreshRecentRevisions]);
+
   const refreshPreservingScroll = () => {
     if (typeof window === "undefined") {
       router.refresh();
