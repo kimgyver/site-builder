@@ -124,75 +124,112 @@ export default function RecentRevisionsPanel({
       ) : (
         <div className="space-y-2">
           <ul className="space-y-1 text-xs text-zinc-700">
-            {revisions.map(revision => (
-              <li
-                key={revision.id}
-                className="flex items-center justify-between rounded border border-zinc-200 bg-white px-2 py-1"
-              >
-                <div className="w-full space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <span>
-                      v{revision.version} · {revision.source.toLowerCase()} ·{" "}
-                      {revision.note ?? "updated"}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-zinc-500">
-                        {typeof revision.createdAt === "string"
-                          ? revision.createdAt
-                          : revision.createdAt
-                              .toISOString()
-                              .replace("T", " ")
-                              .slice(0, 19)}
-                      </span>
-                      <button
-                        type="button"
-                        className="rounded border border-zinc-200 bg-white px-2 py-0.5 text-[11px] text-zinc-700 hover:bg-zinc-100"
-                        onClick={() =>
-                          setExpandedRevisionId(prev =>
-                            prev === revision.id ? null : revision.id
-                          )
-                        }
-                      >
-                        {expandedRevisionId === revision.id
-                          ? "Hide diff"
-                          : "Diff"}
-                      </button>
-                      {canPublish ? (
-                        <RestoreRevisionWithLoading
-                          pageId={pageId}
-                          revisionId={revision.id}
-                          version={revision.version}
-                          confirmMessage={getRestoreConfirmMessage(
-                            revision.version,
-                            revision.id
-                          )}
-                          action={restoreRevision}
-                          onSuccess={updatedAt =>
-                            onRestored(revision.version, updatedAt)
-                          }
-                        />
-                      ) : null}
-                    </div>
-                  </div>
-                  {expandedRevisionId === revision.id ? (
-                    <div className="rounded border border-zinc-200 bg-zinc-50 p-2 text-[11px] text-zinc-700">
-                      {(() => {
-                        const diff = revisionDiffMap.get(revision.id);
-                        if (!diff) {
-                          return (
-                            <p className="text-zinc-500">
-                              Failed to load diff details.
-                            </p>
-                          );
-                        }
+            {revisions.map(revision => {
+              const diff = revisionDiffMap.get(revision.id);
+              const changedTypes = diff
+                ? Array.from(
+                    new Set(
+                      diff.sectionChanges
+                        .map(change => change.afterType ?? change.beforeType)
+                        .filter((value): value is string => Boolean(value))
+                    )
+                  )
+                : [];
 
-                        return <RevisionDiffDetails diff={diff} />;
-                      })()}
+              return (
+                <li
+                  key={revision.id}
+                  className="flex items-center justify-between rounded border border-zinc-200 bg-white px-2 py-1"
+                >
+                  <div className="w-full space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span>
+                        v{revision.version} · {revision.source.toLowerCase()} ·{" "}
+                        {revision.note ?? "updated"}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-500">
+                          {typeof revision.createdAt === "string"
+                            ? revision.createdAt
+                            : revision.createdAt
+                                .toISOString()
+                                .replace("T", " ")
+                                .slice(0, 19)}
+                        </span>
+                        <button
+                          type="button"
+                          className="rounded border border-zinc-200 bg-white px-2 py-0.5 text-[11px] text-zinc-700 hover:bg-zinc-100"
+                          onClick={() =>
+                            setExpandedRevisionId(prev =>
+                              prev === revision.id ? null : revision.id
+                            )
+                          }
+                        >
+                          {expandedRevisionId === revision.id
+                            ? "Hide diff"
+                            : "Diff"}
+                        </button>
+                        {canPublish ? (
+                          <RestoreRevisionWithLoading
+                            pageId={pageId}
+                            revisionId={revision.id}
+                            version={revision.version}
+                            confirmMessage={getRestoreConfirmMessage(
+                              revision.version,
+                              revision.id
+                            )}
+                            action={restoreRevision}
+                            onSuccess={updatedAt =>
+                              onRestored(revision.version, updatedAt)
+                            }
+                          />
+                        ) : null}
+                      </div>
                     </div>
-                  ) : null}
-                </div>
-              </li>
-            ))}
+                    {diff ? (
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-zinc-600">
+                        <span className="rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5">
+                          Meta {diff.metaChanges.length}
+                        </span>
+                        <span className="rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5">
+                          Changed {diff.sections.changed}
+                        </span>
+                        <span className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-emerald-700">
+                          +{diff.sections.added}
+                        </span>
+                        <span className="rounded border border-rose-200 bg-rose-50 px-1.5 py-0.5 text-rose-700">
+                          -{diff.sections.removed}
+                        </span>
+                        <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-amber-700">
+                          Visibility {diff.sections.visibilityChanged}
+                        </span>
+                        {changedTypes.length > 0 ? (
+                          <span className="text-zinc-500">
+                            Types: {changedTypes.slice(0, 4).join(", ")}
+                            {changedTypes.length > 4 ? "…" : ""}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    {expandedRevisionId === revision.id ? (
+                      <div className="rounded border border-zinc-200 bg-zinc-50 p-2 text-[11px] text-zinc-700">
+                        {(() => {
+                          if (!diff) {
+                            return (
+                              <p className="text-zinc-500">
+                                Failed to load diff details.
+                              </p>
+                            );
+                          }
+
+                          return <RevisionDiffDetails diff={diff} />;
+                        })()}
+                      </div>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
 
           {hasMore ? (
