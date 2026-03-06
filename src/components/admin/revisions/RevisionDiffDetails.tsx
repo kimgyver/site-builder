@@ -1,6 +1,12 @@
 import { getChangeTone } from "./revisionTone";
 import type { ReturnTypeBuildRevisionDiffSummary } from "./types";
 
+function formatFieldChangeLabel(kind: "added" | "removed" | "modified") {
+  if (kind === "added") return "added";
+  if (kind === "removed") return "removed";
+  return "changed";
+}
+
 export default function RevisionDiffDetails({
   diff
 }: {
@@ -27,7 +33,7 @@ export default function RevisionDiffDetails({
         <p>
           before {diff.sections.beforeCount} · after {diff.sections.afterCount}{" "}
           · changed {diff.sections.changed} · added {diff.sections.added} ·
-          removed {diff.sections.removed}· visibility changed{" "}
+          removed {diff.sections.removed} · visibility changed{" "}
           {diff.sections.visibilityChanged}
         </p>
       </div>
@@ -47,12 +53,19 @@ export default function RevisionDiffDetails({
                 >
                   <p className="font-medium text-zinc-900">
                     #{sectionChange.order + 1} ·{" "}
-                    {sectionChange.beforeType ?? sectionChange.afterType}{" "}
-                    <span
-                      className={`ml-1 inline-flex rounded border px-1 py-0.5 text-[10px] uppercase ${tone.badge}`}
-                    >
-                      {sectionChange.kind}
-                    </span>
+                    {sectionChange.beforeType ?? sectionChange.afterType}
+                    {sectionChange.kind === "modified" ? (
+                      <span className="ml-2 text-[11px] font-normal text-zinc-500">
+                        changed {sectionChange.fieldChanges.length} field
+                        {sectionChange.fieldChanges.length === 1 ? "" : "s"}
+                      </span>
+                    ) : (
+                      <span
+                        className={`ml-1 inline-flex rounded border px-1 py-0.5 text-[10px] uppercase ${tone.badge}`}
+                      >
+                        {sectionChange.kind}
+                      </span>
+                    )}
                   </p>
                   {sectionChange.kind === "modified" ? (
                     sectionChange.fieldChanges.length === 0 ? (
@@ -68,13 +81,11 @@ export default function RevisionDiffDetails({
                               key={`${sectionChange.order}-${field.path}`}
                               className={`rounded px-1 py-0.5 ${fieldTone.text}`}
                             >
-                              <span
-                                className={`mr-1 inline-flex rounded border px-1 py-0.5 uppercase ${fieldTone.badge}`}
-                              >
-                                {field.kind}
+                              <span className="mr-1 font-medium capitalize">
+                                {formatFieldChangeLabel(field.kind)}
                               </span>
-                              <span className="font-medium">{field.path}</span>·{" "}
-                              {field.before} → {field.after}
+                              <span className="font-medium">{field.path}</span>{" "}
+                              · {field.before} → {field.after}
                             </li>
                           );
                         })}
