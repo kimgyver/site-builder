@@ -1,18 +1,4 @@
 "use client";
-import { ImageSectionEditor } from "./section-editors/ImageSectionEditor";
-
-import FAQSectionEditor from "./section-editors/FAQSectionEditor";
-import HtmlStructureSectionEditor from "./section-editors/HtmlStructureSectionEditor";
-import ColumnsSectionEditor from "./section-editors/ColumnsSectionEditor";
-
-import EmbedSectionEditor from "./section-editors/EmbedSectionEditor";
-
-import PageStyleSectionEditor from "./section-editors/PageStyleSectionEditor";
-
-import CalloutSectionEditor from "./section-editors/CalloutSectionEditor";
-
-import AccordionSectionEditor from "./section-editors/AccordionSectionEditor";
-
 import { useEffect, useMemo, useRef, useState } from "react";
 import SlashMenu from "@/tiptap/SlashMenu";
 import { getSlashCommands } from "@/tiptap/slashCommands";
@@ -21,9 +7,8 @@ import { Toast } from "@/components/Toast";
 import type { SectionBuilderProps } from "@/types/components";
 import type { EditableSection, SectionType } from "@/types/sections";
 import { SECTION_CATALOG, SECTION_TYPES_IN_ORDER } from "@/lib/sectionCatalog";
-import { HeroSectionEditor } from "./section-editors/HeroSectionEditor";
-import { TextSectionEditor } from "./section-editors/TextSectionEditor";
 import type { MediaItem, PageReferenceItem } from "@/types/references";
+import { SectionItemRow } from "./section-builder/SectionItemRow";
 
 export function SectionBuilder({
   pageId,
@@ -390,182 +375,29 @@ export function SectionBuilder({
         ) : null}
 
         <div className="space-y-2 overflow-x-auto">
-          {sections.map((section, index) => {
-            const props = (section.props || {}) as Record<string, unknown>;
-            const isTextSection =
-              section.type === "text" || section.type === "richText";
-            return (
-              <div
-                key={section.id}
-                data-section-index={index}
-                tabIndex={0}
-                className={`flex items-start justify-between gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs ${isTextSection ? "w-max min-w-full" : "w-full"} ${draggedIndex === index ? "opacity-50" : ""}`}
-                draggable
-                onDragStart={event => {
-                  const target = event.target;
-                  const dragHandle =
-                    target instanceof HTMLElement
-                      ? target.closest('[data-section-drag-handle="true"]')
-                      : null;
-                  if (!dragHandle) {
-                    event.preventDefault();
-                    return;
-                  }
-                  setDraggedIndex(index);
-                }}
-                onDragOver={e => {
-                  e.preventDefault();
-                  setDragOverIndex(index);
-                }}
-                onDrop={() => {
-                  if (
-                    draggedIndex !== null &&
-                    dragOverIndex !== null &&
-                    draggedIndex !== dragOverIndex
-                  ) {
-                    const next = [...sections];
-                    const [item] = next.splice(draggedIndex, 1);
-                    next.splice(dragOverIndex, 0, item);
-                    updateOrder(next);
-                  }
-                  setDraggedIndex(null);
-                  setDragOverIndex(null);
-                }}
-                onDragEnd={() => {
-                  setDraggedIndex(null);
-                  setDragOverIndex(null);
-                }}
-              >
-                <div
-                  className={
-                    isTextSection
-                      ? "min-w-max flex-1 space-y-1"
-                      : "flex-1 space-y-1"
-                  }
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-700">
-                      {SECTION_CATALOG[section.type]?.label ?? section.type}
-                    </span>
-                    {!section.enabled && (
-                      <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-amber-700">
-                        hidden (public)
-                      </span>
-                    )}
-                    <span
-                      data-section-drag-handle="true"
-                      className="ml-2 cursor-grab text-zinc-400"
-                      title="Drag to reorder"
-                    >
-                      ↕
-                    </span>
-                  </div>
-                  <div className={isTextSection ? "mt-2 min-w-max" : "mt-2"}>
-                    {section.type === "hero" ? (
-                      <HeroSectionEditor
-                        props={props}
-                        patchProps={patch => patchProps(index, patch)}
-                      />
-                    ) : section.type === "text" ||
-                      section.type === "richText" ? (
-                      <TextSectionEditor
-                        props={props}
-                        updateProps={next => updateProps(index, next)}
-                        type={section.type}
-                      />
-                    ) : section.type === "rawHtml" ? (
-                      <HtmlStructureSectionEditor
-                        props={props}
-                        updateProps={next => updateProps(index, next)}
-                      />
-                    ) : section.type === "columns" ? (
-                      <ColumnsSectionEditor
-                        props={props}
-                        updateProps={next => updateProps(index, next)}
-                      />
-                    ) : section.type === "image" ? (
-                      <ImageSectionEditor
-                        props={props}
-                        updateProps={next => updateProps(index, next)}
-                        libraryMedia={libraryMedia}
-                        libraryPages={libraryPages}
-                        isLibraryLoading={isReferenceLibraryLoading}
-                        mediaTotal={libraryMediaMeta.total}
-                        mediaLimit={libraryMediaMeta.limit}
-                      />
-                    ) : section.type === "faq" ? (
-                      <FAQSectionEditor
-                        section={section}
-                        patchProps={patch => patchProps(index, patch)}
-                        updateProps={next => updateProps(index, next)}
-                      />
-                    ) : section.type === "embed" ? (
-                      <EmbedSectionEditor
-                        section={section}
-                        patchProps={patch => patchProps(index, patch)}
-                        updateProps={next => updateProps(index, next)}
-                      />
-                    ) : section.type === "pageStyle" ? (
-                      <PageStyleSectionEditor
-                        section={section}
-                        patchProps={patch => patchProps(index, patch)}
-                        updateProps={next => updateProps(index, next)}
-                      />
-                    ) : section.type === "callout" ? (
-                      <CalloutSectionEditor
-                        section={section}
-                        patchProps={patch => patchProps(index, patch)}
-                        updateProps={next => updateProps(index, next)}
-                      />
-                    ) : section.type === "accordion" ? (
-                      <AccordionSectionEditor
-                        section={section}
-                        patchProps={patch => patchProps(index, patch)}
-                        updateProps={next => updateProps(index, next)}
-                      />
-                    ) : null}
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-1 text-[10px]">
-                  <button
-                    type="button"
-                    className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
-                    onClick={() => move(index, -1)}
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
-                    onClick={() => move(index, 1)}
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
-                    onClick={() => duplicateSection(index)}
-                  >
-                    Duplicate
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
-                    onClick={() => toggleEnabled(index)}
-                  >
-                    {section.enabled ? "Hide (public)" : "Show (public)"}
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded border border-red-200 px-1.5 py-0.5 text-red-600 hover:border-red-300 hover:bg-red-50"
-                    onClick={() => removeSection(index)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+          {sections.map((section, index) => (
+            <SectionItemRow
+              key={section.id}
+              section={section}
+              sectionIndex={index}
+              draggedIndex={draggedIndex}
+              dragOverIndex={dragOverIndex}
+              sections={sections}
+              setDraggedIndex={setDraggedIndex}
+              setDragOverIndex={setDragOverIndex}
+              updateOrder={updateOrder}
+              patchProps={patchProps}
+              updateProps={updateProps}
+              move={move}
+              duplicateSection={duplicateSection}
+              toggleEnabled={toggleEnabled}
+              removeSection={removeSection}
+              libraryMedia={libraryMedia}
+              libraryPages={libraryPages}
+              isReferenceLibraryLoading={isReferenceLibraryLoading}
+              libraryMediaMeta={libraryMediaMeta}
+            />
+          ))}
         </div>
 
         {slashMenuOpen && (
