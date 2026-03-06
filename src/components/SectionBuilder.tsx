@@ -374,7 +374,7 @@ export function SectionBuilder({
           </p>
         ) : null}
 
-        <div className="space-y-2 overflow-x-auto">
+        <div className="space-y-2">
           {sections.map((section, index) => (
             <SectionItemRow
               key={section.id}

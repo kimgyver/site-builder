@@ -67,7 +67,7 @@ export function SectionItemRow({
       key={section.id}
       data-section-index={sectionIndex}
       tabIndex={0}
-      className={`flex items-start justify-between gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs ${isTextSection ? "w-max min-w-full" : "w-full"} ${draggedIndex === sectionIndex ? "opacity-50" : ""}`}
+      className={`flex w-full items-start justify-between gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs ${draggedIndex === sectionIndex ? "opacity-50" : ""}`}
       draggable
       onDragStart={event => {
         const target = event.target;
@@ -104,11 +104,7 @@ export function SectionItemRow({
         setDragOverIndex(null);
       }}
     >
-      <div
-        className={
-          isTextSection ? "min-w-max flex-1 space-y-1" : "flex-1 space-y-1"
-        }
-      >
+      <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-700">
             {SECTION_CATALOG[section.type]?.label ?? section.type}
@@ -126,18 +122,20 @@ export function SectionItemRow({
             ↕
           </span>
         </div>
-        <div className={isTextSection ? "mt-2 min-w-max" : "mt-2"}>
+        <div className={isTextSection ? "mt-2 overflow-x-auto" : "mt-2"}>
           {section.type === "hero" ? (
             <HeroSectionEditor
               props={sectionProps}
               patchProps={patch => patchProps(sectionIndex, patch)}
             />
           ) : section.type === "text" || section.type === "richText" ? (
-            <TextSectionEditor
-              props={sectionProps}
-              updateProps={nextProps => updateProps(sectionIndex, nextProps)}
-              type={section.type}
-            />
+            <div className="min-w-fit">
+              <TextSectionEditor
+                props={sectionProps}
+                updateProps={nextProps => updateProps(sectionIndex, nextProps)}
+                type={section.type}
+              />
+            </div>
           ) : section.type === "rawHtml" ? (
             <HtmlStructureSectionEditor
               props={sectionProps}
