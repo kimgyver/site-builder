@@ -7,6 +7,86 @@ function formatFieldChangeLabel(kind: "added" | "removed" | "modified") {
   return "changed";
 }
 
+function normalizeDiffValue(value: string) {
+  return value.length > 0 ? value : "(empty)";
+}
+
+function splitDiffParts(beforeRaw: string, afterRaw: string) {
+  const before = normalizeDiffValue(beforeRaw);
+  const after = normalizeDiffValue(afterRaw);
+
+  if (before === after) {
+    return {
+      equal: true,
+      prefix: before,
+      beforeChanged: "",
+      afterChanged: "",
+      suffix: ""
+    };
+  }
+
+  let start = 0;
+  const minLength = Math.min(before.length, after.length);
+  while (start < minLength && before[start] === after[start]) {
+    start += 1;
+  }
+
+  let beforeEnd = before.length - 1;
+  let afterEnd = after.length - 1;
+  while (
+    beforeEnd >= start &&
+    afterEnd >= start &&
+    before[beforeEnd] === after[afterEnd]
+  ) {
+    beforeEnd -= 1;
+    afterEnd -= 1;
+  }
+
+  return {
+    equal: false,
+    prefix: before.slice(0, start),
+    beforeChanged: before.slice(start, beforeEnd + 1),
+    afterChanged: after.slice(start, afterEnd + 1),
+    suffix: before.slice(beforeEnd + 1)
+  };
+}
+
+function renderDiffValue(
+  beforeRaw: string,
+  afterRaw: string,
+  side: "before" | "after"
+) {
+  const parts = splitDiffParts(beforeRaw, afterRaw);
+  const changed = side === "before" ? parts.beforeChanged : parts.afterChanged;
+
+  if (parts.equal) {
+    return <span className="break-all font-mono">{parts.prefix}</span>;
+  }
+
+  return (
+    <span className="break-all font-mono">
+      {parts.prefix}
+      {changed ? <strong className="font-semibold">{changed}</strong> : null}
+      {parts.suffix}
+    </span>
+  );
+}
+
+function BeforeAfterDiff({ before, after }: { before: string; after: string }) {
+  return (
+    <div className="mt-1 grid gap-0.5 sm:grid-cols-2">
+      <p className="text-zinc-600">
+        <span className="mr-1 font-medium">Before:</span>
+        {renderDiffValue(before, after, "before")}
+      </p>
+      <p className="text-zinc-900">
+        <span className="mr-1 font-medium">After:</span>
+        {renderDiffValue(before, after, "after")}
+      </p>
+    </div>
+  );
+}
+
 export default function RevisionDiffDetails({
   diff
 }: {
@@ -20,8 +100,8 @@ export default function RevisionDiffDetails({
           <ul className="space-y-0.5">
             {diff.metaChanges.map(change => (
               <li key={change.field}>
-                <span className="font-medium">{change.label}</span> ·{" "}
-                {change.before} → {change.after}
+                <span className="font-medium">{change.label}</span>
+                <BeforeAfterDiff before={change.before} after={change.after} />
               </li>
             ))}
           </ul>
@@ -84,8 +164,11 @@ export default function RevisionDiffDetails({
                               <span className="mr-1 font-medium capitalize">
                                 {formatFieldChangeLabel(field.kind)}
                               </span>
-                              <span className="font-medium">{field.path}</span>{" "}
-                              · {field.before} → {field.after}
+                              <span className="font-medium">{field.path}</span>
+                              <BeforeAfterDiff
+                                before={field.before}
+                                after={field.after}
+                              />
                             </li>
                           );
                         })}
