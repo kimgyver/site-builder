@@ -310,6 +310,7 @@ export default function AdminPageClientWrapper({
                               </p>
                             );
                           }
+
                           return (
                             <div className="space-y-2">
                               <div className="space-y-1">
@@ -333,6 +334,7 @@ export default function AdminPageClientWrapper({
                                   </ul>
                                 )}
                               </div>
+
                               <div className="space-y-1">
                                 <p className="font-medium text-zinc-900">
                                   Sections summary
@@ -346,24 +348,94 @@ export default function AdminPageClientWrapper({
                                   {diff.sections.visibilityChanged}
                                 </p>
                               </div>
-                              <div className="grid gap-2 md:grid-cols-2">
-                                <div>
-                                  <p className="mb-1 font-medium text-zinc-900">
-                                    Before (current sections JSON)
+
+                              <div className="space-y-1">
+                                <p className="font-medium text-zinc-900">
+                                  Changed sections detail
+                                </p>
+                                {diff.sectionChanges.length === 0 ? (
+                                  <p className="text-zinc-500">
+                                    섹션 상세 변경 없음
                                   </p>
-                                  <pre className="max-h-56 overflow-auto rounded border border-zinc-200 bg-white p-2 text-[10px] leading-relaxed">
-                                    {diff.beforeSectionsJson}
-                                  </pre>
-                                </div>
-                                <div>
-                                  <p className="mb-1 font-medium text-zinc-900">
-                                    After (revision sections JSON)
-                                  </p>
-                                  <pre className="max-h-56 overflow-auto rounded border border-zinc-200 bg-white p-2 text-[10px] leading-relaxed">
-                                    {diff.afterSectionsJson}
-                                  </pre>
-                                </div>
+                                ) : (
+                                  <ul className="space-y-1">
+                                    {diff.sectionChanges.map(sectionChange => (
+                                      <li
+                                        key={`${sectionChange.order}-${sectionChange.kind}`}
+                                        className="rounded border border-zinc-200 bg-white p-2"
+                                      >
+                                        <p className="font-medium text-zinc-900">
+                                          #{sectionChange.order + 1} ·{" "}
+                                          {sectionChange.beforeType ??
+                                            sectionChange.afterType}
+                                          {" · "}
+                                          {sectionChange.kind === "modified"
+                                            ? "수정"
+                                            : sectionChange.kind === "added"
+                                              ? "추가"
+                                              : "삭제"}
+                                        </p>
+                                        {sectionChange.kind === "modified" ? (
+                                          sectionChange.fieldChanges.length ===
+                                          0 ? (
+                                            <p className="text-zinc-500">
+                                              변경 필드 파악 실패
+                                            </p>
+                                          ) : (
+                                            <ul className="mt-1 space-y-0.5 text-[10px]">
+                                              {sectionChange.fieldChanges.map(
+                                                field => (
+                                                  <li
+                                                    key={`${sectionChange.order}-${field.path}`}
+                                                  >
+                                                    <span className="font-medium">
+                                                      {field.path}
+                                                    </span>{" "}
+                                                    · {field.before} →{" "}
+                                                    {field.after}
+                                                  </li>
+                                                )
+                                              )}
+                                            </ul>
+                                          )
+                                        ) : (
+                                          <p className="mt-1 text-[10px] text-zinc-600">
+                                            섹션 전체가
+                                            {sectionChange.kind === "added"
+                                              ? " 추가"
+                                              : " 삭제"}
+                                            되었습니다.
+                                          </p>
+                                        )}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
                               </div>
+
+                              <details className="rounded border border-zinc-200 bg-white p-2">
+                                <summary className="text-[11px] font-medium text-zinc-700">
+                                  Raw JSON 보기 (before / after)
+                                </summary>
+                                <div className="mt-2 grid gap-2 md:grid-cols-2">
+                                  <div>
+                                    <p className="mb-1 font-medium text-zinc-900">
+                                      Before
+                                    </p>
+                                    <pre className="max-h-56 overflow-auto rounded border border-zinc-200 bg-zinc-50 p-2 text-[10px] leading-relaxed">
+                                      {diff.beforeSectionsJson}
+                                    </pre>
+                                  </div>
+                                  <div>
+                                    <p className="mb-1 font-medium text-zinc-900">
+                                      After
+                                    </p>
+                                    <pre className="max-h-56 overflow-auto rounded border border-zinc-200 bg-zinc-50 p-2 text-[10px] leading-relaxed">
+                                      {diff.afterSectionsJson}
+                                    </pre>
+                                  </div>
+                                </div>
+                              </details>
                             </div>
                           );
                         })()}

@@ -47,9 +47,24 @@ export type RevisionSectionDiffSummary = {
   visibilityChanged: number;
 };
 
+export type RevisionSectionFieldChange = {
+  path: string;
+  before: string;
+  after: string;
+};
+
+export type RevisionSectionChange = {
+  order: number;
+  beforeType?: string;
+  afterType?: string;
+  kind: "added" | "removed" | "modified";
+  fieldChanges: RevisionSectionFieldChange[];
+};
+
 export type RevisionDiffSummary = {
   metaChanges: RevisionMetaDiff[];
   sections: RevisionSectionDiffSummary;
+  sectionChanges: RevisionSectionChange[];
   beforeSectionsJson: string;
   afterSectionsJson: string;
 };
@@ -199,6 +214,73 @@ function toDisplayValue(value: unknown): string {
   return String(value);
 }
 
+function toCompactValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "(empty)";
+  }
+  if (typeof value === "string") {
+    return value.length > 120 ? `${value.slice(0, 120)}…` : value;
+  }
+  const serialized = JSON.stringify(value);
+  if (!serialized) {
+    return "(empty)";
+  }
+  return serialized.length > 120 ? `${serialized.slice(0, 120)}…` : serialized;
+}
+
+function buildFieldChanges(
+  beforeValue: unknown,
+  afterValue: unknown,
+  basePath = ""
+): RevisionSectionFieldChange[] {
+  if (stableStringify(beforeValue) === stableStringify(afterValue)) {
+    return [];
+  }
+
+  const beforeIsArray = Array.isArray(beforeValue);
+  const afterIsArray = Array.isArray(afterValue);
+  const beforeIsObject =
+    beforeValue !== null && typeof beforeValue === "object" && !beforeIsArray;
+  const afterIsObject =
+    afterValue !== null && typeof afterValue === "object" && !afterIsArray;
+
+  if (beforeIsArray && afterIsArray) {
+    const maxLength = Math.max(beforeValue.length, afterValue.length);
+    const changes: RevisionSectionFieldChange[] = [];
+    for (let index = 0; index < maxLength; index += 1) {
+      const nextPath = `${basePath}[${index}]`;
+      changes.push(
+        ...buildFieldChanges(beforeValue[index], afterValue[index], nextPath)
+      );
+    }
+    return changes;
+  }
+
+  if (beforeIsObject && afterIsObject) {
+    const beforeObject = beforeValue as Record<string, unknown>;
+    const afterObject = afterValue as Record<string, unknown>;
+    const keys = Array.from(
+      new Set([...Object.keys(beforeObject), ...Object.keys(afterObject)])
+    ).sort((left, right) => left.localeCompare(right));
+    const changes: RevisionSectionFieldChange[] = [];
+    for (const key of keys) {
+      const nextPath = basePath ? `${basePath}.${key}` : key;
+      changes.push(
+        ...buildFieldChanges(beforeObject[key], afterObject[key], nextPath)
+      );
+    }
+    return changes;
+  }
+
+  return [
+    {
+      path: basePath || "value",
+      before: toCompactValue(beforeValue),
+      after: toCompactValue(afterValue)
+    }
+  ];
+}
+
 export function buildRevisionDiffSummary(params: {
   currentPage: CurrentPageMeta;
   currentSections: CurrentSection[];
@@ -267,6 +349,7 @@ export function buildRevisionDiffSummary(params: {
   let removed = 0;
   let changed = 0;
   let visibilityChanged = 0;
+  const sectionChanges: RevisionSectionChange[] = [];
 
   for (let index = 0; index < maxLength; index += 1) {
     const beforeSection = beforeSections[index];
@@ -274,10 +357,22 @@ export function buildRevisionDiffSummary(params: {
 
     if (!beforeSection && afterSection) {
       added += 1;
+      sectionChanges.push({
+        order: index,
+        afterType: afterSection.type,
+        kind: "added",
+        fieldChanges: []
+      });
       continue;
     }
     if (beforeSection && !afterSection) {
       removed += 1;
+      sectionChanges.push({
+        order: index,
+        beforeType: beforeSection.type,
+        kind: "removed",
+        fieldChanges: []
+      });
       continue;
     }
     if (!beforeSection || !afterSection) {
@@ -295,6 +390,27 @@ export function buildRevisionDiffSummary(params: {
       if (beforeSection.enabled !== afterSection.enabled) {
         visibilityChanged += 1;
       }
+
+      const fieldChanges = buildFieldChanges(
+        {
+          type: beforeSection.type,
+          enabled: beforeSection.enabled,
+          props: beforeSection.props
+        },
+        {
+          type: afterSection.type,
+          enabled: afterSection.enabled,
+          props: afterSection.props
+        }
+      );
+
+      sectionChanges.push({
+        order: index,
+        beforeType: beforeSection.type,
+        afterType: afterSection.type,
+        kind: "modified",
+        fieldChanges
+      });
     }
   }
 
@@ -308,6 +424,7 @@ export function buildRevisionDiffSummary(params: {
       changed,
       visibilityChanged
     },
+    sectionChanges,
     beforeSectionsJson: JSON.stringify(beforeSections, null, 2),
     afterSectionsJson: JSON.stringify(afterSections, null, 2)
   };
