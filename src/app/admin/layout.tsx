@@ -21,7 +21,7 @@ export default async function AdminLayout({
   const settings = await getSiteSettings();
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
+    <div className="admin-shell min-h-screen bg-zinc-50 text-zinc-900">
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <Link href="/admin/pages" className="font-semibold tracking-tight">
