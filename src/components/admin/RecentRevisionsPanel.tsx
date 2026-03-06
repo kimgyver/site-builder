@@ -19,6 +19,75 @@ type RevisionItem = {
   snapshot: unknown;
 };
 
+function buildRevisionHeadline(args: {
+  revision: RevisionItem;
+  diff: ReturnType<typeof buildRevisionDiffSummary> | null;
+}) {
+  const { revision, diff } = args;
+  const source = revision.source.toLowerCase();
+
+  if (!diff) {
+    return `v${revision.version} · ${source} · ${revision.note ?? "updated"}`;
+  }
+
+  const totalSectionChanges =
+    diff.sections.changed + diff.sections.added + diff.sections.removed;
+
+  if (totalSectionChanges === 0 && diff.metaChanges.length === 0) {
+    return `v${revision.version} · ${source} · no effective content change`;
+  }
+
+  if (totalSectionChanges === 1) {
+    const change = diff.sectionChanges[0];
+    const sectionType = change?.afterType ?? change?.beforeType ?? "section";
+    const sectionIndex =
+      typeof change?.order === "number" ? change.order + 1 : null;
+    const mainField = change?.fieldChanges?.[0]?.path;
+    const secondaryField = change?.fieldChanges?.[1]?.path;
+
+    if (change?.kind === "added") {
+      return `v${revision.version} · ${source} · added #${sectionIndex ?? "?"} ${sectionType}`;
+    }
+    if (change?.kind === "removed") {
+      return `v${revision.version} · ${source} · removed #${sectionIndex ?? "?"} ${sectionType}`;
+    }
+
+    const fieldPart = mainField
+      ? ` (${mainField}${secondaryField ? `, ${secondaryField}` : ""})`
+      : "";
+    return `v${revision.version} · ${source} · updated #${sectionIndex ?? "?"} ${sectionType}${fieldPart}`;
+  }
+
+  const changedTypes = Array.from(
+    new Set(
+      diff.sectionChanges
+        .map(change => change.afterType ?? change.beforeType ?? null)
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+
+  const parts: string[] = [];
+  if (diff.sections.changed > 0) {
+    parts.push(`${diff.sections.changed} updated`);
+  }
+  if (diff.sections.added > 0) {
+    parts.push(`${diff.sections.added} added`);
+  }
+  if (diff.sections.removed > 0) {
+    parts.push(`${diff.sections.removed} removed`);
+  }
+  if (diff.metaChanges.length > 0) {
+    parts.push(`metadata ${diff.metaChanges.length}`);
+  }
+
+  const typePart =
+    changedTypes.length > 0
+      ? ` · ${changedTypes.slice(0, 3).join(", ")}${changedTypes.length > 3 ? ", …" : ""}`
+      : "";
+
+  return `v${revision.version} · ${source} · ${parts.join(", ")}${typePart}`;
+}
+
 function formatRevisionSummary(
   diff: ReturnType<typeof buildRevisionDiffSummary>
 ) {
@@ -178,6 +247,10 @@ export default function RecentRevisionsPanel({
             {revisions.map(revision => {
               const diff = revisionDiffMap.get(revision.id);
               const summary = diff ? formatRevisionSummary(diff) : null;
+              const headline = buildRevisionHeadline({
+                revision,
+                diff: diff ?? null
+              });
 
               return (
                 <li
@@ -186,10 +259,7 @@ export default function RecentRevisionsPanel({
                 >
                   <div className="w-full space-y-2">
                     <div className="flex items-center justify-between gap-3">
-                      <span>
-                        v{revision.version} · {revision.source.toLowerCase()} ·{" "}
-                        {revision.note ?? "updated"}
-                      </span>
+                      <span>{headline}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-zinc-500">
                           {typeof revision.createdAt === "string"
