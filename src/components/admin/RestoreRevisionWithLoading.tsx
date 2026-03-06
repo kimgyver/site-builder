@@ -12,12 +12,14 @@ export default function RestoreRevisionWithLoading({
   pageId,
   revisionId,
   version,
+  confirmMessage,
   action,
   onSuccess
 }: {
   pageId: string;
   revisionId: string;
   version: number;
+  confirmMessage?: string;
   action: (
     formData: FormData
   ) => Promise<{ ok?: boolean; error?: string; updatedAt?: string } | unknown>;
@@ -57,7 +59,10 @@ export default function RestoreRevisionWithLoading({
       <input type="hidden" name="pageId" value={pageId} />
       <input type="hidden" name="revisionId" value={revisionId} />
       <ConfirmSubmitButton
-        message={`Restore revision v${version}? Current unpublished changes will be replaced.`}
+        message={
+          confirmMessage ??
+          `Restore revision v${version}? Current unpublished changes will be replaced.`
+        }
         className="rounded border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[11px] text-zinc-700 hover:bg-zinc-100 transition-all"
       >
         {loading ? <Spinner /> : "Restore"}

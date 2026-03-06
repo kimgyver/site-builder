@@ -46,7 +46,8 @@ async function getPageData(id: string) {
           version: true,
           source: true,
           createdAt: true,
-          note: true
+          note: true,
+          snapshot: true
         }
       }
     }

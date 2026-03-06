@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Toast } from "@/components/Toast";
 import SaveSectionsClientWrapper from "@/components/admin/SaveSectionsClientWrapper";
@@ -7,6 +7,7 @@ import UpdatePageWithLoading from "@/components/admin/UpdatePageWithLoading";
 import RestoreRevisionWithLoading from "@/components/admin/RestoreRevisionWithLoading";
 import type { EditableSection } from "@/types/sections";
 import type { Prisma } from "@prisma/client";
+import { buildRevisionDiffSummary } from "@/lib/revisionDiff";
 
 type PageWithSectionsAndRevisions = Prisma.PageGetPayload<{
   include: {
@@ -18,6 +19,7 @@ type PageWithSectionsAndRevisions = Prisma.PageGetPayload<{
         source: true;
         createdAt: true;
         note: true;
+        snapshot: true;
       };
     };
   };
@@ -52,6 +54,9 @@ export default function AdminPageClientWrapper({
 }) {
   const router = useRouter();
   const [showInlinePreview, setShowInlinePreview] = useState(false);
+  const [expandedRevisionId, setExpandedRevisionId] = useState<string | null>(
+    null
+  );
   const [sectionsExpectedUpdatedAt, setSectionsExpectedUpdatedAt] = useState(
     page.updatedAt.toISOString()
   );
@@ -62,6 +67,59 @@ export default function AdminPageClientWrapper({
   const handleShowToast = (message: string) =>
     setToast({ show: true, message });
   const previewHref = `/${page.locale}/${page.slug}?preview=${page.previewToken}`;
+  const revisionDiffMap = useMemo(() => {
+    return new Map(
+      page.revisions.map(revision => [
+        revision.id,
+        buildRevisionDiffSummary({
+          currentPage: {
+            title: page.title,
+            slug: page.slug,
+            status: page.status,
+            seoTitle: page.seoTitle,
+            seoDescription: page.seoDescription
+          },
+          currentSections: page.sections.map(section => ({
+            type: section.type,
+            order: section.order,
+            enabled: section.enabled,
+            props:
+              section.props && typeof section.props === "object"
+                ? (section.props as Record<string, unknown>)
+                : {}
+          })),
+          snapshotRaw: revision.snapshot
+        })
+      ])
+    );
+  }, [
+    page.revisions,
+    page.sections,
+    page.slug,
+    page.status,
+    page.title,
+    page.seoTitle,
+    page.seoDescription
+  ]);
+
+  const getRestoreConfirmMessage = (version: number, revisionId: string) => {
+    const diff = revisionDiffMap.get(revisionId);
+    if (!diff) {
+      return `Restore revision v${version}? Current unpublished changes will be replaced.`;
+    }
+
+    const chunks = [
+      `메타 변경 ${diff.metaChanges.length}개`,
+      `섹션 변경 ${diff.sections.changed}개`,
+      `추가 ${diff.sections.added}개`,
+      `삭제 ${diff.sections.removed}개`
+    ];
+
+    return [
+      `Restore revision v${version}? Current unpublished changes will be replaced.`,
+      `요약: ${chunks.join(", ")}`
+    ].join("\n");
+  };
 
   return (
     <>
@@ -192,33 +250,124 @@ export default function AdminPageClientWrapper({
                   key={revision.id}
                   className="flex items-center justify-between rounded border border-zinc-200 bg-white px-2 py-1"
                 >
-                  <span>
-                    v{revision.version} · {revision.source.toLowerCase()} ·{" "}
-                    {revision.note ?? "updated"}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-zinc-500">
-                      {typeof revision.createdAt === "string"
-                        ? revision.createdAt
-                        : revision.createdAt
-                            .toISOString()
-                            .replace("T", " ")
-                            .slice(0, 19)}
-                    </span>
-                    {canPublish ? (
-                      <RestoreRevisionWithLoading
-                        pageId={page.id}
-                        revisionId={revision.id}
-                        version={revision.version}
-                        action={restoreRevision}
-                        onSuccess={updatedAt => {
-                          if (updatedAt) {
-                            setSectionsExpectedUpdatedAt(updatedAt);
+                  <div className="w-full space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span>
+                        v{revision.version} · {revision.source.toLowerCase()} ·{" "}
+                        {revision.note ?? "updated"}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-500">
+                          {typeof revision.createdAt === "string"
+                            ? revision.createdAt
+                            : revision.createdAt
+                                .toISOString()
+                                .replace("T", " ")
+                                .slice(0, 19)}
+                        </span>
+                        <button
+                          type="button"
+                          className="rounded border border-zinc-200 bg-white px-2 py-0.5 text-[11px] text-zinc-700 hover:bg-zinc-100"
+                          onClick={() =>
+                            setExpandedRevisionId(prev =>
+                              prev === revision.id ? null : revision.id
+                            )
                           }
-                          handleShowToast(`Restored v${revision.version}`);
-                          router.refresh();
-                        }}
-                      />
+                        >
+                          {expandedRevisionId === revision.id
+                            ? "Hide diff"
+                            : "Diff"}
+                        </button>
+                        {canPublish ? (
+                          <RestoreRevisionWithLoading
+                            pageId={page.id}
+                            revisionId={revision.id}
+                            version={revision.version}
+                            confirmMessage={getRestoreConfirmMessage(
+                              revision.version,
+                              revision.id
+                            )}
+                            action={restoreRevision}
+                            onSuccess={updatedAt => {
+                              if (updatedAt) {
+                                setSectionsExpectedUpdatedAt(updatedAt);
+                              }
+                              handleShowToast(`Restored v${revision.version}`);
+                              router.refresh();
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                    </div>
+                    {expandedRevisionId === revision.id ? (
+                      <div className="rounded border border-zinc-200 bg-zinc-50 p-2 text-[11px] text-zinc-700">
+                        {(() => {
+                          const diff = revisionDiffMap.get(revision.id);
+                          if (!diff) {
+                            return (
+                              <p className="text-zinc-500">
+                                Diff 정보를 불러오지 못했습니다.
+                              </p>
+                            );
+                          }
+                          return (
+                            <div className="space-y-2">
+                              <div className="space-y-1">
+                                <p className="font-medium text-zinc-900">
+                                  Metadata before vs after
+                                </p>
+                                {diff.metaChanges.length === 0 ? (
+                                  <p className="text-zinc-500">
+                                    메타 변경 없음
+                                  </p>
+                                ) : (
+                                  <ul className="space-y-0.5">
+                                    {diff.metaChanges.map(change => (
+                                      <li key={change.field}>
+                                        <span className="font-medium">
+                                          {change.label}
+                                        </span>{" "}
+                                        · {change.before} → {change.after}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                              <div className="space-y-1">
+                                <p className="font-medium text-zinc-900">
+                                  Sections summary
+                                </p>
+                                <p>
+                                  before {diff.sections.beforeCount} · after{" "}
+                                  {diff.sections.afterCount} · changed{" "}
+                                  {diff.sections.changed} · added{" "}
+                                  {diff.sections.added} · removed{" "}
+                                  {diff.sections.removed} · visibility changed{" "}
+                                  {diff.sections.visibilityChanged}
+                                </p>
+                              </div>
+                              <div className="grid gap-2 md:grid-cols-2">
+                                <div>
+                                  <p className="mb-1 font-medium text-zinc-900">
+                                    Before (current sections JSON)
+                                  </p>
+                                  <pre className="max-h-56 overflow-auto rounded border border-zinc-200 bg-white p-2 text-[10px] leading-relaxed">
+                                    {diff.beforeSectionsJson}
+                                  </pre>
+                                </div>
+                                <div>
+                                  <p className="mb-1 font-medium text-zinc-900">
+                                    After (revision sections JSON)
+                                  </p>
+                                  <pre className="max-h-56 overflow-auto rounded border border-zinc-200 bg-white p-2 text-[10px] leading-relaxed">
+                                    {diff.afterSectionsJson}
+                                  </pre>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
                     ) : null}
                   </div>
                 </li>
