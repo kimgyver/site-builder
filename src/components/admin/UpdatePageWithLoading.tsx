@@ -37,6 +37,8 @@ export default function UpdatePageWithLoading({
     form.seoTitle.trim().length > 0 ? form.seoTitle.trim() : form.title;
   const effectiveSeoDescription =
     form.seoDescription.trim().length > 0 ? form.seoDescription.trim() : "";
+  const hasCustomSeo =
+    form.seoTitle.trim().length > 0 || form.seoDescription.trim().length > 0;
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -111,52 +113,60 @@ export default function UpdatePageWithLoading({
           />
         </div>
       </div>
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-zinc-800">
-          SEO title (optional)
-        </label>
-        <p className="text-xs text-zinc-500">
-          If left empty, the page Title is used. Recommended length: 30–60
-          characters.
-        </p>
-        <input
-          name="seoTitle"
-          value={form.seoTitle}
-          onChange={handleChange}
-          disabled={readOnly}
-          className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-          placeholder="Custom title for search/preview"
-        />
-      </div>
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-zinc-800">
-          SEO description (optional)
-        </label>
-        <p className="text-xs text-zinc-500">
-          Used for search and social preview descriptions. If empty, the
-          description meta tag is omitted. Recommended length: 70–160
-          characters.
-        </p>
-        <textarea
-          name="seoDescription"
-          value={form.seoDescription}
-          onChange={handleChange}
-          disabled={readOnly}
-          className="h-20 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-          placeholder="Short summary for search and link previews"
-        />
-      </div>
-      <div className="space-y-1 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2">
-        <p className="text-xs font-medium text-zinc-700">
-          Search preview (effective)
-        </p>
-        <p className="text-sm font-semibold text-zinc-900">
-          {effectiveSeoTitle}
-        </p>
-        <p className="text-xs text-zinc-600">
-          {effectiveSeoDescription || "(description not set)"}
-        </p>
-      </div>
+      <details className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2">
+        <summary className="cursor-pointer select-none text-sm font-medium text-zinc-800">
+          SEO settings (optional) ·{" "}
+          {hasCustomSeo ? "customized" : "using page defaults"}
+        </summary>
+        <div className="mt-3 space-y-3">
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-zinc-800">
+              SEO title (optional)
+            </label>
+            <p className="text-xs text-zinc-500">
+              If left empty, the page Title is used. Recommended length: 30–60
+              characters.
+            </p>
+            <input
+              name="seoTitle"
+              value={form.seoTitle}
+              onChange={handleChange}
+              disabled={readOnly}
+              className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              placeholder="Custom title for search/preview"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-zinc-800">
+              SEO description (optional)
+            </label>
+            <p className="text-xs text-zinc-500">
+              Used for search and social preview descriptions. If empty, the
+              description meta tag is omitted. Recommended length: 70–160
+              characters.
+            </p>
+            <textarea
+              name="seoDescription"
+              value={form.seoDescription}
+              onChange={handleChange}
+              disabled={readOnly}
+              className="h-20 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              placeholder="Short summary for search and link previews"
+            />
+          </div>
+          <div className="space-y-1 rounded-md border border-zinc-200 bg-white px-3 py-2">
+            <p className="text-xs font-medium text-zinc-700">
+              Search preview (effective)
+            </p>
+            <p className="text-sm font-semibold text-zinc-900">
+              {effectiveSeoTitle}
+            </p>
+            <p className="text-xs text-zinc-600">
+              {effectiveSeoDescription || "(description not set)"}
+            </p>
+          </div>
+        </div>
+      </details>
       <div className="space-y-1">
         <label className="block text-sm font-medium text-zinc-800">
           Status
