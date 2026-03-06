@@ -32,7 +32,14 @@ export const ColoredTableCell = TableCell.extend({
           }
           return null;
         },
-        renderHTML: () => {
+        renderHTML: attributes => {
+          const align = attributes.textAlign as string | null;
+          if (align === "left" || align === "center" || align === "right") {
+            return {
+              "data-align": align,
+              style: `text-align:${align};`
+            };
+          }
           return {};
         }
       },
@@ -86,7 +93,11 @@ export const ColoredTableCell = TableCell.extend({
           if (attr === "transparent") return "transparent";
           return null;
         },
-        renderHTML: () => {
+        renderHTML: attributes => {
+          const borderMode = attributes.borderMode as string | null;
+          if (borderMode === "transparent") {
+            return { "data-border": "transparent" };
+          }
           return {};
         }
       },
@@ -98,8 +109,13 @@ export const ColoredTableCell = TableCell.extend({
           const style = (element as HTMLElement).style?.borderColor;
           return style || null;
         },
-        renderHTML: () => {
-          return {};
+        renderHTML: attributes => {
+          const borderColor = attributes.borderColor as string | null;
+          if (!borderColor) return {};
+          return {
+            "data-border-color": String(borderColor),
+            style: `border-color:${String(borderColor)};border-style:solid;`
+          };
         }
       },
       borderWidth: {
@@ -115,8 +131,23 @@ export const ColoredTableCell = TableCell.extend({
           if (!Number.isFinite(parsed)) return null;
           return String(Math.max(1, Math.min(12, parsed)));
         },
-        renderHTML: () => {
-          return {};
+        renderHTML: attributes => {
+          const rawBorderWidth = attributes.borderWidth as string | null;
+          if (
+            rawBorderWidth === null ||
+            rawBorderWidth === undefined ||
+            rawBorderWidth === ""
+          ) {
+            return {};
+          }
+          const parsed = Number(String(rawBorderWidth).replace(/[^0-9.]/g, ""));
+          if (!Number.isFinite(parsed)) return {};
+          const clamped = Math.max(1, Math.min(12, parsed));
+          const width = String(Math.round(clamped));
+          return {
+            "data-border-width": width,
+            style: `border-width:${width}px;border-style:solid;`
+          };
         }
       },
       backgroundColor: {
@@ -127,8 +158,13 @@ export const ColoredTableCell = TableCell.extend({
           const style = (element as HTMLElement).style?.backgroundColor;
           return style || null;
         },
-        renderHTML: () => {
-          return {};
+        renderHTML: attributes => {
+          const bg = attributes.backgroundColor as string | null;
+          if (!bg) return {};
+          return {
+            "data-bg": String(bg),
+            style: `background-color:${String(bg)};`
+          };
         }
       },
       heightPx: {
@@ -145,19 +181,7 @@ export const ColoredTableCell = TableCell.extend({
           return String(Math.max(20, Math.min(800, parsed)));
         },
         renderHTML: attributes => {
-          const bg = attributes.backgroundColor as string | null;
           const rawHeight = attributes.heightPx as string | null;
-          const colwidth = attributes.colwidth as number[] | null;
-          const align = attributes.textAlign as string | null;
-          const borderMode = attributes.borderMode as string | null;
-          const borderColor = attributes.borderColor as string | null;
-          const rawBorderWidth = attributes.borderWidth as string | null;
-
-          const styleParts: string[] = [];
-
-          if (bg) {
-            styleParts.push(`background-color:${String(bg)};`);
-          }
 
           let heightNumber: number | null = null;
           if (
@@ -168,77 +192,13 @@ export const ColoredTableCell = TableCell.extend({
             const parsed = Number(String(rawHeight).replace(/[^0-9.]/g, ""));
             if (Number.isFinite(parsed)) {
               heightNumber = Math.max(20, Math.min(800, parsed));
-              styleParts.push(`height:${Math.round(heightNumber)}px;`);
             }
           }
-
-          if (Array.isArray(colwidth) && colwidth.length) {
-            const first = Number(colwidth[0]);
-            if (Number.isFinite(first) && first > 0) {
-              styleParts.push(`width:${Math.round(first)}px;`);
-            }
-          }
-
-          if (align === "left" || align === "center" || align === "right") {
-            styleParts.push(`text-align:${align};`);
-          }
-
-          let borderWidthNumber: number | null = null;
-          if (
-            rawBorderWidth !== null &&
-            rawBorderWidth !== undefined &&
-            rawBorderWidth !== ""
-          ) {
-            const parsed = Number(
-              String(rawBorderWidth).replace(/[^0-9.]/g, "")
-            );
-            if (Number.isFinite(parsed)) {
-              borderWidthNumber = Math.max(1, Math.min(12, parsed));
-              styleParts.push(
-                `border-width:${Math.round(borderWidthNumber)}px;`
-              );
-              styleParts.push("border-style:solid;");
-            }
-          }
-
-          if (borderColor) {
-            styleParts.push(`border-color:${String(borderColor)};`);
-            styleParts.push("border-style:solid;");
-          }
-
-          if (
-            !styleParts.length &&
-            !bg &&
-            heightNumber === null &&
-            !borderColor &&
-            borderWidthNumber === null &&
-            borderMode !== "transparent"
-          ) {
-            return {};
-          }
+          if (heightNumber === null) return {};
 
           const out: Record<string, string> = {};
-          if (styleParts.length) {
-            out.style = styleParts.join("");
-          }
-          if (bg) {
-            out["data-bg"] = String(bg);
-          }
-          if (heightNumber !== null) {
-            out["data-height-px"] = String(Math.round(heightNumber));
-          }
-          if (align === "left" || align === "center" || align === "right") {
-            out["data-align"] = align;
-          }
-          if (borderColor) {
-            out["data-border-color"] = String(borderColor);
-          }
-          if (borderWidthNumber !== null) {
-            out["data-border-width"] = String(Math.round(borderWidthNumber));
-          }
-          if (borderMode === "transparent") {
-            out["data-border"] = "transparent";
-          }
+          out.style = `height:${Math.round(heightNumber)}px;`;
+          out["data-height-px"] = String(Math.round(heightNumber));
 
           return out;
         }
