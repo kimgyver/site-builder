@@ -57,14 +57,14 @@ export default function SaveSectionsWithLoading({
   const [error, setError] = useState<string | null>(null);
   const [expectedUpdatedAtLocal, setExpectedUpdatedAtLocal] =
     useState(expectedUpdatedAt);
+  const [lastSavedSignature, setLastSavedSignature] = useState(
+    buildSectionsSignature(initialSections)
+  );
   const [autosaveState, setAutosaveState] = useState<
     "idle" | "saving" | "saved" | "error" | "conflict"
   >("idle");
   const autosaveTimerRef = useRef<number | null>(null);
   const firstRenderRef = useRef(true);
-  const lastSavedJsonRef = useRef<string>(
-    buildSectionsSignature(initialSections)
-  );
   const lastInitialSectionsJsonRef = useRef<string>(
     buildSectionsSignature(initialSections)
   );
@@ -171,7 +171,7 @@ export default function SaveSectionsWithLoading({
     }
 
     setSections(initialSections);
-    lastSavedJsonRef.current = incomingJson;
+    setLastSavedSignature(incomingJson);
     setAutosaveState("idle");
     setError(null);
     firstRenderRef.current = true;
@@ -180,6 +180,8 @@ export default function SaveSectionsWithLoading({
   useEffect(() => {
     setExpectedUpdatedAtLocal(expectedUpdatedAt);
   }, [expectedUpdatedAt]);
+
+  const isDirty = buildSectionsSignature(sections) !== lastSavedSignature;
 
   useEffect(() => {
     if (readOnly) {
@@ -191,7 +193,7 @@ export default function SaveSectionsWithLoading({
     }
 
     const nextJson = buildSectionsSignature(sections);
-    if (nextJson === lastSavedJsonRef.current) {
+    if (nextJson === lastSavedSignature) {
       return;
     }
 
@@ -205,7 +207,7 @@ export default function SaveSectionsWithLoading({
         if (serverResult.updatedAt) {
           setExpectedUpdatedAtLocal(serverResult.updatedAt);
         }
-        lastSavedJsonRef.current = nextJson;
+        setLastSavedSignature(nextJson);
         setAutosaveState("saved");
         setError(null);
         if (onSuccess) onSuccess("autosave", serverResult.updatedAt);
@@ -234,11 +236,13 @@ export default function SaveSectionsWithLoading({
     onSuccess,
     readOnly,
     saveViaServerAction,
-    sections
+    sections,
+    lastSavedSignature
   ]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (readOnly) return;
+    if (!isDirty) return;
     setIsSaving(true);
     setError(null);
 
@@ -250,7 +254,7 @@ export default function SaveSectionsWithLoading({
     setIsSaving(false);
     if (result.ok) {
       setExpectedUpdatedAtLocal(result.updatedAt);
-      lastSavedJsonRef.current = buildSectionsSignature(sections);
+      setLastSavedSignature(buildSectionsSignature(sections));
       setAutosaveState("saved");
       if (onSuccess) onSuccess("manual", result.updatedAt);
       return;
@@ -275,7 +279,7 @@ export default function SaveSectionsWithLoading({
         if (serverResult.updatedAt) {
           setExpectedUpdatedAtLocal(serverResult.updatedAt);
         }
-        lastSavedJsonRef.current = buildSectionsSignature(sections);
+        setLastSavedSignature(buildSectionsSignature(sections));
         setAutosaveState("saved");
         if (onSuccess) onSuccess("manual", serverResult.updatedAt);
       } else {
@@ -327,7 +331,7 @@ export default function SaveSectionsWithLoading({
           type="submit"
           className="inline-flex rounded-md border border-blue-500 bg-blue-600 px-3 py-1.5 text-xs text-white font-semibold shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
           style={{ boxShadow: "none" }}
-          disabled={isSaving}
+          disabled={isSaving || !isDirty}
         >
           {isSaving ? <Spinner /> : "Save sections"}
         </button>
