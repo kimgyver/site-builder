@@ -18,6 +18,17 @@ function parseTake(rawTake: string | null) {
   return Math.min(parsed, 20);
 }
 
+function parseSkip(rawSkip: string | null) {
+  if (!rawSkip) {
+    return 0;
+  }
+  const parsed = Number.parseInt(rawSkip, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 0;
+  }
+  return parsed;
+}
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -38,12 +49,14 @@ export async function GET(
   }
 
   const take = parseTake(request.nextUrl.searchParams.get("take"));
+  const skip = parseSkip(request.nextUrl.searchParams.get("skip"));
 
   try {
-    const revisions = await prisma.pageRevision.findMany({
+    const rows = await prisma.pageRevision.findMany({
       where: { pageId },
       orderBy: { version: "desc" },
-      take,
+      skip,
+      take: take + 1,
       select: {
         id: true,
         version: true,
@@ -54,7 +67,10 @@ export async function GET(
       }
     });
 
-    return NextResponse.json({ ok: true, revisions });
+    const hasMore = rows.length > take;
+    const revisions = hasMore ? rows.slice(0, take) : rows;
+
+    return NextResponse.json({ ok: true, revisions, hasMore });
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

@@ -357,7 +357,7 @@ export default function SaveSectionsWithLoading({
       {!readOnly ? (
         <button
           type="submit"
-          className="inline-flex rounded-md border border-blue-500 bg-blue-600 px-3 py-1.5 text-xs text-white font-semibold shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+          className="inline-flex rounded-md border border-blue-500 bg-blue-600 px-3 py-1.5 text-xs text-white font-semibold shadow transition-all focus:outline-none focus:ring-2 focus:ring-blue-400 enabled:hover:bg-blue-700 disabled:cursor-not-allowed disabled:border-zinc-300 disabled:bg-zinc-200 disabled:text-zinc-500 disabled:opacity-100"
           style={{ boxShadow: "none" }}
           disabled={isSaving || autosaveState === "saving" || !isDirty}
         >

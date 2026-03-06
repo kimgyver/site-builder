@@ -40,7 +40,7 @@ async function getPageData(id: string) {
       sections: { orderBy: { order: "asc" } },
       revisions: {
         orderBy: { version: "desc" },
-        take: 5,
+        take: 10,
         select: {
           id: true,
           version: true,

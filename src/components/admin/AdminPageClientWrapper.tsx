@@ -25,6 +25,7 @@ type PageWithSectionsAndRevisions = Prisma.PageGetPayload<{
 }>;
 
 type ActionResult = { ok: boolean; error?: string };
+const REVISION_PAGE_SIZE = 10;
 
 export default function AdminPageClientWrapper({
   page,
@@ -61,39 +62,88 @@ export default function AdminPageClientWrapper({
     message: ""
   });
   const [revisions, setRevisions] = useState(page.revisions);
+  const [hasMoreRevisions, setHasMoreRevisions] = useState(
+    page.revisions.length >= REVISION_PAGE_SIZE
+  );
+  const [isLoadingMoreRevisions, setIsLoadingMoreRevisions] = useState(false);
   const revisionsRefreshSequenceRef = useRef(0);
   const handleShowToast = (message: string) =>
     setToast({ show: true, message });
-  const refreshRecentRevisions = useCallback(async () => {
-    const refreshSequence = revisionsRefreshSequenceRef.current + 1;
-    revisionsRefreshSequenceRef.current = refreshSequence;
 
-    try {
+  const fetchRevisions = useCallback(
+    async ({ skip, take }: { skip: number; take: number }) => {
       const response = await fetch(
-        `/api/admin/pages/${page.id}/revisions?take=10`,
+        `/api/admin/pages/${page.id}/revisions?skip=${skip}&take=${take}`,
         {
           cache: "no-store",
           credentials: "same-origin"
         }
       );
       if (!response.ok) {
+        return null;
+      }
+
+      const payload = (await response.json()) as {
+        revisions?: unknown;
+        hasMore?: unknown;
+      };
+
+      if (!Array.isArray(payload.revisions)) {
+        return null;
+      }
+
+      return {
+        revisions: payload.revisions as PageWithSectionsAndRevisions["revisions"],
+        hasMore: payload.hasMore === true
+      };
+    },
+    [page.id]
+  );
+
+  const refreshRecentRevisions = useCallback(async () => {
+    const refreshSequence = revisionsRefreshSequenceRef.current + 1;
+    revisionsRefreshSequenceRef.current = refreshSequence;
+
+    try {
+      const result = await fetchRevisions({ skip: 0, take: REVISION_PAGE_SIZE });
+      if (!result) {
         return;
       }
 
-      const payload = (await response.json()) as { revisions?: unknown };
       if (refreshSequence !== revisionsRefreshSequenceRef.current) {
         return;
       }
 
-      if (!Array.isArray(payload.revisions)) {
+      setRevisions(result.revisions);
+      setHasMoreRevisions(result.hasMore);
+    } catch {}
+  }, [fetchRevisions]);
+
+  const loadMoreRevisions = useCallback(async () => {
+    if (isLoadingMoreRevisions || !hasMoreRevisions) {
+      return;
+    }
+
+    setIsLoadingMoreRevisions(true);
+    try {
+      const result = await fetchRevisions({
+        skip: revisions.length,
+        take: REVISION_PAGE_SIZE
+      });
+      if (!result) {
         return;
       }
 
-      setRevisions(
-        payload.revisions as PageWithSectionsAndRevisions["revisions"]
-      );
-    } catch {}
-  }, [page.id]);
+      setRevisions(prev => {
+        const existingIds = new Set(prev.map(item => item.id));
+        const uniqueNext = result.revisions.filter(item => !existingIds.has(item.id));
+        return uniqueNext.length > 0 ? [...prev, ...uniqueNext] : prev;
+      });
+      setHasMoreRevisions(result.hasMore);
+    } finally {
+      setIsLoadingMoreRevisions(false);
+    }
+  }, [fetchRevisions, hasMoreRevisions, isLoadingMoreRevisions, revisions.length]);
   const refreshPreservingScroll = () => {
     if (typeof window === "undefined") {
       router.refresh();
@@ -249,6 +299,9 @@ export default function AdminPageClientWrapper({
         </div>
         <RecentRevisionsPanel
           revisions={revisions}
+          hasMore={hasMoreRevisions}
+          isLoadingMore={isLoadingMoreRevisions}
+          onLoadMore={loadMoreRevisions}
           pageId={page.id}
           canPublish={canPublish}
           currentPage={{
