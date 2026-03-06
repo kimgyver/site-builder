@@ -1,0 +1,24 @@
+.centeredWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.sectionBox {
+  width: 100%;
+  max-width: 900px;
+  min-width: 350px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 24px;
+  padding: 24px;
+  border-radius: 8px;
+  transition: width 0.2s;
+  overflow-x: auto;
+}
+
+.textSectionContent {
+  width: fit-content;
+  min-width: 100%;
+}
