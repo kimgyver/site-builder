@@ -44,7 +44,7 @@ export function EditorToolbar({
   const tableToolsVisible = showTableTools && isTableActive;
 
   return (
-    <div className="space-y-2 rounded-md border border-zinc-300 bg-zinc-50 px-2.5 py-2.5 text-sm text-zinc-700">
+    <div className="space-y-2 rounded-md border border-zinc-300 bg-zinc-50 px-2 py-2 text-xs text-zinc-700 md:px-2.5 md:py-2.5 md:text-sm">
       <div className="flex flex-wrap items-center gap-1">
         <ToolbarButton
           label="Bold"

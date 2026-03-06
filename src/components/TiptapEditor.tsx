@@ -634,7 +634,7 @@ export function TiptapEditor({
         }}
       />
 
-      <div className="relative min-h-45 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-base leading-7 text-zinc-900 focus-within:border-zinc-900 focus-within:ring-1 focus-within:ring-zinc-900">
+      <div className="relative min-h-45 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm leading-6 text-zinc-900 focus-within:border-zinc-900 focus-within:ring-1 focus-within:ring-zinc-900 md:text-base md:leading-7">
         <SlashMenu
           slashMatch={slashMatch}
           filteredSlashCommands={filteredSlashCommands}
