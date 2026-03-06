@@ -99,6 +99,40 @@ export function TiptapEditor({
     });
   };
 
+  const getSelectedTableCellPositions = (activeEditor: CoreEditor) => {
+    const selectionWithCells = activeEditor.state.selection as unknown as {
+      forEachCell?: (
+        fn: (node: { attrs: Record<string, unknown> }, pos: number) => void
+      ) => void;
+      $from?: {
+        depth: number;
+        node: (depth: number) => { type: { name: string } };
+        before: (depth: number) => number;
+      };
+    };
+
+    if (typeof selectionWithCells.forEachCell === "function") {
+      const positions: number[] = [];
+      selectionWithCells.forEachCell((_, pos) => {
+        positions.push(pos);
+      });
+      if (positions.length) {
+        return positions;
+      }
+    }
+
+    const anchor =
+      selectionWithCells.$from ?? activeEditor.state.selection.$from;
+    for (let depth = anchor.depth; depth >= 0; depth -= 1) {
+      const node = anchor.node(depth);
+      if (node.type.name === "tableCell" || node.type.name === "tableHeader") {
+        return [anchor.before(depth)];
+      }
+    }
+
+    return null;
+  };
+
   const lastEmittedHtmlRef = useRef<string>(defaultValue || "");
   const lastPropagatedHtmlRef = useRef<string>(defaultValue || "");
   const lastDefaultValueRef = useRef<string>(defaultValue || "");
@@ -313,22 +347,8 @@ export function TiptapEditor({
         setCellBgColorValue(bgColor);
       }
 
-      const selectionWithCells = editor.state.selection as unknown as {
-        forEachCell?: (
-          fn: (node: { attrs: Record<string, unknown> }, pos: number) => void
-        ) => void;
-      };
-      if (typeof selectionWithCells.forEachCell === "function") {
-        const positions: number[] = [];
-        selectionWithCells.forEachCell((_, pos) => {
-          positions.push(pos);
-        });
-        lastSelectedTableCellPositionsRef.current = positions.length
-          ? positions
-          : null;
-      } else {
-        lastSelectedTableCellPositionsRef.current = null;
-      }
+      lastSelectedTableCellPositionsRef.current =
+        getSelectedTableCellPositions(editor);
 
       bumpSelectionTick(t => (t + 1) % 1000000);
     };
@@ -338,6 +358,8 @@ export function TiptapEditor({
     } else if (!lastTextSelectionRef.current) {
       lastTextSelectionRef.current = { from, to };
     }
+    lastSelectedTableCellPositionsRef.current =
+      getSelectedTableCellPositions(editor);
     editor.on("selectionUpdate", rerender);
     return () => {
       editor.off("selectionUpdate", rerender);
