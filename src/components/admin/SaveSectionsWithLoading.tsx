@@ -64,6 +64,7 @@ export default function SaveSectionsWithLoading({
     "idle" | "saving" | "saved" | "error" | "conflict"
   >("idle");
   const autosaveTimerRef = useRef<number | null>(null);
+  const autosavePromiseRef = useRef<Promise<void> | null>(null);
   const firstRenderRef = useRef(true);
   const lastInitialSectionsJsonRef = useRef<string>(
     buildSectionsSignature(initialSections)
@@ -199,31 +200,43 @@ export default function SaveSectionsWithLoading({
 
     if (autosaveTimerRef.current) {
       window.clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
     }
     autosaveTimerRef.current = window.setTimeout(async () => {
-      setAutosaveState("saving");
-      const serverResult = await saveViaServerAction();
-      if (serverResult.ok) {
-        if (serverResult.updatedAt) {
-          setExpectedUpdatedAtLocal(serverResult.updatedAt);
+      const autosaveTask = (async () => {
+        setAutosaveState("saving");
+        const serverResult = await saveViaServerAction();
+        if (serverResult.ok) {
+          if (serverResult.updatedAt) {
+            setExpectedUpdatedAtLocal(serverResult.updatedAt);
+          }
+          setLastSavedSignature(nextJson);
+          setAutosaveState("saved");
+          setError(null);
+          if (onSuccess) onSuccess("autosave", serverResult.updatedAt);
+          return;
         }
-        setLastSavedSignature(nextJson);
-        setAutosaveState("saved");
-        setError(null);
-        if (onSuccess) onSuccess("autosave", serverResult.updatedAt);
-        return;
-      }
 
-      if (serverResult.error === "STALE_PAGE") {
-        setAutosaveState("conflict");
-        setError(
-          "Conflict detected: this page was updated elsewhere. Reload to continue editing."
-        );
-        return;
-      }
+        if (serverResult.error === "STALE_PAGE") {
+          setAutosaveState("conflict");
+          setError(
+            "Conflict detected: this page was updated elsewhere. Reload to continue editing."
+          );
+          return;
+        }
 
-      setAutosaveState("error");
-      setError(toUserError(serverResult.error ?? "Failed to autosave"));
+        setAutosaveState("error");
+        setError(toUserError(serverResult.error ?? "Failed to autosave"));
+      })();
+
+      autosavePromiseRef.current = autosaveTask;
+      try {
+        await autosaveTask;
+      } finally {
+        if (autosavePromiseRef.current === autosaveTask) {
+          autosavePromiseRef.current = null;
+        }
+      }
     }, 1200);
 
     return () => {
@@ -242,6 +255,21 @@ export default function SaveSectionsWithLoading({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (readOnly) return;
+
+    if (autosaveTimerRef.current) {
+      window.clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+
+    if (autosavePromiseRef.current) {
+      await autosavePromiseRef.current;
+    }
+
+    const nextSignature = buildSectionsSignature(sections);
+    if (nextSignature === lastSavedSignature) {
+      return;
+    }
+
     if (!isDirty) return;
     setIsSaving(true);
     setError(null);
@@ -254,7 +282,7 @@ export default function SaveSectionsWithLoading({
     setIsSaving(false);
     if (result.ok) {
       setExpectedUpdatedAtLocal(result.updatedAt);
-      setLastSavedSignature(buildSectionsSignature(sections));
+      setLastSavedSignature(nextSignature);
       setAutosaveState("saved");
       if (onSuccess) onSuccess("manual", result.updatedAt);
       return;
@@ -279,7 +307,7 @@ export default function SaveSectionsWithLoading({
         if (serverResult.updatedAt) {
           setExpectedUpdatedAtLocal(serverResult.updatedAt);
         }
-        setLastSavedSignature(buildSectionsSignature(sections));
+        setLastSavedSignature(nextSignature);
         setAutosaveState("saved");
         if (onSuccess) onSuccess("manual", serverResult.updatedAt);
       } else {
@@ -331,7 +359,7 @@ export default function SaveSectionsWithLoading({
           type="submit"
           className="inline-flex rounded-md border border-blue-500 bg-blue-600 px-3 py-1.5 text-xs text-white font-semibold shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
           style={{ boxShadow: "none" }}
-          disabled={isSaving || !isDirty}
+          disabled={isSaving || autosaveState === "saving" || !isDirty}
         >
           {isSaving ? <Spinner /> : "Save sections"}
         </button>
