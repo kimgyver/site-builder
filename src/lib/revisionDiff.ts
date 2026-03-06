@@ -51,6 +51,7 @@ export type RevisionSectionFieldChange = {
   path: string;
   before: string;
   after: string;
+  kind: "added" | "removed" | "modified";
 };
 
 export type RevisionSectionChange = {
@@ -215,7 +216,7 @@ function toDisplayValue(value: unknown): string {
 }
 
 function toCompactValue(value: unknown): string {
-  if (value === null || value === undefined) {
+  if (value === null || value === undefined || value === "") {
     return "(empty)";
   }
   if (typeof value === "string") {
@@ -226,6 +227,10 @@ function toCompactValue(value: unknown): string {
     return "(empty)";
   }
   return serialized.length > 120 ? `${serialized.slice(0, 120)}…` : serialized;
+}
+
+function isEmptyValue(value: unknown): boolean {
+  return value === null || value === undefined || value === "";
 }
 
 function buildFieldChanges(
@@ -276,7 +281,13 @@ function buildFieldChanges(
     {
       path: basePath || "value",
       before: toCompactValue(beforeValue),
-      after: toCompactValue(afterValue)
+      after: toCompactValue(afterValue),
+      kind:
+        isEmptyValue(beforeValue) && !isEmptyValue(afterValue)
+          ? "added"
+          : !isEmptyValue(beforeValue) && isEmptyValue(afterValue)
+            ? "removed"
+            : "modified"
     }
   ];
 }

@@ -3,6 +3,32 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { SectionBuilder } from "@/components/SectionBuilder";
 import type { EditableSection } from "@/types/sections";
 
+function normalizeForStableCompare(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(normalizeForStableCompare);
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .reduce<Record<string, unknown>>((acc, [key, entry]) => {
+        acc[key] = normalizeForStableCompare(entry);
+        return acc;
+      }, {});
+  }
+  return value;
+}
+
+function buildSectionsSignature(sections: EditableSection[]): string {
+  return JSON.stringify(
+    sections.map(section => ({
+      type: section.type,
+      order: section.order,
+      enabled: section.enabled,
+      props: normalizeForStableCompare(section.props ?? {})
+    }))
+  );
+}
+
 function Spinner() {
   return (
     <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-zinc-400 border-t-transparent align-middle" />
@@ -36,9 +62,11 @@ export default function SaveSectionsWithLoading({
   >("idle");
   const autosaveTimerRef = useRef<number | null>(null);
   const firstRenderRef = useRef(true);
-  const lastSavedJsonRef = useRef<string>(JSON.stringify(initialSections));
+  const lastSavedJsonRef = useRef<string>(
+    buildSectionsSignature(initialSections)
+  );
   const lastInitialSectionsJsonRef = useRef<string>(
-    JSON.stringify(initialSections)
+    buildSectionsSignature(initialSections)
   );
 
   type PutSectionsOk = { ok: true; updatedAt: string };
@@ -130,7 +158,7 @@ export default function SaveSectionsWithLoading({
   };
 
   useEffect(() => {
-    const incomingJson = JSON.stringify(initialSections);
+    const incomingJson = buildSectionsSignature(initialSections);
     if (incomingJson === lastInitialSectionsJsonRef.current) {
       return;
     }
@@ -162,7 +190,7 @@ export default function SaveSectionsWithLoading({
       return;
     }
 
-    const nextJson = JSON.stringify(sections);
+    const nextJson = buildSectionsSignature(sections);
     if (nextJson === lastSavedJsonRef.current) {
       return;
     }
@@ -222,7 +250,7 @@ export default function SaveSectionsWithLoading({
     setIsSaving(false);
     if (result.ok) {
       setExpectedUpdatedAtLocal(result.updatedAt);
-      lastSavedJsonRef.current = JSON.stringify(sections);
+      lastSavedJsonRef.current = buildSectionsSignature(sections);
       setAutosaveState("saved");
       if (onSuccess) onSuccess("manual", result.updatedAt);
       return;
@@ -247,7 +275,7 @@ export default function SaveSectionsWithLoading({
         if (serverResult.updatedAt) {
           setExpectedUpdatedAtLocal(serverResult.updatedAt);
         }
-        lastSavedJsonRef.current = JSON.stringify(sections);
+        lastSavedJsonRef.current = buildSectionsSignature(sections);
         setAutosaveState("saved");
         if (onSuccess) onSuccess("manual", serverResult.updatedAt);
       } else {

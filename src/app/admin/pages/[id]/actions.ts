@@ -114,6 +114,39 @@ export function sanitizeRichHtml(input: unknown) {
   return sanitizeCmsHtml(input);
 }
 
+function normalizeForStableCompare(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(normalizeForStableCompare);
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .reduce<Record<string, unknown>>((acc, [key, entry]) => {
+        acc[key] = normalizeForStableCompare(entry);
+        return acc;
+      }, {});
+  }
+  return value;
+}
+
+function buildSectionsSignature(
+  sections: Array<{
+    type: string;
+    order: number;
+    enabled: boolean;
+    props: Prisma.InputJsonValue;
+  }>
+) {
+  return JSON.stringify(
+    sections.map(section => ({
+      type: section.type,
+      order: section.order,
+      enabled: section.enabled,
+      props: normalizeForStableCompare(section.props)
+    }))
+  );
+}
+
 function parseJsonStringMaybe(value: unknown): unknown {
   if (typeof value !== "string") {
     return value;
@@ -285,30 +318,58 @@ export async function saveSections(formData: FormData) {
       return { ok: false, error: "Invalid sections format" };
     }
 
-    if (expectedUpdatedAt) {
-      const page = await prisma.page.findUnique({
-        where: { id: String(pageId) },
-        select: { updatedAt: true }
-      });
-      if (!page) {
-        return { ok: false, error: "Page not found" };
+    const pageForCheck = await prisma.page.findUnique({
+      where: { id: String(pageId) },
+      select: {
+        updatedAt: true,
+        sections: {
+          orderBy: { order: "asc" },
+          select: {
+            type: true,
+            order: true,
+            enabled: true,
+            props: true
+          }
+        }
       }
-      if (page.updatedAt.toISOString() !== expectedUpdatedAt) {
+    });
+    if (!pageForCheck) {
+      return { ok: false, error: "Page not found" };
+    }
+
+    if (expectedUpdatedAt) {
+      if (pageForCheck.updatedAt.toISOString() !== expectedUpdatedAt) {
         return { ok: false, error: "STALE_PAGE" };
       }
     }
 
-    // 기존 섹션 삭제 후 새 섹션 추가
-    await prisma.section.deleteMany({ where: { pageId: String(pageId) } });
-    await prisma.section.createMany({
-      data: sections.map(section => ({
-        pageId: String(pageId),
+    const currentSectionsSignature = buildSectionsSignature(
+      pageForCheck.sections.map(section => ({
         type: section.type,
         order: section.order,
         enabled: section.enabled,
-        props: section.props
+        props: section.props as Prisma.InputJsonValue
       }))
-    });
+    );
+    const nextSectionsSignature = buildSectionsSignature(sections);
+
+    if (currentSectionsSignature === nextSectionsSignature) {
+      return { ok: true, updatedAt: pageForCheck.updatedAt.toISOString() };
+    }
+
+    // 기존 섹션 삭제 후 새 섹션 추가
+    await prisma.section.deleteMany({ where: { pageId: String(pageId) } });
+    if (sections.length > 0) {
+      await prisma.section.createMany({
+        data: sections.map(section => ({
+          pageId: String(pageId),
+          type: section.type,
+          order: section.order,
+          enabled: section.enabled,
+          props: section.props
+        }))
+      });
+    }
     // revision 생성 - note에 섹션 변경 요약 기록
     let nextVersion = 1;
     let pageRevisionEnabled = true;

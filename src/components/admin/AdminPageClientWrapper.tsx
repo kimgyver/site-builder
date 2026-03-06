@@ -9,6 +9,25 @@ import type { EditableSection } from "@/types/sections";
 import type { Prisma } from "@prisma/client";
 import { buildRevisionDiffSummary } from "@/lib/revisionDiff";
 
+function getChangeTone(kind: "added" | "removed" | "modified") {
+  if (kind === "added") {
+    return {
+      badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
+      text: "text-emerald-700"
+    };
+  }
+  if (kind === "removed") {
+    return {
+      badge: "border-rose-200 bg-rose-50 text-rose-700",
+      text: "text-rose-700"
+    };
+  }
+  return {
+    badge: "border-amber-200 bg-amber-50 text-amber-700",
+    text: "text-amber-700"
+  };
+}
+
 type PageWithSectionsAndRevisions = Prisma.PageGetPayload<{
   include: {
     sections: true;
@@ -109,15 +128,15 @@ export default function AdminPageClientWrapper({
     }
 
     const chunks = [
-      `메타 변경 ${diff.metaChanges.length}개`,
-      `섹션 변경 ${diff.sections.changed}개`,
-      `추가 ${diff.sections.added}개`,
-      `삭제 ${diff.sections.removed}개`
+      `metadata changed ${diff.metaChanges.length}`,
+      `sections changed ${diff.sections.changed}`,
+      `added ${diff.sections.added}`,
+      `removed ${diff.sections.removed}`
     ];
 
     return [
       `Restore revision v${version}? Current unpublished changes will be replaced.`,
-      `요약: ${chunks.join(", ")}`
+      `Summary: ${chunks.join(", ")}`
     ].join("\n");
   };
 
@@ -306,7 +325,7 @@ export default function AdminPageClientWrapper({
                           if (!diff) {
                             return (
                               <p className="text-zinc-500">
-                                Diff 정보를 불러오지 못했습니다.
+                                Failed to load diff details.
                               </p>
                             );
                           }
@@ -315,11 +334,11 @@ export default function AdminPageClientWrapper({
                             <div className="space-y-2">
                               <div className="space-y-1">
                                 <p className="font-medium text-zinc-900">
-                                  Metadata before vs after
+                                  Metadata changes
                                 </p>
                                 {diff.metaChanges.length === 0 ? (
                                   <p className="text-zinc-500">
-                                    메타 변경 없음
+                                    No metadata changes
                                   </p>
                                 ) : (
                                   <ul className="space-y-0.5">
@@ -355,67 +374,79 @@ export default function AdminPageClientWrapper({
                                 </p>
                                 {diff.sectionChanges.length === 0 ? (
                                   <p className="text-zinc-500">
-                                    섹션 상세 변경 없음
+                                    No section changes
                                   </p>
                                 ) : (
                                   <ul className="space-y-1">
-                                    {diff.sectionChanges.map(sectionChange => (
-                                      <li
-                                        key={`${sectionChange.order}-${sectionChange.kind}`}
-                                        className="rounded border border-zinc-200 bg-white p-2"
-                                      >
-                                        <p className="font-medium text-zinc-900">
-                                          #{sectionChange.order + 1} ·{" "}
-                                          {sectionChange.beforeType ??
-                                            sectionChange.afterType}
-                                          {" · "}
-                                          {sectionChange.kind === "modified"
-                                            ? "수정"
-                                            : sectionChange.kind === "added"
-                                              ? "추가"
-                                              : "삭제"}
-                                        </p>
-                                        {sectionChange.kind === "modified" ? (
-                                          sectionChange.fieldChanges.length ===
-                                          0 ? (
-                                            <p className="text-zinc-500">
-                                              변경 필드 파악 실패
-                                            </p>
-                                          ) : (
-                                            <ul className="mt-1 space-y-0.5 text-[10px]">
-                                              {sectionChange.fieldChanges.map(
-                                                field => (
-                                                  <li
-                                                    key={`${sectionChange.order}-${field.path}`}
-                                                  >
-                                                    <span className="font-medium">
-                                                      {field.path}
-                                                    </span>{" "}
-                                                    · {field.before} →{" "}
-                                                    {field.after}
-                                                  </li>
-                                                )
-                                              )}
-                                            </ul>
-                                          )
-                                        ) : (
-                                          <p className="mt-1 text-[10px] text-zinc-600">
-                                            섹션 전체가
-                                            {sectionChange.kind === "added"
-                                              ? " 추가"
-                                              : " 삭제"}
-                                            되었습니다.
+                                    {diff.sectionChanges.map(sectionChange => {
+                                      const tone = getChangeTone(
+                                        sectionChange.kind
+                                      );
+                                      return (
+                                        <li
+                                          key={`${sectionChange.order}-${sectionChange.kind}`}
+                                          className="rounded border border-zinc-200 bg-white p-2"
+                                        >
+                                          <p className="font-medium text-zinc-900">
+                                            #{sectionChange.order + 1} ·{" "}
+                                            {sectionChange.beforeType ??
+                                              sectionChange.afterType}{" "}
+                                            <span
+                                              className={`ml-1 inline-flex rounded border px-1 py-0.5 text-[10px] uppercase ${tone.badge}`}
+                                            >
+                                              {sectionChange.kind}
+                                            </span>
                                           </p>
-                                        )}
-                                      </li>
-                                    ))}
+                                          {sectionChange.kind === "modified" ? (
+                                            sectionChange.fieldChanges
+                                              .length === 0 ? (
+                                              <p className="text-zinc-500">
+                                                No field-level changes detected
+                                              </p>
+                                            ) : (
+                                              <ul className="mt-1 space-y-0.5 text-[10px]">
+                                                {sectionChange.fieldChanges.map(
+                                                  field => {
+                                                    const fieldTone =
+                                                      getChangeTone(field.kind);
+                                                    return (
+                                                      <li
+                                                        key={`${sectionChange.order}-${field.path}`}
+                                                        className={`rounded px-1 py-0.5 ${fieldTone.text}`}
+                                                      >
+                                                        <span
+                                                          className={`mr-1 inline-flex rounded border px-1 py-0.5 uppercase ${fieldTone.badge}`}
+                                                        >
+                                                          {field.kind}
+                                                        </span>
+                                                        <span className="font-medium">
+                                                          {field.path}
+                                                        </span>{" "}
+                                                        · {field.before} →{" "}
+                                                        {field.after}
+                                                      </li>
+                                                    );
+                                                  }
+                                                )}
+                                              </ul>
+                                            )
+                                          ) : (
+                                            <p
+                                              className={`mt-1 text-[10px] ${tone.text}`}
+                                            >
+                                              Section was {sectionChange.kind}.
+                                            </p>
+                                          )}
+                                        </li>
+                                      );
+                                    })}
                                   </ul>
                                 )}
                               </div>
 
                               <details className="rounded border border-zinc-200 bg-white p-2">
                                 <summary className="text-[11px] font-medium text-zinc-700">
-                                  Raw JSON 보기 (before / after)
+                                  Raw JSON (before / after)
                                 </summary>
                                 <div className="mt-2 grid gap-2 md:grid-cols-2">
                                   <div>

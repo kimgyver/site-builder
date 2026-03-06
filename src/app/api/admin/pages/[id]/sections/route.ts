@@ -54,6 +54,39 @@ function sanitizeRichHtml(input: unknown) {
   return sanitizeCmsHtml(input);
 }
 
+function normalizeForStableCompare(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(normalizeForStableCompare);
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .reduce<Record<string, unknown>>((acc, [key, entry]) => {
+        acc[key] = normalizeForStableCompare(entry);
+        return acc;
+      }, {});
+  }
+  return value;
+}
+
+function buildSectionsSignature(
+  sections: Array<{
+    type: string;
+    order: number;
+    enabled: boolean;
+    props: Prisma.InputJsonValue;
+  }>
+) {
+  return JSON.stringify(
+    sections.map(section => ({
+      type: section.type,
+      order: section.order,
+      enabled: section.enabled,
+      props: normalizeForStableCompare(section.props)
+    }))
+  );
+}
+
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -155,7 +188,16 @@ export async function PUT(
             status: true,
             seoTitle: true,
             seoDescription: true,
-            updatedAt: true
+            updatedAt: true,
+            sections: {
+              orderBy: { order: "asc" },
+              select: {
+                type: true,
+                order: true,
+                enabled: true,
+                props: true
+              }
+            }
           }
         });
 
@@ -169,6 +211,27 @@ export async function PUT(
           page.updatedAt.getTime() !== expectedDate.getTime()
         ) {
           throw new Error("STALE_PAGE");
+        }
+
+        const currentSectionsSignature = buildSectionsSignature(
+          page.sections.map(section => ({
+            type: section.type,
+            order: section.order,
+            enabled: section.enabled,
+            props: section.props as Prisma.InputJsonValue
+          }))
+        );
+        const nextSectionsSignature = buildSectionsSignature(
+          nextSections.map(section => ({
+            type: section.type,
+            order: section.order,
+            enabled: section.enabled,
+            props: section.props
+          }))
+        );
+
+        if (currentSectionsSignature === nextSectionsSignature) {
+          return { updatedAt: page.updatedAt };
         }
 
         await tx.section.deleteMany({ where: { pageId } });
