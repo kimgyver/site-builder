@@ -5,8 +5,6 @@ export function updateCurrentTableCells(
   attrs: Record<string, unknown>,
   selectedCellPositions?: number[] | null
 ) {
-  if (!editor.isActive("table")) return false;
-
   const { state, view } = editor;
   const { from, to, $from } = state.selection;
   let tr = state.tr;

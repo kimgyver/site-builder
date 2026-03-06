@@ -94,7 +94,6 @@ function applyTableAttrsToSelection(
   attrs: Record<string, unknown>,
   selectedCellPositions?: number[] | null
 ) {
-  if (!editor.isActive("table")) return;
   if (updateCurrentTableCells(editor, attrs, selectedCellPositions)) return;
 }
 
