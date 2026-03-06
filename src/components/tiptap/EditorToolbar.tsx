@@ -44,7 +44,7 @@ export function EditorToolbar({
   const tableToolsVisible = showTableTools && isTableActive;
 
   return (
-    <div className="space-y-2 rounded-md border border-zinc-300 bg-zinc-50 px-2 py-2 text-xs text-zinc-700">
+    <div className="space-y-2 rounded-md border border-zinc-300 bg-zinc-50 px-2.5 py-2.5 text-sm text-zinc-700">
       <div className="flex flex-wrap items-center gap-1">
         <ToolbarButton
           label="Bold"
@@ -151,9 +151,7 @@ export function EditorToolbar({
 
       {showTextTools ? (
         <div className="flex flex-wrap items-center gap-1 rounded border border-zinc-200 bg-white px-2 py-1">
-          <span className="px-1 text-[10px] font-medium text-zinc-500">
-            Text
-          </span>
+          <span className="px-1 text-xs font-medium text-zinc-500">Text</span>
           <ToolbarButton
             label="Text Color"
             title="Text Color"
@@ -233,10 +231,8 @@ export function EditorToolbar({
 
       {imageToolsVisible ? (
         <div className="flex flex-wrap items-center gap-1 rounded border border-zinc-200 bg-white px-2 py-1">
-          <span className="px-1 text-[10px] font-medium text-zinc-500">
-            Image
-          </span>
-          <span className="px-1 text-[11px] text-zinc-500">
+          <span className="px-1 text-xs font-medium text-zinc-500">Image</span>
+          <span className="px-1 text-xs text-zinc-500">
             Width {effectiveImageWidth ? `${effectiveImageWidth}%` : "Auto"}
           </span>
           <input

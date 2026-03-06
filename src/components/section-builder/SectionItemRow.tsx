@@ -67,7 +67,7 @@ export function SectionItemRow({
       key={section.id}
       data-section-index={sectionIndex}
       tabIndex={0}
-      className={`flex w-full items-start justify-between gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2 text-xs ${draggedIndex === sectionIndex ? "opacity-50" : ""}`}
+      className={`flex w-full items-start justify-between gap-3 rounded-md border border-zinc-200 bg-white px-3 py-2.5 text-sm ${draggedIndex === sectionIndex ? "opacity-50" : ""}`}
       draggable
       onDragStart={event => {
         const target = event.target;
@@ -106,11 +106,11 @@ export function SectionItemRow({
     >
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-700">
+          <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-zinc-700">
             {SECTION_CATALOG[section.type]?.label ?? section.type}
           </span>
           {!section.enabled && (
-            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-amber-700">
+            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs uppercase tracking-wide text-amber-700">
               hidden (public)
             </span>
           )}
@@ -189,38 +189,38 @@ export function SectionItemRow({
           ) : null}
         </div>
       </div>
-      <div className="flex flex-col items-end gap-1 text-[10px]">
+      <div className="flex flex-col items-end gap-1 text-xs">
         <button
           type="button"
-          className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
+          className="rounded border border-zinc-200 px-2 py-1 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
           onClick={() => move(sectionIndex, -1)}
         >
           ↑
         </button>
         <button
           type="button"
-          className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
+          className="rounded border border-zinc-200 px-2 py-1 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
           onClick={() => move(sectionIndex, 1)}
         >
           ↓
         </button>
         <button
           type="button"
-          className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
+          className="rounded border border-zinc-200 px-2 py-1 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
           onClick={() => duplicateSection(sectionIndex)}
         >
           Duplicate
         </button>
         <button
           type="button"
-          className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
+          className="rounded border border-zinc-200 px-2 py-1 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
           onClick={() => toggleEnabled(sectionIndex)}
         >
           {section.enabled ? "Hide (public)" : "Show (public)"}
         </button>
         <button
           type="button"
-          className="rounded border border-red-200 px-1.5 py-0.5 text-red-600 hover:border-red-300 hover:bg-red-50"
+          className="rounded border border-red-200 px-2 py-1 text-red-600 hover:border-red-300 hover:bg-red-50"
           onClick={() => removeSection(sectionIndex)}
         >
           Delete

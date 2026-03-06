@@ -347,7 +347,7 @@ export function SectionBuilder({
           readOnly
         />
 
-        <div className="flex flex-wrap items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="text-zinc-500">Add section:</span>
           {SECTION_TYPES_IN_ORDER.map(type => {
             const meta = SECTION_CATALOG[type];
@@ -355,7 +355,7 @@ export function SectionBuilder({
               <button
                 key={type}
                 type="button"
-                className="inline-flex items-center gap-1 rounded-full border border-zinc-200 px-2 py-0.5 text-[10px] font-medium text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+                className="inline-flex items-center gap-1 rounded-full border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
                 onClick={() => addSection(type)}
               >
                 {meta?.icon ? <span>{meta.icon}</span> : null}

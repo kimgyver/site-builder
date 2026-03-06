@@ -16,7 +16,7 @@ export function ToolbarButton({
       title={title ?? label}
       aria-label={title ?? label}
       className={
-        "rounded px-2 py-1 text-[11px] transition " +
+        "rounded px-2.5 py-1 text-xs transition " +
         (disabled
           ? "opacity-40"
           : active

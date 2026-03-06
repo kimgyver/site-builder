@@ -119,7 +119,7 @@ export default function AdminPageClientWrapper({
         show={toast.show}
         onClose={() => setToast({ ...toast, show: false })}
       />
-      <div className="mx-auto w-full max-w-2xl space-y-6">
+      <div className="mx-auto w-full max-w-4xl space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Edit page</h1>
