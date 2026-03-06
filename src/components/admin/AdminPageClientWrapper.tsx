@@ -88,6 +88,27 @@ export default function AdminPageClientWrapper({
   });
   const handleShowToast = (message: string) =>
     setToast({ show: true, message });
+  const refreshPreservingScroll = () => {
+    if (typeof window === "undefined") {
+      router.refresh();
+      return;
+    }
+
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    router.refresh();
+
+    let frame = 0;
+    const restore = () => {
+      window.scrollTo({ left: scrollX, top: scrollY, behavior: "auto" });
+      frame += 1;
+      if (frame < 4) {
+        window.requestAnimationFrame(restore);
+      }
+    };
+
+    window.requestAnimationFrame(restore);
+  };
   const previewHref = `/${page.locale}/${page.slug}?preview=${page.previewToken}`;
   const revisionDiffVsCurrentMap = useMemo(() => {
     return new Map(
@@ -251,7 +272,7 @@ export default function AdminPageClientWrapper({
               setSectionsExpectedUpdatedAt(updatedAt);
             }
             handleShowToast("Page info saved!");
-            router.refresh();
+            refreshPreservingScroll();
           }}
         />
         <div className="space-y-2 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-3">
@@ -313,7 +334,7 @@ export default function AdminPageClientWrapper({
               if (mode === "manual") {
                 handleShowToast("Sections saved!");
               }
-              router.refresh();
+              refreshPreservingScroll();
             }}
           />
         </div>
@@ -373,7 +394,7 @@ export default function AdminPageClientWrapper({
                                 setSectionsExpectedUpdatedAt(updatedAt);
                               }
                               handleShowToast(`Restored v${revision.version}`);
-                              router.refresh();
+                              refreshPreservingScroll();
                             }}
                           />
                         ) : null}
