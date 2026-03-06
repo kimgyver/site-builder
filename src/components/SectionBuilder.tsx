@@ -437,7 +437,7 @@ export function SectionBuilder({
                 <div className="flex-1 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-700">
-                      {section.type}
+                      {SECTION_CATALOG[section.type]?.label ?? section.type}
                     </span>
                     {!section.enabled && (
                       <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] uppercase tracking-wide text-amber-700">

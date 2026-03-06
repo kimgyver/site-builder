@@ -94,8 +94,8 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
   },
   richText: {
     type: "richText",
-    label: "Rich Text",
-    description: "Legacy rich text area",
+    label: "Rich Text (Legacy)",
+    description: "Legacy alias of Text section",
     icon: "📝",
     keywords: ["rich", "legacy", "html"],
     createDefaultProps: () => ({ html: "<p>New text block</p>" }),
@@ -254,6 +254,5 @@ export const SECTION_TYPES_IN_ORDER: SectionType[] = [
   "accordion",
   "callout",
   "embed",
-  "pageStyle",
-  "richText"
+  "pageStyle"
 ];
