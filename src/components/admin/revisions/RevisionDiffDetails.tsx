@@ -8,11 +8,9 @@ export default function RevisionDiffDetails({
 }) {
   return (
     <div className="space-y-2">
-      <div className="space-y-1">
-        <p className="font-medium text-zinc-900">Metadata changes</p>
-        {diff.metaChanges.length === 0 ? (
-          <p className="text-zinc-500">No metadata changes</p>
-        ) : (
+      {diff.metaChanges.length > 0 ? (
+        <div className="space-y-1">
+          <p className="font-medium text-zinc-900">Metadata changes</p>
           <ul className="space-y-0.5">
             {diff.metaChanges.map(change => (
               <li key={change.field}>
@@ -21,8 +19,8 @@ export default function RevisionDiffDetails({
               </li>
             ))}
           </ul>
-        )}
-      </div>
+        </div>
+      ) : null}
 
       <div className="space-y-1">
         <p className="font-medium text-zinc-900">Sections summary</p>
