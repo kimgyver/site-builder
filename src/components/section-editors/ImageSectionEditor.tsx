@@ -2,6 +2,61 @@ import React from "react";
 import Image from "next/image";
 import type { MediaItem, PageReferenceItem } from "@/types/references";
 
+function getImageUrlFromPastedContent(
+  text: string,
+  html: string
+): string | undefined {
+  const htmlMatch = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (htmlMatch?.[1]) {
+    return htmlMatch[1].trim();
+  }
+
+  const textMatch = text.match(
+    /data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=\s]+|https?:\/\/[^\s"')]+|\/[^\s"')]+/i
+  );
+  if (textMatch?.[0]) {
+    return textMatch[0].trim();
+  }
+
+  return undefined;
+}
+
+function readClipboardImageAsDataUrl(
+  items: DataTransferItemList
+): Promise<string | undefined> {
+  const imageItem = Array.from(items).find(item =>
+    item.type.toLowerCase().startsWith("image/")
+  );
+  const file = imageItem?.getAsFile();
+  if (!file) return Promise.resolve(undefined);
+
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve(typeof reader.result === "string" ? reader.result : undefined);
+    };
+    reader.onerror = () => resolve(undefined);
+    reader.readAsDataURL(file);
+  });
+}
+
+function isImageLikeUrl(url: string): boolean {
+  return (
+    /^data:image\//i.test(url) ||
+    /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif)(\?.*)?$/i.test(url) ||
+    url.startsWith("https://placehold.co/") ||
+    url.startsWith("https://imgnews") ||
+    url.startsWith("https://images") ||
+    url.startsWith("https://pstatic") ||
+    url.startsWith("https://cdn") ||
+    url.startsWith("/public/")
+  );
+}
+
+function isEmbeddedDataImage(url: string): boolean {
+  return /^data:image\//i.test(url);
+}
+
 export function ImageSectionEditor({
   props,
   updateProps,
@@ -19,12 +74,63 @@ export function ImageSectionEditor({
   mediaTotal: number;
   mediaLimit: number;
 }) {
+  const currentUrl = typeof props.url === "string" ? props.url.trim() : "";
+  const libraryImageCandidates = libraryMedia.filter(item =>
+    isImageLikeUrl(item.url)
+  );
+  const hasCurrentInCandidates = libraryImageCandidates.some(
+    item => item.url === currentUrl
+  );
+  const mediaCandidates =
+    currentUrl && isImageLikeUrl(currentUrl) && !hasCurrentInCandidates
+      ? [
+          {
+            url: currentUrl,
+            label: /^data:image\//i.test(currentUrl)
+              ? "Current section · data:image;base64,..."
+              : currentUrl.length > 84
+                ? `Current section · ${currentUrl.slice(0, 81)}...`
+                : `Current section · ${currentUrl}`
+          },
+          ...libraryImageCandidates
+        ]
+      : libraryImageCandidates;
+
+  const handleImageUrlPaste = async (
+    e: React.ClipboardEvent<HTMLInputElement>
+  ) => {
+    const clipboardImage = await readClipboardImageAsDataUrl(
+      e.clipboardData.items
+    );
+    if (clipboardImage) {
+      e.preventDefault();
+      updateProps({
+        ...props,
+        url: clipboardImage
+      });
+      return;
+    }
+
+    const text = e.clipboardData.getData("text/plain");
+    const html = e.clipboardData.getData("text/html");
+    const extracted = getImageUrlFromPastedContent(text, html);
+    if (!extracted) return;
+
+    e.preventDefault();
+    updateProps({
+      ...props,
+      url: extracted
+    });
+  };
+
   return (
     <div className="space-y-1">
       {!isLibraryLoading && mediaLimit > 0 ? (
         <p className="mb-1 text-[11px] text-zinc-500">
-          Showing recent {libraryMedia.length} image references
-          {mediaTotal > libraryMedia.length ? ` (of ${mediaTotal} total)` : ""}
+          Showing recent {mediaCandidates.length} image references
+          {mediaTotal > libraryImageCandidates.length
+            ? ` (of ${mediaTotal} total)`
+            : ""}
           {mediaTotal > mediaLimit ? ` · cap ${mediaLimit}` : ""}
         </p>
       ) : null}
@@ -39,16 +145,9 @@ export function ImageSectionEditor({
                 <div className="mt-2 h-3 w-2/3 rounded bg-zinc-200" />
               </div>
             ))
-          : libraryMedia.map(item => {
-              const isImage =
-                (typeof item.url === "string" &&
-                  /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(item.url)) ||
-                item.url.startsWith("https://placehold.co/") ||
-                item.url.startsWith("https://imgnews") ||
-                item.url.startsWith("https://images") ||
-                item.url.startsWith("https://pstatic") ||
-                item.url.startsWith("https://cdn") ||
-                item.url.startsWith("/public/");
+          : mediaCandidates.map(item => {
+              const isImage = isImageLikeUrl(item.url);
+              const isEmbedded = isEmbeddedDataImage(item.url);
               return (
                 <button
                   key={item.url}
@@ -84,8 +183,14 @@ export function ImageSectionEditor({
                     </div>
                   )}
                   <span className="truncate w-full text-center">
+                    {isEmbedded ? "[Embedded] " : ""}
                     {item.label}
                   </span>
+                  {isEmbedded ? (
+                    <span className="mt-1 inline-flex rounded border border-amber-300 bg-amber-50 px-1 py-0.5 text-[10px] font-medium text-amber-700">
+                      Embedded
+                    </span>
+                  ) : null}
                 </button>
               );
             })}
@@ -98,13 +203,14 @@ export function ImageSectionEditor({
       <input
         className="w-full rounded-md border border-zinc-300 px-2 py-1 text-[11px]"
         value={typeof props.url === "string" ? props.url : ""}
+        onPaste={handleImageUrlPaste}
         onChange={e =>
           updateProps({
             ...props,
             url: e.target.value
           })
         }
-        placeholder="Image URL"
+        placeholder="Image URL (or paste image with Cmd+V)"
       />
       <input
         className="w-full rounded-md border border-zinc-300 px-2 py-1 text-[11px]"
@@ -161,6 +267,11 @@ export function ImageSectionEditor({
           </option>
         ))}
       </select>
+
+      <p className="text-[10px] text-zinc-500">
+        Items marked <span className="font-medium">Embedded</span> are pasted
+        clipboard images stored as <code>data:image</code> values.
+      </p>
     </div>
   );
 }

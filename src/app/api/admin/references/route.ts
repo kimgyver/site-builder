@@ -26,7 +26,13 @@ function pushMediaFromValue(
   if (typeof value !== "string") return;
   const url = value.trim();
   if (!url) return;
-  if (!/^https?:\/\//i.test(url) && !url.startsWith("/")) return;
+  const isDataImage =
+    /^data:image\/(png|jpe?g|webp|gif|bmp|avif);base64,[a-z0-9+/=\s]+$/i.test(
+      url
+    ) && url.length <= 2_500_000;
+  if (!/^https?:\/\//i.test(url) && !url.startsWith("/") && !isDataImage) {
+    return;
+  }
   const existing = out.get(url);
   if (existing) {
     existing.count += 1;
@@ -34,7 +40,11 @@ function pushMediaFromValue(
     return;
   }
 
-  const short = url.length > 72 ? `${url.slice(0, 69)}...` : url;
+  const short = isDataImage
+    ? "data:image;base64,..."
+    : url.length > 72
+      ? `${url.slice(0, 69)}...`
+      : url;
   out.set(url, {
     url,
     label: `${fallbackLabel} · ${short}`,

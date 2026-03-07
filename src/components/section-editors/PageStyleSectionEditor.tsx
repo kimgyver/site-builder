@@ -35,6 +35,10 @@ function isLikelyImageUrl(url: string): boolean {
   return /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif)(\?.*)?$/i.test(url);
 }
 
+function isEmbeddedDataImage(url: string): boolean {
+  return /^data:image\//i.test(url);
+}
+
 function isSupportedBackgroundImageValue(value: string): boolean {
   const raw = value.trim();
   if (!raw) return false;
@@ -105,6 +109,26 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
   const hasImageValue = backgroundImageUrl.trim().length > 0;
   const imageValueValid = isSupportedBackgroundImageValue(backgroundImageUrl);
   const isDataImageValue = /^data:image\//i.test(backgroundImageUrl.trim());
+  const normalizedCurrentImageUrl = backgroundImageUrl.trim();
+  const hasCurrentImageInCandidates = imageCandidates.some(
+    item => item.url === normalizedCurrentImageUrl
+  );
+  const imageCandidatesWithCurrent =
+    imageValueValid &&
+    !isDataImageValue &&
+    normalizedCurrentImageUrl.length > 0 &&
+    !hasCurrentImageInCandidates
+      ? [
+          {
+            url: normalizedCurrentImageUrl,
+            label:
+              normalizedCurrentImageUrl.length > 84
+                ? `Current page · ${normalizedCurrentImageUrl.slice(0, 81)}...`
+                : `Current page · ${normalizedCurrentImageUrl}`
+          },
+          ...imageCandidates
+        ]
+      : imageCandidates;
   const backgroundImageDimPercent =
     typeof props.backgroundImageDimPercent === "number"
       ? props.backgroundImageDimPercent
@@ -214,8 +238,10 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
         Background image URL (optional)
         {!isLibraryLoading && mediaLimit > 0 ? (
           <span className="ml-1 text-zinc-500">
-            · {imageCandidates.length} from library
-            {mediaTotal > imageCandidates.length ? ` (of ${mediaTotal})` : ""}
+            · {imageCandidatesWithCurrent.length} available
+            {mediaTotal > imageCandidates.length
+              ? ` (of ${mediaTotal} in library)`
+              : ""}
           </span>
         ) : null}
         <input
@@ -272,7 +298,7 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           />
         </div>
       ) : null}
-      {!isLibraryLoading && imageCandidates.length > 0 ? (
+      {!isLibraryLoading && imageCandidatesWithCurrent.length > 0 ? (
         <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
           Pick from media library (URL images)
           <select
@@ -287,12 +313,18 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
             }
           >
             <option value="">Select an image…</option>
-            {imageCandidates.map(item => (
+            {imageCandidatesWithCurrent.map(item => (
               <option key={item.url} value={item.url}>
-                {item.label}
+                {isEmbeddedDataImage(item.url)
+                  ? `[Embedded] ${item.label}`
+                  : item.label}
               </option>
             ))}
           </select>
+          <p className="mt-1 text-[10px] text-zinc-500">
+            <span className="font-medium">[Embedded]</span> means clipboard
+            image data (<code>data:image</code>), not an external URL.
+          </p>
         </label>
       ) : null}
       <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
