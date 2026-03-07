@@ -39,6 +39,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 Current reality-check status is tracked in [docs/cms-phase-status.md](docs/cms-phase-status.md).
 
+예약 발행(스케줄) 설정/운영/테스트 문서는 [docs/scheduled-publish.md](docs/scheduled-publish.md)를 참고하세요.
+
 Phase A (complete) includes:
 
 - Admin auth middleware for `/admin` routes
@@ -63,6 +65,7 @@ Set these environment variables for admin authentication:
 - `ADMIN_REVIEWER_PASSWORD`: reviewer login password (read-only).
 - `ADMIN_PASSWORD`: legacy publisher fallback password.
 - `ADMIN_SESSION_KEY`: optional session cookie value override (recommended random string).
+- `CRON_SECRET`: scheduled publish cron API 보호용 bearer token.
 
 How to set them:
 
@@ -73,6 +76,15 @@ How to set them:
 Recommended way to generate `ADMIN_SESSION_KEY`:
 
 - `openssl rand -base64 48`
+
+Recommended way to generate `CRON_SECRET`:
+
+- `openssl rand -base64 48`
+
+로컬에서 예약 발행을 수동/주기 테스트하려면:
+
+- `npm run cron:publish:once`
+- `npm run cron:publish:watch`
 
 After pulling schema changes, run:
 

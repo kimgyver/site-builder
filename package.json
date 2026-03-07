@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "cron:publish:once": "node scripts/cron-publish-once.mjs",
+    "cron:publish:watch": "node scripts/cron-publish-watch.mjs"
   },
   "dependencies": {
     "@prisma/client": "6.2.1",

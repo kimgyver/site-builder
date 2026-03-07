@@ -102,6 +102,29 @@
   - 체크 시 robots 규칙이 전체 disallow로 변경됨
   - 해제 시 기존 allow 규칙으로 복귀함
 
+### T-NEW-08 예약 발행(Scheduled Publish)
+
+- 전제조건: `/admin/pages/[id]` 접근 가능 권한(`admin`/`publisher`/`editor`)
+- 절차:
+  1. `Status`를 `Draft`로 설정
+  2. `Scheduled publish (optional)`에 2~5분 뒤 시각 입력
+  3. 저장
+  4. 로컬이면 `npm run cron:publish:once` 또는 `npm run cron:publish:watch` 실행
+  5. 시간이 지난 뒤 페이지 상태 확인
+- 기대 결과:
+  - 예약 시각 도달 후 페이지 상태가 `Published`로 전환됨
+  - 전환 후 예약값(`publishAt`)이 해제됨
+
+### T-NEW-09 예약값 해제 조건
+
+- 전제조건: 예약 시간이 들어간 Draft 페이지
+- 절차:
+  1. 같은 페이지에서 `Status`를 `Published`로 변경
+  2. 저장 후 다시 편집 화면 확인
+- 기대 결과:
+  - 예약값이 자동으로 비워져 있음
+  - 즉시 발행 상태가 유지됨
+
 ### 1. 글로벌 헤더/푸터 섹션 관리
 
 - `/admin/globals`에서 헤더/푸터 글로벌 섹션 그룹 생성 및 편집 가능
@@ -182,6 +205,13 @@
 - [ ] 저장 후 `/` 및 `/admin/*`에 설정 반영(홈 타이틀/설명, 상단 브랜드 라벨) 확인
 - [ ] `Disable search indexing` on/off에 따라 `/robots.txt` 규칙 변경 확인
 - [ ] `reviewer` 권한에서 Settings 저장 불가(읽기 전용) 확인
+
+### 예약 발행(Scheduled Publish)
+
+- [ ] `/admin/pages/[id]`에서 Draft + 예약 시각 저장 가능 여부 확인
+- [ ] 예약 시각 도달 후 자동 Publish 전환 확인
+- [ ] Publish로 저장 시 예약값 자동 해제 확인
+- [ ] 로컬 테스트 시 `npm run cron:publish:once` / `npm run cron:publish:watch` 동작 확인
 
 ### 다국어/네비게이션
 
