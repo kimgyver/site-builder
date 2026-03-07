@@ -100,38 +100,75 @@ async function saveSettings(formData: FormData) {
     publishTimeZoneColumnExistsResult[0]?.exists
   );
 
-  await prisma.siteSetting.upsert({
-    where: { key: "default" },
-    update: {
-      siteName,
-      siteTagline,
-      siteUrl,
-      contactEmail,
-      defaultSeoTitle,
-      defaultSeoDescription,
-      cronPublishIntervalMinutes,
-      disableIndexing,
-      adminBrandLabel
-    },
-    create: {
-      key: "default",
-      siteName,
-      siteTagline,
-      siteUrl,
-      contactEmail,
-      defaultSeoTitle,
-      defaultSeoDescription,
-      cronPublishIntervalMinutes,
-      disableIndexing,
-      adminBrandLabel
-    }
-  });
-
   if (hasPublishTimeZoneColumn) {
+    await prisma.siteSetting.upsert({
+      where: { key: "default" },
+      update: {
+        siteName,
+        siteTagline,
+        siteUrl,
+        contactEmail,
+        defaultSeoTitle,
+        defaultSeoDescription,
+        cronPublishIntervalMinutes,
+        disableIndexing,
+        adminBrandLabel
+      },
+      create: {
+        key: "default",
+        siteName,
+        siteTagline,
+        siteUrl,
+        contactEmail,
+        defaultSeoTitle,
+        defaultSeoDescription,
+        cronPublishIntervalMinutes,
+        disableIndexing,
+        adminBrandLabel
+      }
+    });
+
     await prisma.$executeRaw`
       UPDATE "SiteSetting"
       SET "publishTimeZone" = ${publishTimeZone}
       WHERE "key" = 'default'
+    `;
+  } else {
+    await prisma.$executeRaw`
+      INSERT INTO "SiteSetting" (
+        "key",
+        "siteName",
+        "siteTagline",
+        "siteUrl",
+        "contactEmail",
+        "defaultSeoTitle",
+        "defaultSeoDescription",
+        "cronPublishIntervalMinutes",
+        "disableIndexing",
+        "adminBrandLabel"
+      )
+      VALUES (
+        'default',
+        ${siteName},
+        ${siteTagline},
+        ${siteUrl},
+        ${contactEmail},
+        ${defaultSeoTitle},
+        ${defaultSeoDescription},
+        ${cronPublishIntervalMinutes},
+        ${disableIndexing},
+        ${adminBrandLabel}
+      )
+      ON CONFLICT ("key") DO UPDATE SET
+        "siteName" = EXCLUDED."siteName",
+        "siteTagline" = EXCLUDED."siteTagline",
+        "siteUrl" = EXCLUDED."siteUrl",
+        "contactEmail" = EXCLUDED."contactEmail",
+        "defaultSeoTitle" = EXCLUDED."defaultSeoTitle",
+        "defaultSeoDescription" = EXCLUDED."defaultSeoDescription",
+        "cronPublishIntervalMinutes" = EXCLUDED."cronPublishIntervalMinutes",
+        "disableIndexing" = EXCLUDED."disableIndexing",
+        "adminBrandLabel" = EXCLUDED."adminBrandLabel"
     `;
   }
 
