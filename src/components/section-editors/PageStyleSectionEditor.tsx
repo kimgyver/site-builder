@@ -121,7 +121,9 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
       ? `linear-gradient(rgba(255, 255, 255, ${previewDimAlpha}), rgba(255, 255, 255, ${previewDimAlpha})), url("${escapedPreviewUrl}")`
       : `url("${escapedPreviewUrl}")`;
   const previewBackgroundRepeat =
-    backgroundImageDimPercent > 0 ? `no-repeat, ${previewRepeat}` : previewRepeat;
+    backgroundImageDimPercent > 0
+      ? `no-repeat, ${previewRepeat}`
+      : previewRepeat;
   const previewBackgroundSize =
     backgroundImageDimPercent > 0 ? `cover, ${previewSize}` : previewSize;
   const previewBackgroundPosition =
