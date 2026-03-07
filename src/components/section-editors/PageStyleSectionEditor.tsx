@@ -35,6 +35,20 @@ function isLikelyImageUrl(url: string): boolean {
   return /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif)(\?.*)?$/i.test(url);
 }
 
+function isSupportedBackgroundImageValue(value: string): boolean {
+  const raw = value.trim();
+  if (!raw) return false;
+  if (
+    /^data:image\/(png|jpe?g|webp|gif|bmp|avif);base64,[a-z0-9+/=\s]+$/i.test(
+      raw
+    )
+  ) {
+    return raw.length <= 2_500_000;
+  }
+  if (raw.startsWith("/")) return true;
+  return /^https?:\/\//i.test(raw);
+}
+
 const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
   section,
   updateProps,
@@ -44,13 +58,27 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
   mediaLimit
 }) => {
   const props = (section.props || {}) as Record<string, unknown>;
+  const backgroundMode =
+    props.backgroundMode === "color" ||
+    props.backgroundMode === "image" ||
+    props.backgroundMode === "both"
+      ? String(props.backgroundMode)
+      : "both";
   const backgroundImageUrl =
     typeof props.backgroundImageUrl === "string"
       ? props.backgroundImageUrl
       : "";
+  const backgroundColor =
+    typeof props.backgroundColor === "string"
+      ? props.backgroundColor
+      : "#f8fafc";
   const imageCandidates = libraryMedia.filter(item =>
     isLikelyImageUrl(item.url)
   );
+  const imageModeEnabled =
+    backgroundMode === "image" || backgroundMode === "both";
+  const hasImageValue = backgroundImageUrl.trim().length > 0;
+  const imageValueValid = isSupportedBackgroundImageValue(backgroundImageUrl);
 
   const handleBackgroundPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     const text = e.clipboardData.getData("text/plain");
@@ -68,24 +96,35 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
   return (
     <div className="space-y-1">
       <div className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 text-[10px] text-blue-800">
-        <p className="font-medium">Background image setup</p>
+        <p className="font-medium">Background setup (quick steps)</p>
         <p>
-          1) Paste into the URL field: direct image URL, HTML with{" "}
-          <code>&lt;img src="..." /&gt;</code>, or clipboard image ({" "}
-          <code>data:image;base64,...</code>). 2) Or choose one from{" "}
-          <span className="font-medium">Pick from media library</span>.
+          1) Choose mode: Color only / Image only / Both. 2) For image,
+          paste URL/HTML/image clipboard or choose from library. 3) Save.
         </p>
       </div>
+      <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+        Background mode
+        <select
+          className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+          value={backgroundMode}
+          onChange={e =>
+            updateProps({
+              ...props,
+              backgroundMode: e.target.value
+            })
+          }
+        >
+          <option value="color">Color only</option>
+          <option value="image">Image only</option>
+          <option value="both">Both (image over color)</option>
+        </select>
+      </label>
       <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
         Background color
         <input
           type="color"
           className="mt-1 h-7 w-full cursor-pointer rounded border border-zinc-300 bg-white p-0"
-          value={
-            typeof props.backgroundColor === "string"
-              ? props.backgroundColor
-              : "#f8fafc"
-          }
+          value={backgroundColor}
           onChange={e =>
             updateProps({
               ...props,
@@ -94,6 +133,16 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           }
         />
       </label>
+      <div className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+        <span className="font-medium">Image status:</span>{" "}
+        {!imageModeEnabled
+          ? "disabled by mode"
+          : !hasImageValue
+            ? "no image set"
+            : imageValueValid
+              ? "ready"
+              : "invalid value (use https://, /path, or data:image;base64)"}
+      </div>
       <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
         Background image URL (optional)
         {!isLibraryLoading && mediaLimit > 0 ? (
@@ -107,6 +156,7 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
           value={backgroundImageUrl}
           onPaste={handleBackgroundPaste}
+          disabled={!imageModeEnabled}
           onChange={e =>
             updateProps({
               ...props,
@@ -116,16 +166,32 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           placeholder="https://... or /images/bg.jpg or data:image/..."
         />
         <p className="mt-1 text-[10px] text-zinc-500">
-          Tip: if you paste HTML containing <code>&lt;img src="..." /&gt;</code>
-          or clipboard image data, the first image source is auto-filled.
+          Accepted: URL, local path, HTML <code>&lt;img src /&gt;</code>,
+          clipboard image data.
         </p>
       </label>
+      {imageModeEnabled && hasImageValue && imageValueValid ? (
+        <div className="rounded-md border border-zinc-200 bg-white p-2">
+          <p className="mb-1 text-[10px] text-zinc-600">Image preview</p>
+          <div
+            className="h-16 rounded border border-zinc-200"
+            style={{
+              backgroundColor,
+              backgroundImage: `url("${backgroundImageUrl.replace(/"/g, '\\"')}")`,
+              backgroundSize: "cover",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center"
+            }}
+          />
+        </div>
+      ) : null}
       {!isLibraryLoading && imageCandidates.length > 0 ? (
         <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
           Pick from media library
           <select
             className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
             value={backgroundImageUrl}
+            disabled={!imageModeEnabled}
             onChange={e =>
               updateProps({
                 ...props,
@@ -149,6 +215,7 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           min={0}
           max={90}
           className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+          disabled={!imageModeEnabled}
           value={
             typeof props.backgroundImageDimPercent === "number"
               ? props.backgroundImageDimPercent

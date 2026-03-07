@@ -15,7 +15,6 @@ import {
   type SupportedLocale
 } from "@/lib/i18n";
 import {
-  getPageBackgroundColor,
   getSectionBrandingConfig,
   getSectionBackgroundStyle,
   getSectionLayoutConfig,
@@ -193,7 +192,7 @@ export default async function LocaleDynamicPage({
       })
     ]);
 
-  const pageBackgroundColor = getPageBackgroundColor(
+  const pageBackgroundStyle = getSectionBackgroundStyle(
     page.sections as unknown as RenderableSection[]
   );
 
@@ -281,11 +280,7 @@ export default async function LocaleDynamicPage({
   return (
     <div
       className="min-h-screen bg-zinc-50 text-zinc-900"
-      style={
-        pageBackgroundColor
-          ? { backgroundColor: pageBackgroundColor }
-          : undefined
-      }
+      style={pageBackgroundStyle}
     >
       <header
         className="bg-white"

@@ -165,6 +165,7 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
     icon: "🎨",
     keywords: ["style", "background", "theme"],
     createDefaultProps: () => ({
+      backgroundMode: "both",
       backgroundColor: "#f8fafc",
       backgroundImageUrl: "",
       backgroundImageDimPercent: 0,
@@ -181,6 +182,12 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
       dividerColor: "#e4e4e7"
     }),
     convertProps: from => ({
+      backgroundMode:
+        from.backgroundMode === "color" ||
+        from.backgroundMode === "image" ||
+        from.backgroundMode === "both"
+          ? from.backgroundMode
+          : "both",
       backgroundColor: (from.backgroundColor as string) ?? "#f8fafc",
       backgroundImageUrl: (from.backgroundImageUrl as string) ?? "",
       backgroundImageDimPercent:

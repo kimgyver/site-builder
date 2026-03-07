@@ -95,6 +95,13 @@ function getSafeBackgroundDimPercent(value: unknown): number {
   return 0;
 }
 
+function getSafeBackgroundMode(value: unknown): "color" | "image" | "both" {
+  if (value === "color" || value === "image" || value === "both") {
+    return value;
+  }
+  return "both";
+}
+
 export function getSectionLayoutConfig(sections: RenderableSection[]) {
   const pageStyleSection = sections.find(
     section => section.enabled !== false && section.type === "pageStyle"
@@ -128,6 +135,7 @@ export function getSectionBackgroundStyle(
     section => section.enabled !== false && section.type === "pageStyle"
   );
   const pageStyleProps = (pageStyleSection?.props ?? {}) as SectionProps;
+  const backgroundMode = getSafeBackgroundMode(pageStyleProps.backgroundMode);
   const backgroundColor = getSafeColor(pageStyleProps.backgroundColor);
   const backgroundImageUrl = getSafeBackgroundImageUrl(
     pageStyleProps.backgroundImageUrl
@@ -136,14 +144,22 @@ export function getSectionBackgroundStyle(
     pageStyleProps.backgroundImageDimPercent
   );
 
-  if (!backgroundColor && !backgroundImageUrl) return undefined;
+  const useColor =
+    backgroundMode === "color" || backgroundMode === "both";
+  const useImage =
+    backgroundMode === "image" || backgroundMode === "both";
+
+  const appliedColor = useColor ? backgroundColor : undefined;
+  const appliedImage = useImage ? backgroundImageUrl : undefined;
+
+  if (!appliedColor && !appliedImage) return undefined;
 
   const style: CSSProperties = {
-    ...(backgroundColor ? { backgroundColor } : {})
+    ...(appliedColor ? { backgroundColor: appliedColor } : {})
   };
 
-  if (backgroundImageUrl) {
-    const escaped = backgroundImageUrl.replace(/"/g, '\\"');
+  if (appliedImage) {
+    const escaped = appliedImage.replace(/"/g, '\\"');
     if (backgroundImageDimPercent > 0) {
       const alpha = Number((backgroundImageDimPercent / 100).toFixed(2));
       style.backgroundImage = `linear-gradient(rgba(0, 0, 0, ${alpha}), rgba(0, 0, 0, ${alpha})), url("${escaped}")`;
