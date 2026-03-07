@@ -44,6 +44,15 @@ function normalizeSiteUrl(value: string | null) {
   }
 }
 
+function normalizeCronIntervalMinutes(formData: FormData) {
+  const raw = String(formData.get("cronPublishIntervalMinutes") ?? "").trim();
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_SITE_SETTINGS.cronPublishIntervalMinutes;
+  }
+  return Math.min(60, Math.max(1, parsed));
+}
+
 async function saveSettings(formData: FormData) {
   "use server";
 
@@ -66,6 +75,7 @@ async function saveSettings(formData: FormData) {
   const adminBrandLabel =
     String(formData.get("adminBrandLabel") ?? "").trim() ||
     DEFAULT_SITE_SETTINGS.adminBrandLabel;
+  const cronPublishIntervalMinutes = normalizeCronIntervalMinutes(formData);
   const disableIndexing = formData.get("disableIndexing") === "on";
   const siteUrl = normalizeSiteUrl(toOptionalString(formData, "siteUrl"));
 
@@ -78,6 +88,7 @@ async function saveSettings(formData: FormData) {
       contactEmail,
       defaultSeoTitle,
       defaultSeoDescription,
+      cronPublishIntervalMinutes,
       disableIndexing,
       adminBrandLabel
     },
@@ -89,6 +100,7 @@ async function saveSettings(formData: FormData) {
       contactEmail,
       defaultSeoTitle,
       defaultSeoDescription,
+      cronPublishIntervalMinutes,
       disableIndexing,
       adminBrandLabel
     }
@@ -113,12 +125,16 @@ export default async function SettingsAdminPage({
   const { saved } = await searchParams;
 
   return (
-    <div className="w-full max-w-3xl space-y-6">
+    <div className="mx-auto w-full space-y-6 lg:max-w-4xl">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="mt-1 text-sm text-zinc-600">
           Site-wide options inspired by common CMS settings
           (general/reading/SEO).
+        </p>
+        <p className="mt-1 text-xs text-zinc-500">
+          Canonical site URL is used for page metadata, robots, and sitemap
+          generation.
         </p>
         <p className="mt-1 text-xs text-zinc-500">
           Role: {role}
@@ -209,6 +225,25 @@ export default async function SettingsAdminPage({
               disabled={!canEdit}
               className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
             />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="text-zinc-700">
+              Publish scheduler interval (minutes)
+            </span>
+            <input
+              type="number"
+              name="cronPublishIntervalMinutes"
+              min={1}
+              max={60}
+              defaultValue={settings.cronPublishIntervalMinutes}
+              disabled={!canEdit}
+              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+            />
+            <span className="text-xs text-zinc-500">
+              Cron runs every minute and publishes only at this interval
+              boundary.
+            </span>
           </label>
         </div>
 

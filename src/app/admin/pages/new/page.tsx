@@ -105,7 +105,7 @@ export default async function NewPage({
   const canPublish = canPublishContent(role);
 
   return (
-    <div className="w-full max-w-2xl space-y-6">
+    <div className="mx-auto w-full space-y-6 lg:max-w-4xl">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">New page</h1>
         <p className="mt-1 text-sm text-zinc-600">

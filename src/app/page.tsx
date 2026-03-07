@@ -14,6 +14,17 @@ export default async function Home() {
           {settings.siteTagline ||
             "Use the admin to manage pages, menus, and global sections. Start from Page Management to create and edit page content."}
         </p>
+        {settings.contactEmail ? (
+          <p className="text-sm text-zinc-600">
+            Contact: {" "}
+            <a
+              href={`mailto:${settings.contactEmail}`}
+              className="underline underline-offset-2 hover:text-zinc-900"
+            >
+              {settings.contactEmail}
+            </a>
+          </p>
+        ) : null}
         <div className="flex flex-wrap gap-3">
           <Link
             href="/admin/pages"

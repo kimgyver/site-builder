@@ -7,6 +7,7 @@ export type SiteSettings = {
   contactEmail: string | null;
   defaultSeoTitle: string | null;
   defaultSeoDescription: string | null;
+  cronPublishIntervalMinutes: number;
   disableIndexing: boolean;
   adminBrandLabel: string;
   updatedAt: Date | null;
@@ -19,6 +20,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   contactEmail: null,
   defaultSeoTitle: null,
   defaultSeoDescription: null,
+  cronPublishIntervalMinutes: 5,
   disableIndexing: false,
   adminBrandLabel: "Site Builder Admin",
   updatedAt: null
@@ -64,6 +66,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       contactEmail: row.contactEmail,
       defaultSeoTitle: row.defaultSeoTitle,
       defaultSeoDescription: row.defaultSeoDescription,
+      cronPublishIntervalMinutes: row.cronPublishIntervalMinutes,
       disableIndexing: row.disableIndexing,
       adminBrandLabel: row.adminBrandLabel,
       updatedAt: row.updatedAt

@@ -14,6 +14,8 @@ import {
   isSupportedLocale,
   type SupportedLocale
 } from "@/lib/i18n";
+import { getSiteSettings } from "@/lib/siteSettings";
+import { resolveSiteUrl } from "@/lib/siteUrl";
 import {
   getSectionBrandingConfig,
   getSectionBackgroundStyle,
@@ -24,18 +26,6 @@ import {
   renderSections,
   type RenderableSection
 } from "@/lib/public/renderSections";
-
-function getSiteUrl() {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (configured) {
-    return configured.replace(/\/$/, "");
-  }
-  const vercel = process.env.VERCEL_URL?.trim();
-  if (vercel) {
-    return `https://${vercel.replace(/^https?:\/\//, "").replace(/\/$/, "")}`;
-  }
-  return "http://localhost:3000";
-}
 
 async function findPageByLocale({
   slug,
@@ -82,14 +72,19 @@ export async function generateMetadata({
 
   if (!page) return {};
 
-  const siteUrl = getSiteUrl();
+  const settings = await getSiteSettings();
+  const siteUrl = resolveSiteUrl(settings.siteUrl);
   const canonicalPath = `/${rawLocale}/${slug}`;
   const canonical = `${siteUrl}${canonicalPath}`;
   const alternatesLanguages = Object.fromEntries(
     SUPPORTED_LOCALES.map(locale => [locale, `${siteUrl}/${locale}/${slug}`])
   ) as Record<string, string>;
-  const title = page.seoTitle || page.title;
-  const description = page.seoDescription || undefined;
+  const title = page.seoTitle || settings.defaultSeoTitle || page.title;
+  const description =
+    page.seoDescription ||
+    settings.defaultSeoDescription ||
+    settings.siteTagline ||
+    undefined;
 
   return {
     metadataBase: new URL(siteUrl),
@@ -193,6 +188,8 @@ export default async function LocaleDynamicPage({
         orderBy: { createdAt: "asc" }
       })
     ]);
+
+  const settings = await getSiteSettings();
 
   const pickGlobalGroup = <T extends { id: string; isDefault: boolean }>(
     groups: T[],
@@ -582,6 +579,16 @@ export default async function LocaleDynamicPage({
                 }
               )}
             </nav>
+          </div>
+        ) : null}
+        {settings.contactEmail ? (
+          <div className={`mx-auto px-4 pb-6 ${footerWidthClass}`}>
+            <a
+              href={`mailto:${settings.contactEmail}`}
+              className="text-xs text-zinc-600 underline-offset-2 hover:underline"
+            >
+              Contact: {settings.contactEmail}
+            </a>
           </div>
         ) : null}
       </footer>

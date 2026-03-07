@@ -22,7 +22,7 @@ export default async function PagesListPage() {
   });
 
   return (
-    <div className="flex w-full flex-col gap-6">
+    <div className="mx-auto flex w-full flex-col gap-6 lg:max-w-4xl">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">

@@ -5,6 +5,25 @@ import { redirect } from "next/navigation";
 import { SESSION_COOKIE_NAME } from "@/lib/adminAuth";
 import { getSiteSettings } from "@/lib/siteSettings";
 
+function SettingsGearIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        d="M10.325 4.317a1 1 0 0 1 1.35-.936l.648.247a1 1 0 0 0 1.354-.648l.247-.648a1 1 0 0 1 1.873 0l.247.648a1 1 0 0 0 1.354.648l.648-.247a1 1 0 0 1 1.35.936l.093.689a1 1 0 0 0 1.133.853l.689-.093a1 1 0 0 1 .936 1.35l-.247.648a1 1 0 0 0 .648 1.354l.648.247a1 1 0 0 1 0 1.873l-.648.247a1 1 0 0 0-.648 1.354l.247.648a1 1 0 0 1-.936 1.35l-.689-.093a1 1 0 0 0-1.133.853l-.093.689a1 1 0 0 1-1.35.936l-.648-.247a1 1 0 0 0-1.354.648l-.247.648a1 1 0 0 1-1.873 0l-.247-.648a1 1 0 0 0-1.354-.648l-.648.247a1 1 0 0 1-1.35-.936l-.093-.689a1 1 0 0 0-1.133-.853l-.689.093a1 1 0 0 1-.936-1.35l.247-.648a1 1 0 0 0-.648-1.354l-.648-.247a1 1 0 0 1 0-1.873l.648-.247a1 1 0 0 0 .648-1.354l-.247-.648a1 1 0 0 1 .936-1.35l.689.093a1 1 0 0 0 1.133-.853l.093-.689Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
 async function logout() {
   "use server";
 
@@ -35,12 +54,6 @@ export default async function AdminLayout({
               Page Management
             </Link>
             <Link
-              href="/admin/settings"
-              className="whitespace-nowrap hover:text-zinc-900"
-            >
-              Settings
-            </Link>
-            <Link
               href="/admin/menus"
               className="whitespace-nowrap hover:text-zinc-900"
             >
@@ -51,6 +64,14 @@ export default async function AdminLayout({
               className="whitespace-nowrap hover:text-zinc-900"
             >
               Global Sections
+            </Link>
+            <Link
+              href="/admin/settings"
+              aria-label="Open settings"
+              title="Settings"
+              className="inline-flex h-7 w-7 items-center justify-center rounded border border-zinc-300 text-sm text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
+            >
+              <SettingsGearIcon className="h-4 w-4" />
             </Link>
             <form action={logout}>
               <button
@@ -63,7 +84,16 @@ export default async function AdminLayout({
           </nav>
         </div>
       </header>
-      <main className="mx-auto flex max-w-5xl px-4 py-6">{children}</main>
+      <main className="mx-auto flex w-full max-w-5xl px-4 py-6">
+        {children}
+      </main>
+      <Link
+        href="/admin/settings"
+        aria-label="Open settings"
+        className="fixed bottom-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-white text-lg text-zinc-700 shadow-sm transition-colors hover:bg-zinc-100 hover:text-zinc-900"
+      >
+        <SettingsGearIcon className="h-5 w-5" />
+      </Link>
     </div>
   );
 }

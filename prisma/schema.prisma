@@ -136,6 +136,7 @@ model SiteSetting {
   contactEmail          String?
   defaultSeoTitle       String?
   defaultSeoDescription String?
+  cronPublishIntervalMinutes Int @default(5)
   disableIndexing       Boolean  @default(false)
   adminBrandLabel       String   @default("Site Builder Admin")
   createdAt             DateTime @default(now())

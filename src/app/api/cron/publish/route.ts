@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { PageStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -69,9 +70,28 @@ export async function GET(request: NextRequest) {
   }
 
   const now = new Date();
+  const settings = await getSiteSettings();
+  const interval = Math.min(
+    60,
+    Math.max(1, Number(settings.cronPublishIntervalMinutes || 5))
+  );
+
+  if (now.getUTCMinutes() % interval !== 0) {
+    return NextResponse.json({
+      ok: true,
+      skipped: true,
+      reason: "INTERVAL_NOT_REACHED",
+      intervalMinutes: interval
+    });
+  }
+
   try {
     const firstTry = await runScheduledPublish(now);
-    return NextResponse.json({ ok: true, published: firstTry.published });
+    return NextResponse.json({
+      ok: true,
+      published: firstTry.published,
+      intervalMinutes: interval
+    });
   } catch (error) {
     if (!isRetryableDbError(error)) {
       const message = error instanceof Error ? error.message : String(error);
@@ -87,6 +107,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       published: secondTry.published,
+      intervalMinutes: interval,
       retried: true
     });
   } catch (error) {
