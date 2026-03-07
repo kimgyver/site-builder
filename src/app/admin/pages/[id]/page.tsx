@@ -10,6 +10,7 @@ import {
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
 
 //
 import {
@@ -65,7 +66,16 @@ async function getPageData(id: string) {
     orderBy: [{ location: "asc" }, { createdAt: "asc" }]
   });
 
-  return { page, canDelete, canPublish, canEdit, globalGroups };
+  const settings = await getSiteSettings();
+
+  return {
+    page,
+    canDelete,
+    canPublish,
+    canEdit,
+    globalGroups,
+    publishTimeZone: settings.publishTimeZone
+  };
 }
 
 export default function EditPage({
@@ -78,9 +88,14 @@ export default function EditPage({
   if (!id) {
     notFound();
   }
-  const { page, canDelete, canPublish, canEdit, globalGroups } = use(
-    getPageData(id)
-  );
+  const {
+    page,
+    canDelete,
+    canPublish,
+    canEdit,
+    globalGroups,
+    publishTimeZone
+  } = use(getPageData(id));
   return (
     <AdminPageClientWrapper
       page={page}
@@ -88,6 +103,7 @@ export default function EditPage({
       canDelete={canDelete}
       canPublish={canPublish}
       canEdit={canEdit}
+      publishTimeZone={publishTimeZone}
       saveSections={saveSections}
       updatePage={updatePage}
       deletePage={deletePage}

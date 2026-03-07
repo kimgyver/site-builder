@@ -137,6 +137,7 @@ model SiteSetting {
   defaultSeoTitle       String?
   defaultSeoDescription String?
   cronPublishIntervalMinutes Int @default(5)
+  publishTimeZone       String   @default("UTC")
   disableIndexing       Boolean  @default(false)
   adminBrandLabel       String   @default("Site Builder Admin")
   createdAt             DateTime @default(now())

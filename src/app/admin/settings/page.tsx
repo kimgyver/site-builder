@@ -14,6 +14,7 @@ import {
   ALLOWED_CRON_INTERVAL_MINUTES,
   normalizeCronIntervalMinutes
 } from "@/lib/siteSettings";
+import { normalizePublishTimeZone } from "@/lib/publishTimeZone";
 
 async function ensureRole(nextPath: string) {
   const cookieStore = await cookies();
@@ -74,8 +75,27 @@ async function saveSettings(formData: FormData) {
   const cronPublishIntervalMinutes = normalizeCronIntervalMinutes(
     formData.get("cronPublishIntervalMinutes")
   );
+  const publishTimeZone = normalizePublishTimeZone(
+    formData.get("publishTimeZone")
+  );
   const disableIndexing = formData.get("disableIndexing") === "on";
   const siteUrl = normalizeSiteUrl(toOptionalString(formData, "siteUrl"));
+
+  const publishTimeZoneColumnExistsResult = await prisma.$queryRaw<
+    Array<{ exists: boolean }>
+  >`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'SiteSetting'
+        AND column_name = 'publishTimeZone'
+    ) AS "exists"
+  `;
+
+  const hasPublishTimeZoneColumn = Boolean(
+    publishTimeZoneColumnExistsResult[0]?.exists
+  );
 
   await prisma.siteSetting.upsert({
     where: { key: "default" },
@@ -103,6 +123,14 @@ async function saveSettings(formData: FormData) {
       adminBrandLabel
     }
   });
+
+  if (hasPublishTimeZoneColumn) {
+    await prisma.$executeRaw`
+      UPDATE "SiteSetting"
+      SET "publishTimeZone" = ${publishTimeZone}
+      WHERE "key" = 'default'
+    `;
+  }
 
   revalidatePath("/", "layout");
   revalidatePath("/admin/settings");
@@ -244,6 +272,21 @@ export default async function SettingsAdminPage({
             <span className="text-xs text-zinc-500">
               GitHub scheduler runs every 5 minutes. Choose a 5-minute multiple
               for predictable publishing.
+            </span>
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="text-zinc-700">Publish timezone (IANA)</span>
+            <input
+              name="publishTimeZone"
+              defaultValue={settings.publishTimeZone}
+              disabled={!canEdit}
+              placeholder="UTC"
+              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+            />
+            <span className="text-xs text-zinc-500">
+              Example: UTC, Pacific/Auckland, Asia/Seoul. Invalid values fall
+              back to UTC.
             </span>
           </label>
         </div>

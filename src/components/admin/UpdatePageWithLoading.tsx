@@ -3,6 +3,7 @@ import { useState } from "react";
 
 export default function UpdatePageWithLoading({
   page,
+  publishTimeZone,
   globalGroups,
   action,
   readOnly,
@@ -20,6 +21,7 @@ export default function UpdatePageWithLoading({
     footerGlobalGroupId?: string;
     publishAt?: string | null;
   };
+  publishTimeZone?: string;
   globalGroups: Array<{
     id: string;
     name: string;
@@ -266,7 +268,8 @@ export default function UpdatePageWithLoading({
           Scheduled publish (optional)
         </label>
         <p className="text-xs text-zinc-500">
-          Set a future datetime to auto-publish this page while status is Draft.
+          Set a future datetime to auto-publish this page while status is Draft
+          ({publishTimeZone || "UTC"}).
         </p>
         <input
           type="datetime-local"

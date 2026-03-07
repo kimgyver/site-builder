@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { sanitizeCmsHtml } from "@/lib/sanitizeCmsHtml";
+import { getSiteSettings } from "@/lib/siteSettings";
+import { parseDateTimeLocalInTimeZone } from "@/lib/publishTimeZone";
 import { PageStatus, Prisma, RevisionSource } from "@prisma/client";
 
 function isMissingTable(error: unknown, tableName: string) {
@@ -259,6 +261,8 @@ export async function updatePage(formData: FormData) {
     if (!canEditContent(role)) {
       return { ok: false, error: "Unauthorized" };
     }
+    const settings = await getSiteSettings();
+    const publishTimeZone = settings.publishTimeZone;
     const normalizeOptionalText = (value: FormDataEntryValue | null) => {
       if (typeof value !== "string") {
         return null;
@@ -281,8 +285,11 @@ export async function updatePage(formData: FormData) {
       typeof publishAtRaw === "string" ? publishAtRaw.trim() : "";
     let nextPublishAt: Date | null = null;
     if (publishAtInput) {
-      const parsed = new Date(publishAtInput);
-      if (Number.isNaN(parsed.getTime())) {
+      const parsed = parseDateTimeLocalInTimeZone(
+        publishAtInput,
+        publishTimeZone
+      );
+      if (!parsed || Number.isNaN(parsed.getTime())) {
         return { ok: false, error: "Invalid schedule datetime" };
       }
       nextPublishAt = parsed;

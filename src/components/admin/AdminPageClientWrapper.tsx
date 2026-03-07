@@ -9,6 +9,7 @@ import PagePreviewPanel from "@/components/admin/PagePreviewPanel";
 import { usePagedRevisions } from "@/components/admin/hooks/usePagedRevisions";
 import type { EditableSection } from "@/types/sections";
 import type { Prisma } from "@prisma/client";
+import { formatDateTimeLocalInTimeZone } from "@/lib/publishTimeZone";
 
 type PageWithSectionsAndRevisions = Prisma.PageGetPayload<{
   include: {
@@ -35,6 +36,7 @@ export default function AdminPageClientWrapper({
   canEdit,
   canDelete,
   canPublish,
+  publishTimeZone,
   saveSections,
   updatePage,
   deletePage,
@@ -50,6 +52,7 @@ export default function AdminPageClientWrapper({
   canEdit: boolean;
   canDelete: boolean;
   canPublish: boolean;
+  publishTimeZone: string;
   saveSections: (
     formData: FormData
   ) => Promise<(ActionResult & { updatedAt?: string }) | undefined>;
@@ -164,9 +167,10 @@ export default function AdminPageClientWrapper({
             headerGlobalGroupId: page.headerGlobalGroupId ?? "",
             footerGlobalGroupId: page.footerGlobalGroupId ?? "",
             publishAt: page.publishAt
-              ? page.publishAt.toISOString().slice(0, 16)
+              ? formatDateTimeLocalInTimeZone(page.publishAt, publishTimeZone)
               : ""
           }}
+          publishTimeZone={publishTimeZone}
           globalGroups={globalGroups}
           action={updatePage}
           readOnly={!canEdit}
