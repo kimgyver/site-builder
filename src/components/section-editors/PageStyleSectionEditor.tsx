@@ -49,6 +49,25 @@ function isSupportedBackgroundImageValue(value: string): boolean {
   return /^https?:\/\//i.test(raw);
 }
 
+function readClipboardImageAsDataUrl(
+  items: DataTransferItemList
+): Promise<string | undefined> {
+  const imageItem = Array.from(items).find(item =>
+    item.type.toLowerCase().startsWith("image/")
+  );
+  const file = imageItem?.getAsFile();
+  if (!file) return Promise.resolve(undefined);
+
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve(typeof reader.result === "string" ? reader.result : undefined);
+    };
+    reader.onerror = () => resolve(undefined);
+    reader.readAsDataURL(file);
+  });
+}
+
 const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
   section,
   updateProps,
@@ -81,7 +100,21 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
   const imageValueValid = isSupportedBackgroundImageValue(backgroundImageUrl);
   const isDataImageValue = /^data:image\//i.test(backgroundImageUrl.trim());
 
-  const handleBackgroundPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+  const handleBackgroundPaste = async (
+    e: React.ClipboardEvent<HTMLInputElement>
+  ) => {
+    const clipboardImage = await readClipboardImageAsDataUrl(
+      e.clipboardData.items
+    );
+    if (clipboardImage) {
+      e.preventDefault();
+      updateProps({
+        ...props,
+        backgroundImageUrl: clipboardImage
+      });
+      return;
+    }
+
     const text = e.clipboardData.getData("text/plain");
     const html = e.clipboardData.getData("text/html");
     const extracted = getImageUrlFromPastedContent(text, html);
@@ -99,8 +132,8 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
       <div className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 text-[10px] text-blue-800">
         <p className="font-medium">Background setup (quick steps)</p>
         <p>
-          1) Choose mode: Color only / Image only / Both. 2) For image, paste
-          URL/HTML/image clipboard or choose from library. 3) Save.
+          1) Set mode to Image only or Both. 2) Copy an image and paste (Cmd+V)
+          into Background image URL, or pick one from media library. 3) Save.
         </p>
       </div>
       <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
@@ -169,12 +202,10 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           placeholder="https://... or /images/bg.jpg or data:image/..."
         />
         <p className="mt-1 text-[10px] text-zinc-500">
-          Accepted: URL, local path, HTML <code>&lt;img src /&gt;</code>,
-          clipboard image data.
+          Easy way: copy any image and press Cmd+V here.
         </p>
         <p className="mt-1 text-[10px] text-zinc-500">
-          Note: <code>data:image;base64,...</code> values are set by direct
-          paste into this field (not from library list).
+          You can also paste a URL or HTML with <code>&lt;img src /&gt;</code>.
         </p>
       </label>
       {imageModeEnabled && hasImageValue && imageValueValid ? (
