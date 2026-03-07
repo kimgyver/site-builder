@@ -18,6 +18,7 @@ export default function UpdatePageWithLoading({
     status: string;
     headerGlobalGroupId?: string;
     footerGlobalGroupId?: string;
+    publishAt?: string | null;
   };
   globalGroups: Array<{
     id: string;
@@ -39,7 +40,8 @@ export default function UpdatePageWithLoading({
     seoDescription: page.seoDescription ?? "",
     status: page.status,
     headerGlobalGroupId: page.headerGlobalGroupId ?? "",
-    footerGlobalGroupId: page.footerGlobalGroupId ?? ""
+    footerGlobalGroupId: page.footerGlobalGroupId ?? "",
+    publishAt: page.publishAt ?? ""
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +82,7 @@ export default function UpdatePageWithLoading({
     formData.set("status", form.status);
     formData.set("headerGlobalGroupId", form.headerGlobalGroupId);
     formData.set("footerGlobalGroupId", form.footerGlobalGroupId);
+    formData.set("publishAt", form.publishAt);
     const result = await action(formData);
     setIsSaving(false);
     if (result?.ok) {
@@ -256,6 +259,23 @@ export default function UpdatePageWithLoading({
           <option value="DRAFT">Draft</option>
           <option value="PUBLISHED">Published</option>
         </select>
+      </div>
+
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-zinc-800">
+          Scheduled publish (optional)
+        </label>
+        <p className="text-xs text-zinc-500">
+          Set a future datetime to auto-publish this page while status is Draft.
+        </p>
+        <input
+          type="datetime-local"
+          name="publishAt"
+          value={form.publishAt}
+          onChange={handleChange}
+          disabled={readOnly || form.status === "PUBLISHED"}
+          className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 disabled:bg-zinc-100"
+        />
       </div>
       {!readOnly ? (
         <button

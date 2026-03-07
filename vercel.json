@@ -1,3 +1,9 @@
 {
-  "buildCommand": "bash -lc 'for i in 1 2 3 4 5; do npx prisma migrate deploy && break; echo \"[prisma] migrate deploy failed (attempt $i), retrying in 8s...\"; sleep 8; done; npx prisma migrate status && next build'"
+  "buildCommand": "bash -lc 'for i in 1 2 3 4 5; do npx prisma migrate deploy && break; echo \"[prisma] migrate deploy failed (attempt $i), retrying in 8s...\"; sleep 8; done; npx prisma migrate status && next build'",
+  "crons": [
+    {
+      "path": "/api/cron/publish",
+      "schedule": "*/5 * * * *"
+    }
+  ]
 }

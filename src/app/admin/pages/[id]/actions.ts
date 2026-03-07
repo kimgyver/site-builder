@@ -250,6 +250,7 @@ export async function updatePage(formData: FormData) {
     const seoDescription = formData.get("seoDescription");
     const headerGlobalGroupId = formData.get("headerGlobalGroupId");
     const footerGlobalGroupId = formData.get("footerGlobalGroupId");
+    const publishAtRaw = formData.get("publishAt");
     const status = formData.get("status");
     if (!id || !title || !slug || !status) {
       return { ok: false, error: "Missing required fields" };
@@ -276,6 +277,16 @@ export async function updatePage(formData: FormData) {
 
     const nextHeaderGlobalGroupId = normalizeOptionalId(headerGlobalGroupId);
     const nextFooterGlobalGroupId = normalizeOptionalId(footerGlobalGroupId);
+    const publishAtInput =
+      typeof publishAtRaw === "string" ? publishAtRaw.trim() : "";
+    let nextPublishAt: Date | null = null;
+    if (publishAtInput) {
+      const parsed = new Date(publishAtInput);
+      if (Number.isNaN(parsed.getTime())) {
+        return { ok: false, error: "Invalid schedule datetime" };
+      }
+      nextPublishAt = parsed;
+    }
 
     if (nextHeaderGlobalGroupId) {
       const headerGroup = await prisma.globalSectionGroup.findUnique({
@@ -307,7 +318,8 @@ export async function updatePage(formData: FormData) {
         seoDescription: normalizeOptionalText(seoDescription),
         headerGlobalGroupId: nextHeaderGlobalGroupId,
         footerGlobalGroupId: nextFooterGlobalGroupId,
-        status: status as PageStatus
+        status: status as PageStatus,
+        publishAt: status === "PUBLISHED" ? null : nextPublishAt
       },
       select: { updatedAt: true }
     });

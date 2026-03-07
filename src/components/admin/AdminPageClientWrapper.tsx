@@ -162,7 +162,10 @@ export default function AdminPageClientWrapper({
             seoDescription: page.seoDescription ?? "",
             status: page.status,
             headerGlobalGroupId: page.headerGlobalGroupId ?? "",
-            footerGlobalGroupId: page.footerGlobalGroupId ?? ""
+            footerGlobalGroupId: page.footerGlobalGroupId ?? "",
+            publishAt: page.publishAt
+              ? page.publishAt.toISOString().slice(0, 16)
+              : ""
           }}
           globalGroups={globalGroups}
           action={updatePage}
