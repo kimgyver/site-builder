@@ -8,7 +8,12 @@ import {
   getRoleFromSessionCookie,
   isAdminAuthEnabled
 } from "@/lib/adminAuth";
-import { DEFAULT_SITE_SETTINGS, getSiteSettings } from "@/lib/siteSettings";
+import {
+  DEFAULT_SITE_SETTINGS,
+  getSiteSettings,
+  ALLOWED_CRON_INTERVAL_MINUTES,
+  normalizeCronIntervalMinutes
+} from "@/lib/siteSettings";
 
 async function ensureRole(nextPath: string) {
   const cookieStore = await cookies();
@@ -44,15 +49,6 @@ function normalizeSiteUrl(value: string | null) {
   }
 }
 
-function normalizeCronIntervalMinutes(formData: FormData) {
-  const raw = String(formData.get("cronPublishIntervalMinutes") ?? "").trim();
-  const parsed = Number.parseInt(raw, 10);
-  if (!Number.isFinite(parsed)) {
-    return DEFAULT_SITE_SETTINGS.cronPublishIntervalMinutes;
-  }
-  return Math.min(60, Math.max(1, parsed));
-}
-
 async function saveSettings(formData: FormData) {
   "use server";
 
@@ -75,7 +71,9 @@ async function saveSettings(formData: FormData) {
   const adminBrandLabel =
     String(formData.get("adminBrandLabel") ?? "").trim() ||
     DEFAULT_SITE_SETTINGS.adminBrandLabel;
-  const cronPublishIntervalMinutes = normalizeCronIntervalMinutes(formData);
+  const cronPublishIntervalMinutes = normalizeCronIntervalMinutes(
+    formData.get("cronPublishIntervalMinutes")
+  );
   const disableIndexing = formData.get("disableIndexing") === "on";
   const siteUrl = normalizeSiteUrl(toOptionalString(formData, "siteUrl"));
 
@@ -231,18 +229,21 @@ export default async function SettingsAdminPage({
             <span className="text-zinc-700">
               Publish scheduler interval (minutes)
             </span>
-            <input
-              type="number"
+            <select
               name="cronPublishIntervalMinutes"
-              min={1}
-              max={60}
               defaultValue={settings.cronPublishIntervalMinutes}
               disabled={!canEdit}
               className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-            />
+            >
+              {ALLOWED_CRON_INTERVAL_MINUTES.map(value => (
+                <option key={value} value={value}>
+                  {value} minutes
+                </option>
+              ))}
+            </select>
             <span className="text-xs text-zinc-500">
-              Cron runs every minute and publishes only at this interval
-              boundary.
+              GitHub scheduler runs every 5 minutes. Choose a 5-minute multiple
+              for predictable publishing.
             </span>
           </label>
         </div>

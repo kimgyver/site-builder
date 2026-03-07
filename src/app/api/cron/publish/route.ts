@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { PageStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getSiteSettings } from "@/lib/siteSettings";
+import {
+  getSiteSettings,
+  normalizeCronIntervalMinutes
+} from "@/lib/siteSettings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -62,7 +65,18 @@ function isAuthorized(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const userAgent = request.headers.get("user-agent") ?? "unknown";
+  const triggerSource = userAgent.includes("vercel-cron")
+    ? "vercel-cron"
+    : userAgent.includes("github-actions")
+      ? "github-actions"
+      : "manual-or-other";
+
   if (!isAuthorized(request)) {
+    console.warn("[cron:publish] unauthorized request", {
+      triggerSource,
+      userAgent
+    });
     return NextResponse.json(
       { ok: false, error: "UNAUTHORIZED" },
       { status: 401 }
@@ -71,12 +85,22 @@ export async function GET(request: NextRequest) {
 
   const now = new Date();
   const settings = await getSiteSettings();
-  const interval = Math.min(
-    60,
-    Math.max(1, Number(settings.cronPublishIntervalMinutes || 5))
+  const interval = normalizeCronIntervalMinutes(
+    settings.cronPublishIntervalMinutes
   );
 
+  console.info("[cron:publish] invoked", {
+    triggerSource,
+    nowIso: now.toISOString(),
+    intervalMinutes: interval
+  });
+
   if (now.getUTCMinutes() % interval !== 0) {
+    console.info("[cron:publish] skipped", {
+      reason: "INTERVAL_NOT_REACHED",
+      currentUtcMinute: now.getUTCMinutes(),
+      intervalMinutes: interval
+    });
     return NextResponse.json({
       ok: true,
       skipped: true,
@@ -87,6 +111,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const firstTry = await runScheduledPublish(now);
+    console.info("[cron:publish] completed", {
+      published: firstTry.published,
+      intervalMinutes: interval,
+      retried: false
+    });
     return NextResponse.json({
       ok: true,
       published: firstTry.published,
@@ -95,15 +124,32 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     if (!isRetryableDbError(error)) {
       const message = error instanceof Error ? error.message : String(error);
+      console.error("[cron:publish] failed", {
+        stage: "first-try",
+        retryable: false,
+        message
+      });
       return NextResponse.json(
         { ok: false, error: "SCHEDULE_PUBLISH_FAILED", detail: message },
         { status: 500 }
       );
     }
+
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn("[cron:publish] retrying after retryable db error", {
+      stage: "first-try",
+      retryable: true,
+      message
+    });
   }
 
   try {
     const secondTry = await runScheduledPublish(now);
+    console.info("[cron:publish] completed", {
+      published: secondTry.published,
+      intervalMinutes: interval,
+      retried: true
+    });
     return NextResponse.json({
       ok: true,
       published: secondTry.published,
@@ -112,6 +158,11 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    console.error("[cron:publish] failed", {
+      stage: "second-try",
+      retryable: false,
+      message
+    });
     return NextResponse.json(
       { ok: false, error: "DB_UNAVAILABLE", detail: message },
       { status: 503 }

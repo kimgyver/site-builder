@@ -26,6 +26,25 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   updatedAt: null
 };
 
+export const ALLOWED_CRON_INTERVAL_MINUTES = [5, 10, 15, 30, 60] as const;
+
+export function normalizeCronIntervalMinutes(value: unknown): number {
+  const parsed = Number.parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_SITE_SETTINGS.cronPublishIntervalMinutes;
+  }
+
+  if (
+    ALLOWED_CRON_INTERVAL_MINUTES.includes(
+      parsed as (typeof ALLOWED_CRON_INTERVAL_MINUTES)[number]
+    )
+  ) {
+    return parsed;
+  }
+
+  return DEFAULT_SITE_SETTINGS.cronPublishIntervalMinutes;
+}
+
 function isMissingTableError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   return (
@@ -66,7 +85,9 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       contactEmail: row.contactEmail,
       defaultSeoTitle: row.defaultSeoTitle,
       defaultSeoDescription: row.defaultSeoDescription,
-      cronPublishIntervalMinutes: row.cronPublishIntervalMinutes,
+      cronPublishIntervalMinutes: normalizeCronIntervalMinutes(
+        row.cronPublishIntervalMinutes
+      ),
       disableIndexing: row.disableIndexing,
       adminBrandLabel: row.adminBrandLabel,
       updatedAt: row.updatedAt
