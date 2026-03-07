@@ -153,9 +153,6 @@ export default async function GlobalSectionsListPage() {
                             </span>
                           ) : null}
                         </p>
-                        <p className="truncate text-xs text-zinc-500">
-                          {group.id}
-                        </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <Link
