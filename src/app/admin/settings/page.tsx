@@ -92,14 +92,26 @@ async function saveSettings(formData: FormData) {
       SELECT 1
       FROM information_schema.columns
       WHERE table_schema = 'public'
-        AND table_name = 'SiteSetting'
-        AND column_name = 'publishTimeZone'
+        AND lower(table_name) = lower('SiteSetting')
+        AND lower(column_name) = lower('publishTimeZone')
     ) AS "exists"
   `;
 
-  const hasPublishTimeZoneColumn = Boolean(
+  let hasPublishTimeZoneColumn = Boolean(
     publishTimeZoneColumnExistsResult[0]?.exists
   );
+
+  if (!hasPublishTimeZoneColumn) {
+    try {
+      await prisma.$executeRaw`
+        ALTER TABLE "SiteSetting"
+        ADD COLUMN IF NOT EXISTS "publishTimeZone" TEXT NOT NULL DEFAULT 'UTC'
+      `;
+      hasPublishTimeZoneColumn = true;
+    } catch {
+      hasPublishTimeZoneColumn = false;
+    }
+  }
 
   if (hasPublishTimeZoneColumn) {
     await prisma.siteSetting.upsert({

@@ -83,8 +83,8 @@ export async function getSiteSettings(): Promise<SiteSettings> {
         SELECT 1
         FROM information_schema.columns
         WHERE table_schema = 'public'
-          AND table_name = 'SiteSetting'
-          AND column_name = 'publishTimeZone'
+          AND lower(table_name) = lower('SiteSetting')
+          AND lower(column_name) = lower('publishTimeZone')
       ) AS "exists"
     `;
 
