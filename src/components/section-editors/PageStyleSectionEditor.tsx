@@ -51,6 +51,26 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           placeholder="https://... or /images/bg.jpg"
         />
       </label>
+      <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+        Background image dim (%)
+        <input
+          type="number"
+          min={0}
+          max={90}
+          className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+          value={
+            typeof props.backgroundImageDimPercent === "number"
+              ? props.backgroundImageDimPercent
+              : 0
+          }
+          onChange={e =>
+            updateProps({
+              ...props,
+              backgroundImageDimPercent: Number(e.target.value)
+            })
+          }
+        />
+      </label>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
           Brand name (header slot)
@@ -256,7 +276,8 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
       </label>
       <p className="text-[10px] text-zinc-500">
         Keep one enabled Page Style section. Use the same controls in pages and
-        shared header/footer blocks for consistent look.
+        shared header/footer blocks for consistent look. Divider color applies
+        to the block where this Page Style exists.
       </p>
     </div>
   );

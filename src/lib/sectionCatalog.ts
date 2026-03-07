@@ -167,6 +167,7 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
     createDefaultProps: () => ({
       backgroundColor: "#f8fafc",
       backgroundImageUrl: "",
+      backgroundImageDimPercent: 0,
       brandName: "",
       brandHref: "/",
       brandLogoUrl: "",
@@ -182,6 +183,13 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
     convertProps: from => ({
       backgroundColor: (from.backgroundColor as string) ?? "#f8fafc",
       backgroundImageUrl: (from.backgroundImageUrl as string) ?? "",
+      backgroundImageDimPercent:
+        typeof from.backgroundImageDimPercent === "number"
+          ? Math.min(
+              90,
+              Math.max(0, Math.round(from.backgroundImageDimPercent))
+            )
+          : 0,
       brandName: (from.brandName as string) ?? "",
       brandHref: (from.brandHref as string) ?? "/",
       brandLogoUrl: (from.brandLogoUrl as string) ?? "",

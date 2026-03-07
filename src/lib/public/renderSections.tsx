@@ -74,6 +74,19 @@ function getSafeSectionGap(value: unknown): number {
   return fallback;
 }
 
+function getSafeBackgroundDimPercent(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.min(90, Math.max(0, Math.round(value)));
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value.trim());
+    if (Number.isFinite(parsed)) {
+      return Math.min(90, Math.max(0, Math.round(parsed)));
+    }
+  }
+  return 0;
+}
+
 export function getSectionLayoutConfig(sections: RenderableSection[]) {
   const pageStyleSection = sections.find(
     section => section.enabled !== false && section.type === "pageStyle"
@@ -111,6 +124,9 @@ export function getSectionBackgroundStyle(
   const backgroundImageUrl = getSafeBackgroundImageUrl(
     pageStyleProps.backgroundImageUrl
   );
+  const backgroundImageDimPercent = getSafeBackgroundDimPercent(
+    pageStyleProps.backgroundImageDimPercent
+  );
 
   if (!backgroundColor && !backgroundImageUrl) return undefined;
 
@@ -120,7 +136,12 @@ export function getSectionBackgroundStyle(
 
   if (backgroundImageUrl) {
     const escaped = backgroundImageUrl.replace(/"/g, '\\"');
-    style.backgroundImage = `url("${escaped}")`;
+    if (backgroundImageDimPercent > 0) {
+      const alpha = Number((backgroundImageDimPercent / 100).toFixed(2));
+      style.backgroundImage = `linear-gradient(rgba(0, 0, 0, ${alpha}), rgba(0, 0, 0, ${alpha})), url("${escaped}")`;
+    } else {
+      style.backgroundImage = `url("${escaped}")`;
+    }
     style.backgroundSize = "cover";
     style.backgroundRepeat = "no-repeat";
     style.backgroundPosition = "center";

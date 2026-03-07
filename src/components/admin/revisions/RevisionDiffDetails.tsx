@@ -51,23 +51,47 @@ function splitDiffParts(beforeRaw: string, afterRaw: string) {
   };
 }
 
+function truncateMiddle(value: string, head: number, tail: number) {
+  if (value.length <= head + tail + 1) return value;
+  return `${value.slice(0, head)}…${value.slice(-tail)}`;
+}
+
 function renderDiffValue(
   beforeRaw: string,
   afterRaw: string,
   side: "before" | "after"
 ) {
+  const CONTEXT_LIMIT = 36;
+  const CHANGED_HEAD = 80;
+  const CHANGED_TAIL = 50;
   const parts = splitDiffParts(beforeRaw, afterRaw);
   const changed = side === "before" ? parts.beforeChanged : parts.afterChanged;
 
   if (parts.equal) {
-    return <span className="break-all font-mono">{parts.prefix}</span>;
+    return (
+      <span className="break-all font-mono">
+        {truncateMiddle(parts.prefix, CHANGED_HEAD, CHANGED_TAIL)}
+      </span>
+    );
   }
+
+  const prefix =
+    parts.prefix.length > CONTEXT_LIMIT
+      ? `…${parts.prefix.slice(-CONTEXT_LIMIT)}`
+      : parts.prefix;
+  const suffix =
+    parts.suffix.length > CONTEXT_LIMIT
+      ? `${parts.suffix.slice(0, CONTEXT_LIMIT)}…`
+      : parts.suffix;
+  const changedDisplay = truncateMiddle(changed, CHANGED_HEAD, CHANGED_TAIL);
 
   return (
     <span className="break-all font-mono">
-      {parts.prefix}
-      {changed ? <strong className="font-semibold">{changed}</strong> : null}
-      {parts.suffix}
+      {prefix}
+      {changedDisplay ? (
+        <strong className="font-semibold">{changedDisplay}</strong>
+      ) : null}
+      {suffix}
     </span>
   );
 }

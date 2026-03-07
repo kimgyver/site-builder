@@ -57,6 +57,11 @@ export function SectionBuilder({
   const [isReferenceLibraryLoading, setIsReferenceLibraryLoading] =
     useState(true);
 
+  const hasPageStyleSection = useMemo(
+    () => sections.some(section => section.type === "pageStyle"),
+    [sections]
+  );
+
   const serializeSections = (items: EditableSection[]) =>
     JSON.stringify(
       items.map(section => ({
@@ -171,6 +176,19 @@ export function SectionBuilder({
     const meta = SECTION_CATALOG[newType];
     if (!meta) return;
 
+    const currentSection = sectionsRef.current[index];
+    if (
+      newType === "pageStyle" &&
+      currentSection?.type !== "pageStyle" &&
+      sectionsRef.current.some(section => section.type === "pageStyle")
+    ) {
+      setToast({
+        show: true,
+        message: "Only one Page Style section is allowed."
+      });
+      return;
+    }
+
     setSectionsSynced(prev => {
       const section = prev[index];
       if (!section) return prev;
@@ -213,6 +231,18 @@ export function SectionBuilder({
   const addSection = (type: SectionType) => {
     const meta = SECTION_CATALOG[type];
     if (!meta) return;
+
+    if (
+      type === "pageStyle" &&
+      sectionsRef.current.some(section => section.type === "pageStyle")
+    ) {
+      setToast({
+        show: true,
+        message: "Only one Page Style section is allowed."
+      });
+      return;
+    }
+
     tempIdRef.current += 1;
     const id = `temp-${tempIdRef.current}`;
     const baseProps = meta.createDefaultProps();
@@ -352,6 +382,8 @@ export function SectionBuilder({
           {SECTION_TYPES_IN_ORDER.map(type => {
             const meta = SECTION_CATALOG[type];
             const description = meta?.description ?? "";
+            const isPageStyleDisabled =
+              type === "pageStyle" && hasPageStyleSection;
             return (
               <div key={type} className="group relative">
                 <button
@@ -362,7 +394,12 @@ export function SectionBuilder({
                       ? `${meta?.label ?? type}: ${description}`
                       : (meta?.label ?? type)
                   }
-                  className="inline-flex items-center gap-1 rounded-full border border-zinc-200 px-2 py-0.5 text-[11px] font-medium text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50 md:px-2.5 md:py-1 md:text-xs"
+                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium md:px-2.5 md:py-1 md:text-xs ${
+                    isPageStyleDisabled
+                      ? "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400"
+                      : "border-zinc-200 text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+                  }`}
+                  disabled={isPageStyleDisabled}
                   onClick={() => addSection(type)}
                 >
                   {meta?.icon ? <span>{meta.icon}</span> : null}
