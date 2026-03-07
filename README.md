@@ -65,7 +65,7 @@ Set these environment variables for admin authentication:
 - `ADMIN_REVIEWER_PASSWORD`: reviewer login password (read-only).
 - `ADMIN_PASSWORD`: legacy publisher fallback password.
 - `ADMIN_SESSION_KEY`: optional session cookie value override (recommended random string).
-- `CRON_SECRET`: scheduled publish cron API 보호용 bearer token.
+- `CRON_SECRET`: scheduled publish cron API 보호용 bearer token (QStash 호출 헤더와 동일 값 사용).
 
 How to set them:
 

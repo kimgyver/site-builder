@@ -32,23 +32,13 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   updatedAt: null
 };
 
-export const ALLOWED_CRON_INTERVAL_MINUTES = [5, 10, 15, 30, 60] as const;
-
 export function normalizeCronIntervalMinutes(value: unknown): number {
   const parsed = Number.parseInt(String(value ?? ""), 10);
   if (!Number.isFinite(parsed)) {
     return DEFAULT_SITE_SETTINGS.cronPublishIntervalMinutes;
   }
 
-  if (
-    ALLOWED_CRON_INTERVAL_MINUTES.includes(
-      parsed as (typeof ALLOWED_CRON_INTERVAL_MINUTES)[number]
-    )
-  ) {
-    return parsed;
-  }
-
-  return DEFAULT_SITE_SETTINGS.cronPublishIntervalMinutes;
+  return Math.min(60, Math.max(1, parsed));
 }
 
 function isMissingTableError(error: unknown) {

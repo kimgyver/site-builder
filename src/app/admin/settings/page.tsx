@@ -12,7 +12,6 @@ import {
 import {
   DEFAULT_SITE_SETTINGS,
   getSiteSettings,
-  ALLOWED_CRON_INTERVAL_MINUTES,
   normalizeCronIntervalMinutes
 } from "@/lib/siteSettings";
 import {
@@ -321,21 +320,18 @@ export default async function SettingsAdminPage({
             <span className="text-zinc-700">
               Publish scheduler interval (minutes)
             </span>
-            <select
+            <input
+              type="number"
               name="cronPublishIntervalMinutes"
+              min={1}
+              max={60}
               defaultValue={settings.cronPublishIntervalMinutes}
               disabled={!canEdit}
               className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-            >
-              {ALLOWED_CRON_INTERVAL_MINUTES.map(value => (
-                <option key={value} value={value}>
-                  {value} minutes
-                </option>
-              ))}
-            </select>
+            />
             <span className="text-xs text-zinc-500">
-              GitHub scheduler runs every 5 minutes. Choose a 5-minute multiple
-              for predictable publishing.
+              External scheduler (QStash recommended) should call cron every
+              minute. This value controls actual publish interval.
             </span>
           </label>
 
