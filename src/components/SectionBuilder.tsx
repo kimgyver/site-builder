@@ -211,6 +211,13 @@ export function SectionBuilder({
     setSectionsSynced(prev => {
       const source = prev[index];
       if (!source) return prev;
+      if (source.type === "pageStyle") {
+        setToast({
+          show: true,
+          message: "Page Style section cannot be duplicated."
+        });
+        return prev;
+      }
 
       tempIdRef.current += 1;
       const copy: EditableSection = {

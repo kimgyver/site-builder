@@ -1,17 +1,68 @@
 import React from "react";
 import { EditableSection } from "../../types/sections";
+import type { MediaItem } from "@/types/references";
 
 interface PageStyleSectionEditorProps {
   section: EditableSection;
   patchProps: (patch: Partial<Record<string, unknown>>) => void;
   updateProps: (newProps: Record<string, unknown>) => void;
+  libraryMedia: MediaItem[];
+  isLibraryLoading: boolean;
+  mediaTotal: number;
+  mediaLimit: number;
+}
+
+function getImageUrlFromPastedContent(
+  text: string,
+  html: string
+): string | undefined {
+  const htmlMatch = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (htmlMatch?.[1]) {
+    return htmlMatch[1].trim();
+  }
+
+  const textMatch = text.match(/https?:\/\/[^\s"')]+|\/[^\s"')]+/i);
+  if (textMatch?.[0]) {
+    return textMatch[0].trim();
+  }
+
+  return undefined;
+}
+
+function isLikelyImageUrl(url: string): boolean {
+  return /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif)(\?.*)?$/i.test(url);
 }
 
 const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
   section,
-  updateProps
+  updateProps,
+  libraryMedia,
+  isLibraryLoading,
+  mediaTotal,
+  mediaLimit
 }) => {
   const props = (section.props || {}) as Record<string, unknown>;
+  const backgroundImageUrl =
+    typeof props.backgroundImageUrl === "string"
+      ? props.backgroundImageUrl
+      : "";
+  const imageCandidates = libraryMedia.filter(item =>
+    isLikelyImageUrl(item.url)
+  );
+
+  const handleBackgroundPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData("text/plain");
+    const html = e.clipboardData.getData("text/html");
+    const extracted = getImageUrlFromPastedContent(text, html);
+    if (!extracted) return;
+
+    e.preventDefault();
+    updateProps({
+      ...props,
+      backgroundImageUrl: extracted
+    });
+  };
+
   return (
     <div className="space-y-1">
       <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
@@ -34,23 +85,48 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
       </label>
       <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
         Background image URL (optional)
+        {!isLibraryLoading && mediaLimit > 0 ? (
+          <span className="ml-1 text-zinc-500">
+            · {imageCandidates.length} from library
+            {mediaTotal > imageCandidates.length ? ` (of ${mediaTotal})` : ""}
+          </span>
+        ) : null}
         <input
           type="url"
           className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
-          value={
-            typeof props.backgroundImageUrl === "string"
-              ? props.backgroundImageUrl
-              : ""
-          }
+          value={backgroundImageUrl}
+          onPaste={handleBackgroundPaste}
           onChange={e =>
             updateProps({
               ...props,
               backgroundImageUrl: e.target.value
             })
           }
-          placeholder="https://... or /images/bg.jpg"
+          placeholder="https://... or /images/bg.jpg (or paste rich text)"
         />
       </label>
+      {!isLibraryLoading && imageCandidates.length > 0 ? (
+        <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+          Pick from media library
+          <select
+            className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+            value={backgroundImageUrl}
+            onChange={e =>
+              updateProps({
+                ...props,
+                backgroundImageUrl: e.target.value
+              })
+            }
+          >
+            <option value="">Select an image…</option>
+            {imageCandidates.map(item => (
+              <option key={item.url} value={item.url}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
       <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
         Background image dim (%)
         <input

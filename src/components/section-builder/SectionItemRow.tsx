@@ -61,6 +61,7 @@ export function SectionItemRow({
 }: SectionItemRowProps) {
   const sectionProps = (section.props || {}) as Record<string, unknown>;
   const isTextSection = section.type === "text" || section.type === "richText";
+  const canDuplicate = section.type !== "pageStyle";
 
   return (
     <div
@@ -173,6 +174,10 @@ export function SectionItemRow({
               section={section}
               patchProps={patch => patchProps(sectionIndex, patch)}
               updateProps={nextProps => updateProps(sectionIndex, nextProps)}
+              libraryMedia={libraryMedia}
+              isLibraryLoading={isReferenceLibraryLoading}
+              mediaTotal={libraryMediaMeta.total}
+              mediaLimit={libraryMediaMeta.limit}
             />
           ) : section.type === "callout" ? (
             <CalloutSectionEditor
@@ -204,13 +209,15 @@ export function SectionItemRow({
         >
           ↓
         </button>
-        <button
-          type="button"
-          className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 md:px-2 md:py-1"
-          onClick={() => duplicateSection(sectionIndex)}
-        >
-          Duplicate
-        </button>
+        {canDuplicate ? (
+          <button
+            type="button"
+            className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 md:px-2 md:py-1"
+            onClick={() => duplicateSection(sectionIndex)}
+          >
+            Duplicate
+          </button>
+        ) : null}
         <button
           type="button"
           className="rounded border border-zinc-200 px-1.5 py-0.5 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 md:px-2 md:py-1"
