@@ -46,7 +46,7 @@ export default async function MenuManagementAdmin() {
   const locations = ["header", "footer"] as const;
 
   return (
-    <div className="w-full max-w-2xl space-y-6">
+    <div className="mx-auto w-full space-y-6 lg:max-w-4xl">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">
           Menu Management
@@ -56,15 +56,15 @@ export default async function MenuManagementAdmin() {
         </p>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {locations.map(location => {
           const menu = byLocation.get(location);
           return (
             <div
               key={location}
-              className="rounded-md border border-zinc-200 bg-white px-4 py-3"
+              className="rounded-lg border border-zinc-200 bg-white p-4"
             >
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="text-sm font-medium text-zinc-900">
                     {location === "header"
@@ -83,11 +83,14 @@ export default async function MenuManagementAdmin() {
                     Edit
                   </Link>
                 ) : (
-                  <form action={createMenu} className="flex items-center gap-2">
+                  <form
+                    action={createMenu}
+                    className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center"
+                  >
                     <input type="hidden" name="location" value={location} />
                     <input
                       name="name"
-                      className="w-40 rounded-md border border-zinc-300 px-2 py-1 text-xs"
+                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 sm:w-56"
                       placeholder={`${location} menu`}
                       required
                     />
