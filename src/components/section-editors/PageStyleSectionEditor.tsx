@@ -143,8 +143,8 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
             : imageValueValid && isDataImageValue
               ? "ready (embedded data image; library list may not include this)"
               : imageValueValid
-              ? "ready"
-              : "invalid value (use https://, /path, or data:image;base64)"}
+                ? "ready"
+                : "invalid value (use https://, /path, or data:image;base64)"}
       </div>
       <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
         Background image URL (optional)
