@@ -55,7 +55,17 @@ async function getPageData(id: string) {
   if (!page) {
     notFound();
   }
-  return { page, canDelete, canPublish, canEdit };
+  const globalGroups = await prisma.globalSectionGroup.findMany({
+    select: {
+      id: true,
+      name: true,
+      location: true,
+      isDefault: true
+    },
+    orderBy: [{ location: "asc" }, { createdAt: "asc" }]
+  });
+
+  return { page, canDelete, canPublish, canEdit, globalGroups };
 }
 
 export default function EditPage({
@@ -68,10 +78,13 @@ export default function EditPage({
   if (!id) {
     notFound();
   }
-  const { page, canDelete, canPublish, canEdit } = use(getPageData(id));
+  const { page, canDelete, canPublish, canEdit, globalGroups } = use(
+    getPageData(id)
+  );
   return (
     <AdminPageClientWrapper
       page={page}
+      globalGroups={globalGroups}
       canDelete={canDelete}
       canPublish={canPublish}
       canEdit={canEdit}

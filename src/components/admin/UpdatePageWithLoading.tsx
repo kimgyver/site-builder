@@ -3,6 +3,7 @@ import { useState } from "react";
 
 export default function UpdatePageWithLoading({
   page,
+  globalGroups,
   action,
   readOnly,
   onSuccess
@@ -15,7 +16,15 @@ export default function UpdatePageWithLoading({
     seoTitle?: string;
     seoDescription?: string;
     status: string;
+    headerGlobalGroupId?: string;
+    footerGlobalGroupId?: string;
   };
+  globalGroups: Array<{
+    id: string;
+    name: string;
+    location: string;
+    isDefault: boolean;
+  }>;
   action: (
     formData: FormData
   ) => Promise<{ ok: boolean; error?: string; updatedAt?: string } | undefined>;
@@ -28,7 +37,9 @@ export default function UpdatePageWithLoading({
     locale: page.locale ?? "en",
     seoTitle: page.seoTitle ?? "",
     seoDescription: page.seoDescription ?? "",
-    status: page.status
+    status: page.status,
+    headerGlobalGroupId: page.headerGlobalGroupId ?? "",
+    footerGlobalGroupId: page.footerGlobalGroupId ?? ""
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +50,12 @@ export default function UpdatePageWithLoading({
     form.seoDescription.trim().length > 0 ? form.seoDescription.trim() : "";
   const hasCustomSeo =
     form.seoTitle.trim().length > 0 || form.seoDescription.trim().length > 0;
+  const headerGroups = globalGroups.filter(
+    group => group.location === "header"
+  );
+  const footerGroups = globalGroups.filter(
+    group => group.location === "footer"
+  );
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -61,6 +78,8 @@ export default function UpdatePageWithLoading({
     formData.set("seoTitle", form.seoTitle);
     formData.set("seoDescription", form.seoDescription);
     formData.set("status", form.status);
+    formData.set("headerGlobalGroupId", form.headerGlobalGroupId);
+    formData.set("footerGlobalGroupId", form.footerGlobalGroupId);
     const result = await action(formData);
     setIsSaving(false);
     if (result?.ok) {
@@ -167,6 +186,62 @@ export default function UpdatePageWithLoading({
           </div>
         </div>
       </details>
+
+      <details className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2">
+        <summary className="cursor-pointer select-none text-sm font-medium text-zinc-800">
+          Header/Footer globals (optional)
+        </summary>
+        <div className="mt-3 space-y-3">
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-zinc-800">
+              Header group
+            </label>
+            <p className="text-xs text-zinc-500">
+              If not selected, the default header group is used.
+            </p>
+            <select
+              name="headerGlobalGroupId"
+              value={form.headerGlobalGroupId}
+              onChange={handleChange}
+              disabled={readOnly}
+              className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+            >
+              <option value="">Use default header</option>
+              {headerGroups.map(group => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                  {group.isDefault ? " (default)" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-zinc-800">
+              Footer group
+            </label>
+            <p className="text-xs text-zinc-500">
+              If not selected, the default footer group is used.
+            </p>
+            <select
+              name="footerGlobalGroupId"
+              value={form.footerGlobalGroupId}
+              onChange={handleChange}
+              disabled={readOnly}
+              className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+            >
+              <option value="">Use default footer</option>
+              {footerGroups.map(group => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                  {group.isDefault ? " (default)" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </details>
+
       <div className="space-y-1">
         <label className="block text-sm font-medium text-zinc-800">
           Status

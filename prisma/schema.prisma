@@ -13,6 +13,8 @@ model Page {
   slug      String
   locale    String    @default("en")
   pageGroupId String?
+  headerGlobalGroupId String?
+  footerGlobalGroupId String?
   status    PageStatus @default(DRAFT)
   previewToken String  @unique @default(cuid())
   seoTitle  String?
@@ -23,9 +25,13 @@ model Page {
   sections  Section[]
   revisions PageRevision[]
   sectionRevisions SectionRevision[]
+  headerGlobalGroup GlobalSectionGroup? @relation("PageHeaderGlobalGroup", fields: [headerGlobalGroupId], references: [id], onDelete: SetNull)
+  footerGlobalGroup GlobalSectionGroup? @relation("PageFooterGlobalGroup", fields: [footerGlobalGroupId], references: [id], onDelete: SetNull)
 
   @@unique([slug, locale])
   @@unique([pageGroupId, locale])
+  @@index([headerGlobalGroupId])
+  @@index([footerGlobalGroupId])
 }
 
 model Section {
@@ -98,12 +104,15 @@ model GlobalSectionGroup {
   id        String   @id @default(cuid())
   name      String
   location  String   @default("header")
+  isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   sections  GlobalSection[]
+  headerAssignedPages Page[] @relation("PageHeaderGlobalGroup")
+  footerAssignedPages Page[] @relation("PageFooterGlobalGroup")
 
-  @@unique([location])
+  @@index([location])
 }
 
 model GlobalSection {

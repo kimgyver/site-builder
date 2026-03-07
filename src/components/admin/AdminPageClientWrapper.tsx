@@ -31,6 +31,7 @@ const REVISION_PAGE_SIZE = 10;
 
 export default function AdminPageClientWrapper({
   page,
+  globalGroups,
   canEdit,
   canDelete,
   canPublish,
@@ -40,6 +41,12 @@ export default function AdminPageClientWrapper({
   restoreRevision
 }: {
   page: PageWithSectionsAndRevisions;
+  globalGroups: Array<{
+    id: string;
+    name: string;
+    location: string;
+    isDefault: boolean;
+  }>;
   canEdit: boolean;
   canDelete: boolean;
   canPublish: boolean;
@@ -153,8 +160,11 @@ export default function AdminPageClientWrapper({
             locale: page.locale,
             seoTitle: page.seoTitle ?? "",
             seoDescription: page.seoDescription ?? "",
-            status: page.status
+            status: page.status,
+            headerGlobalGroupId: page.headerGlobalGroupId ?? "",
+            footerGlobalGroupId: page.footerGlobalGroupId ?? ""
           }}
+          globalGroups={globalGroups}
           action={updatePage}
           readOnly={!canEdit}
           onSuccess={updatedAt => {

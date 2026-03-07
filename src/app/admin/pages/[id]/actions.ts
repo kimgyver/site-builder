@@ -248,6 +248,8 @@ export async function updatePage(formData: FormData) {
     const locale = formData.get("locale");
     const seoTitle = formData.get("seoTitle");
     const seoDescription = formData.get("seoDescription");
+    const headerGlobalGroupId = formData.get("headerGlobalGroupId");
+    const footerGlobalGroupId = formData.get("footerGlobalGroupId");
     const status = formData.get("status");
     if (!id || !title || !slug || !status) {
       return { ok: false, error: "Missing required fields" };
@@ -264,6 +266,37 @@ export async function updatePage(formData: FormData) {
       return trimmed.length > 0 ? trimmed : null;
     };
 
+    const normalizeOptionalId = (value: FormDataEntryValue | null) => {
+      if (typeof value !== "string") {
+        return null;
+      }
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    };
+
+    const nextHeaderGlobalGroupId = normalizeOptionalId(headerGlobalGroupId);
+    const nextFooterGlobalGroupId = normalizeOptionalId(footerGlobalGroupId);
+
+    if (nextHeaderGlobalGroupId) {
+      const headerGroup = await prisma.globalSectionGroup.findUnique({
+        where: { id: nextHeaderGlobalGroupId },
+        select: { id: true, location: true }
+      });
+      if (!headerGroup || headerGroup.location !== "header") {
+        return { ok: false, error: "Invalid header global group" };
+      }
+    }
+
+    if (nextFooterGlobalGroupId) {
+      const footerGroup = await prisma.globalSectionGroup.findUnique({
+        where: { id: nextFooterGlobalGroupId },
+        select: { id: true, location: true }
+      });
+      if (!footerGroup || footerGroup.location !== "footer") {
+        return { ok: false, error: "Invalid footer global group" };
+      }
+    }
+
     const updated = await prisma.page.update({
       where: { id: String(id) },
       data: {
@@ -272,6 +305,8 @@ export async function updatePage(formData: FormData) {
         locale: locale ? String(locale) : undefined,
         seoTitle: normalizeOptionalText(seoTitle),
         seoDescription: normalizeOptionalText(seoDescription),
+        headerGlobalGroupId: nextHeaderGlobalGroupId,
+        footerGlobalGroupId: nextFooterGlobalGroupId,
         status: status as PageStatus
       },
       select: { updatedAt: true }

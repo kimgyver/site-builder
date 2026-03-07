@@ -178,19 +178,37 @@ export default async function LocaleDynamicPage({
     }
   };
 
-  const [headerMenu, footerMenu, headerGlobals, footerGlobals] =
+  const [headerMenu, footerMenu, headerGroups, footerGroups] =
     await Promise.all([
       getMenuByLocation("header"),
       getMenuByLocation("footer"),
-      prisma.globalSectionGroup.findFirst({
+      prisma.globalSectionGroup.findMany({
         where: { location: "header" },
-        include: { sections: { orderBy: { order: "asc" } } }
+        include: { sections: { orderBy: { order: "asc" } } },
+        orderBy: { createdAt: "asc" }
       }),
-      prisma.globalSectionGroup.findFirst({
+      prisma.globalSectionGroup.findMany({
         where: { location: "footer" },
-        include: { sections: { orderBy: { order: "asc" } } }
+        include: { sections: { orderBy: { order: "asc" } } },
+        orderBy: { createdAt: "asc" }
       })
     ]);
+
+  const pickGlobalGroup = <T extends { id: string; isDefault: boolean }>(
+    groups: T[],
+    preferredId?: string | null
+  ) => {
+    if (preferredId) {
+      const matched = groups.find(group => group.id === preferredId);
+      if (matched) return matched;
+    }
+    const defaultGroup = groups.find(group => group.isDefault);
+    if (defaultGroup) return defaultGroup;
+    return groups[0] ?? null;
+  };
+
+  const headerGlobals = pickGlobalGroup(headerGroups, page.headerGlobalGroupId);
+  const footerGlobals = pickGlobalGroup(footerGroups, page.footerGlobalGroupId);
 
   const pageBackgroundStyle = getSectionBackgroundStyle(
     page.sections as unknown as RenderableSection[]
