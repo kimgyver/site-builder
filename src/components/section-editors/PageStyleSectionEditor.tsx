@@ -70,10 +70,10 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
       <div className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 text-[10px] text-blue-800">
         <p className="font-medium">Background image setup</p>
         <p>
-          1) Paste into the URL field: direct image URL, HTML with
-          {" "}<code>&lt;img src="..." /&gt;</code>, or clipboard image
-          ({" "}<code>data:image;base64,...</code>). 2) Or choose one from
-          {" "}<span className="font-medium">Pick from media library</span>.
+          1) Paste into the URL field: direct image URL, HTML with{" "}
+          <code>&lt;img src="..." /&gt;</code>, or clipboard image ({" "}
+          <code>data:image;base64,...</code>). 2) Or choose one from{" "}
+          <span className="font-medium">Pick from media library</span>.
         </p>
       </div>
       <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
