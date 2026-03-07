@@ -178,7 +178,7 @@ export function getSectionBackgroundStyle(
 
     if (backgroundImageDimPercent > 0) {
       const alpha = Number((backgroundImageDimPercent / 100).toFixed(2));
-      style.backgroundImage = `linear-gradient(rgba(0, 0, 0, ${alpha}), rgba(0, 0, 0, ${alpha})), url("${escaped}")`;
+      style.backgroundImage = `linear-gradient(rgba(255, 255, 255, ${alpha}), rgba(255, 255, 255, ${alpha})), url("${escaped}")`;
       style.backgroundRepeat = `no-repeat, ${imageRepeat}`;
       style.backgroundSize = `cover, ${imageSize}`;
       style.backgroundPosition = `center, ${imagePosition}`;

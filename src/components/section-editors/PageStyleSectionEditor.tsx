@@ -105,11 +105,29 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
   const hasImageValue = backgroundImageUrl.trim().length > 0;
   const imageValueValid = isSupportedBackgroundImageValue(backgroundImageUrl);
   const isDataImageValue = /^data:image\//i.test(backgroundImageUrl.trim());
+  const backgroundImageDimPercent =
+    typeof props.backgroundImageDimPercent === "number"
+      ? props.backgroundImageDimPercent
+      : 0;
   const previewRepeat =
     backgroundImageRenderMode === "tile" ? "repeat" : "no-repeat";
   const previewSize = backgroundImageRenderMode === "cover" ? "cover" : "auto";
   const previewPosition =
     backgroundImageRenderMode === "cover" ? "center" : "top left";
+  const previewDimAlpha = Number((backgroundImageDimPercent / 100).toFixed(2));
+  const escapedPreviewUrl = backgroundImageUrl.replace(/"/g, '\\"');
+  const previewBackgroundImage =
+    backgroundImageDimPercent > 0
+      ? `linear-gradient(rgba(255, 255, 255, ${previewDimAlpha}), rgba(255, 255, 255, ${previewDimAlpha})), url("${escapedPreviewUrl}")`
+      : `url("${escapedPreviewUrl}")`;
+  const previewBackgroundRepeat =
+    backgroundImageDimPercent > 0 ? `no-repeat, ${previewRepeat}` : previewRepeat;
+  const previewBackgroundSize =
+    backgroundImageDimPercent > 0 ? `cover, ${previewSize}` : previewSize;
+  const previewBackgroundPosition =
+    backgroundImageDimPercent > 0
+      ? `center, ${previewPosition}`
+      : previewPosition;
 
   const handleBackgroundPaste = async (
     e: React.ClipboardEvent<HTMLInputElement>
@@ -244,10 +262,10 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
             className="h-16 rounded border border-zinc-200"
             style={{
               backgroundColor,
-              backgroundImage: `url("${backgroundImageUrl.replace(/"/g, '\\"')}")`,
-              backgroundSize: previewSize,
-              backgroundRepeat: previewRepeat,
-              backgroundPosition: previewPosition
+              backgroundImage: previewBackgroundImage,
+              backgroundSize: previewBackgroundSize,
+              backgroundRepeat: previewBackgroundRepeat,
+              backgroundPosition: previewBackgroundPosition
             }}
           />
         </div>
@@ -276,18 +294,14 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
         </label>
       ) : null}
       <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
-        Background image dim (%)
+        Background image fade (%)
         <input
           type="number"
           min={0}
           max={90}
           className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
           disabled={!imageModeEnabled}
-          value={
-            typeof props.backgroundImageDimPercent === "number"
-              ? props.backgroundImageDimPercent
-              : 0
-          }
+          value={backgroundImageDimPercent}
           onChange={e =>
             updateProps({
               ...props,
@@ -295,6 +309,9 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
             })
           }
         />
+        <p className="mt-1 text-[10px] text-zinc-500">
+          Higher value makes the image lighter.
+        </p>
       </label>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
