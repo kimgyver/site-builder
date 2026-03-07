@@ -144,10 +144,8 @@ export function getSectionBackgroundStyle(
     pageStyleProps.backgroundImageDimPercent
   );
 
-  const useColor =
-    backgroundMode === "color" || backgroundMode === "both";
-  const useImage =
-    backgroundMode === "image" || backgroundMode === "both";
+  const useColor = backgroundMode === "color" || backgroundMode === "both";
+  const useImage = backgroundMode === "image" || backgroundMode === "both";
 
   const appliedColor = useColor ? backgroundColor : undefined;
   const appliedImage = useImage ? backgroundImageUrl : undefined;

@@ -114,6 +114,7 @@ export async function GET(request: NextRequest) {
 
     pushMediaFromValue(props.url, mediaMap, baseLabel, rank);
     pushMediaFromValue(props.src, mediaMap, baseLabel, rank);
+    pushMediaFromValue(props.backgroundImageUrl, mediaMap, baseLabel, rank);
 
     const html = typeof props.html === "string" ? props.html : "";
     if (html) {
