@@ -14,7 +14,10 @@ import {
   ALLOWED_CRON_INTERVAL_MINUTES,
   normalizeCronIntervalMinutes
 } from "@/lib/siteSettings";
-import { normalizePublishTimeZone } from "@/lib/publishTimeZone";
+import {
+  COMMON_PUBLISH_TIME_ZONES,
+  normalizePublishTimeZone
+} from "@/lib/publishTimeZone";
 
 async function ensureRole(nextPath: string) {
   const cookieStore = await cookies();
@@ -149,6 +152,11 @@ export default async function SettingsAdminPage({
   const settings = await getSiteSettings();
   const canEdit = canEditContent(role);
   const { saved } = await searchParams;
+  const publishTimeZoneOptions = COMMON_PUBLISH_TIME_ZONES.includes(
+    settings.publishTimeZone as (typeof COMMON_PUBLISH_TIME_ZONES)[number]
+  )
+    ? [...COMMON_PUBLISH_TIME_ZONES]
+    : [settings.publishTimeZone, ...COMMON_PUBLISH_TIME_ZONES];
 
   return (
     <div className="mx-auto w-full space-y-6 lg:max-w-4xl">
@@ -277,16 +285,20 @@ export default async function SettingsAdminPage({
 
           <label className="space-y-1 text-sm">
             <span className="text-zinc-700">Publish timezone (IANA)</span>
-            <input
+            <select
               name="publishTimeZone"
               defaultValue={settings.publishTimeZone}
               disabled={!canEdit}
-              placeholder="UTC"
               className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-            />
+            >
+              {publishTimeZoneOptions.map(value => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
             <span className="text-xs text-zinc-500">
-              Example: UTC, Pacific/Auckland, Asia/Seoul. Invalid values fall
-              back to UTC.
+              Select the timezone used to interpret scheduled publish datetime.
             </span>
           </label>
         </div>

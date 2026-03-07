@@ -1,5 +1,27 @@
 const DEFAULT_PUBLISH_TIME_ZONE = "UTC";
 
+export const COMMON_PUBLISH_TIME_ZONES = [
+  "UTC",
+  "Pacific/Auckland",
+  "Pacific/Fiji",
+  "Australia/Sydney",
+  "Australia/Brisbane",
+  "Asia/Seoul",
+  "Asia/Tokyo",
+  "Asia/Singapore",
+  "Asia/Bangkok",
+  "Asia/Kolkata",
+  "Europe/London",
+  "Europe/Berlin",
+  "Europe/Paris",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Toronto",
+  "America/Sao_Paulo"
+] as const;
+
 function parseDateTimeLocalInput(input: string) {
   const match = input.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
   if (!match) return null;
