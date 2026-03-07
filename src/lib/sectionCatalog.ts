@@ -168,6 +168,7 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
       backgroundMode: "both",
       backgroundColor: "#f8fafc",
       backgroundImageUrl: "",
+      backgroundImageRenderMode: "cover",
       backgroundImageDimPercent: 0,
       brandName: "",
       brandHref: "/",
@@ -190,6 +191,12 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
           : "both",
       backgroundColor: (from.backgroundColor as string) ?? "#f8fafc",
       backgroundImageUrl: (from.backgroundImageUrl as string) ?? "",
+      backgroundImageRenderMode:
+        from.backgroundImageRenderMode === "cover" ||
+        from.backgroundImageRenderMode === "original" ||
+        from.backgroundImageRenderMode === "tile"
+          ? from.backgroundImageRenderMode
+          : "cover",
       backgroundImageDimPercent:
         typeof from.backgroundImageDimPercent === "number"
           ? Math.min(

@@ -87,6 +87,12 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
     typeof props.backgroundImageUrl === "string"
       ? props.backgroundImageUrl
       : "";
+  const backgroundImageRenderMode =
+    props.backgroundImageRenderMode === "cover" ||
+    props.backgroundImageRenderMode === "original" ||
+    props.backgroundImageRenderMode === "tile"
+      ? String(props.backgroundImageRenderMode)
+      : "cover";
   const backgroundColor =
     typeof props.backgroundColor === "string"
       ? props.backgroundColor
@@ -99,6 +105,11 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
   const hasImageValue = backgroundImageUrl.trim().length > 0;
   const imageValueValid = isSupportedBackgroundImageValue(backgroundImageUrl);
   const isDataImageValue = /^data:image\//i.test(backgroundImageUrl.trim());
+  const previewRepeat =
+    backgroundImageRenderMode === "tile" ? "repeat" : "no-repeat";
+  const previewSize = backgroundImageRenderMode === "cover" ? "cover" : "auto";
+  const previewPosition =
+    backgroundImageRenderMode === "cover" ? "center" : "top left";
 
   const handleBackgroundPaste = async (
     e: React.ClipboardEvent<HTMLInputElement>
@@ -208,6 +219,24 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           You can also paste a URL or HTML with <code>&lt;img src /&gt;</code>.
         </p>
       </label>
+      <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+        Image layout
+        <select
+          className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+          value={backgroundImageRenderMode}
+          disabled={!imageModeEnabled}
+          onChange={e =>
+            updateProps({
+              ...props,
+              backgroundImageRenderMode: e.target.value
+            })
+          }
+        >
+          <option value="cover">Single (cover)</option>
+          <option value="original">Single (original size)</option>
+          <option value="tile">Tile (repeat original size)</option>
+        </select>
+      </label>
       {imageModeEnabled && hasImageValue && imageValueValid ? (
         <div className="rounded-md border border-zinc-200 bg-white p-2">
           <p className="mb-1 text-[10px] text-zinc-600">Image preview</p>
@@ -216,9 +245,9 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
             style={{
               backgroundColor,
               backgroundImage: `url("${backgroundImageUrl.replace(/"/g, '\\"')}")`,
-              backgroundSize: "cover",
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "center"
+              backgroundSize: previewSize,
+              backgroundRepeat: previewRepeat,
+              backgroundPosition: previewPosition
             }}
           />
         </div>

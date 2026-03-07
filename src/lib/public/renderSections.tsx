@@ -102,6 +102,15 @@ function getSafeBackgroundMode(value: unknown): "color" | "image" | "both" {
   return "both";
 }
 
+function getSafeBackgroundImageRenderMode(
+  value: unknown
+): "cover" | "original" | "tile" {
+  if (value === "cover" || value === "original" || value === "tile") {
+    return value;
+  }
+  return "cover";
+}
+
 export function getSectionLayoutConfig(sections: RenderableSection[]) {
   const pageStyleSection = sections.find(
     section => section.enabled !== false && section.type === "pageStyle"
@@ -136,6 +145,9 @@ export function getSectionBackgroundStyle(
   );
   const pageStyleProps = (pageStyleSection?.props ?? {}) as SectionProps;
   const backgroundMode = getSafeBackgroundMode(pageStyleProps.backgroundMode);
+  const backgroundImageRenderMode = getSafeBackgroundImageRenderMode(
+    pageStyleProps.backgroundImageRenderMode
+  );
   const backgroundColor = getSafeColor(pageStyleProps.backgroundColor);
   const backgroundImageUrl = getSafeBackgroundImageUrl(
     pageStyleProps.backgroundImageUrl
@@ -158,15 +170,24 @@ export function getSectionBackgroundStyle(
 
   if (appliedImage) {
     const escaped = appliedImage.replace(/"/g, '\\"');
+    const imageRepeat =
+      backgroundImageRenderMode === "tile" ? "repeat" : "no-repeat";
+    const imageSize = backgroundImageRenderMode === "cover" ? "cover" : "auto";
+    const imagePosition =
+      backgroundImageRenderMode === "cover" ? "center" : "top left";
+
     if (backgroundImageDimPercent > 0) {
       const alpha = Number((backgroundImageDimPercent / 100).toFixed(2));
       style.backgroundImage = `linear-gradient(rgba(0, 0, 0, ${alpha}), rgba(0, 0, 0, ${alpha})), url("${escaped}")`;
+      style.backgroundRepeat = `no-repeat, ${imageRepeat}`;
+      style.backgroundSize = `cover, ${imageSize}`;
+      style.backgroundPosition = `center, ${imagePosition}`;
     } else {
       style.backgroundImage = `url("${escaped}")`;
+      style.backgroundRepeat = imageRepeat;
+      style.backgroundSize = imageSize;
+      style.backgroundPosition = imagePosition;
     }
-    style.backgroundSize = "cover";
-    style.backgroundRepeat = "no-repeat";
-    style.backgroundPosition = "center";
   }
 
   return style;
