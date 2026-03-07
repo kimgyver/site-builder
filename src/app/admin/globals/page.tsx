@@ -44,7 +44,7 @@ export default async function GlobalSectionsListPage() {
   const byLocation = new Map(groups.map(g => [g.location, g]));
 
   return (
-    <div className="w-full max-w-3xl space-y-6">
+    <div className="mx-auto w-full space-y-6 lg:max-w-4xl">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">
           Shared Header/Footer Blocks
@@ -62,7 +62,7 @@ export default async function GlobalSectionsListPage() {
               key={location}
               className="rounded-lg border border-zinc-200 bg-white p-4"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="text-sm font-semibold text-zinc-900">
                     {location === "header" ? "Header" : "Footer"}
@@ -75,16 +75,19 @@ export default async function GlobalSectionsListPage() {
                 {group ? (
                   <Link
                     href={`/admin/globals/${group.id}`}
-                    className="rounded-md border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-800 hover:bg-zinc-100"
+                    className="w-full rounded-md border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-800 hover:bg-zinc-100 sm:w-auto"
                   >
                     Edit
                   </Link>
                 ) : (
-                  <form action={createGroup}>
+                  <form
+                    action={createGroup}
+                    className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center"
+                  >
                     <input type="hidden" name="location" value={location} />
                     <input
                       name="name"
-                      className="mr-2 w-40 rounded-md border border-zinc-300 px-2 py-1 text-xs"
+                      className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 sm:w-56"
                       placeholder={`${location} global sections`}
                       required
                     />
