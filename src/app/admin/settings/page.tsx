@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import {
   SESSION_COOKIE_NAME,
@@ -134,8 +135,10 @@ async function saveSettings(formData: FormData) {
       WHERE "key" = 'default'
     `;
   } else {
+    const fallbackId = randomUUID();
     await prisma.$executeRaw`
       INSERT INTO "SiteSetting" (
+        "id",
         "key",
         "siteName",
         "siteTagline",
@@ -145,9 +148,11 @@ async function saveSettings(formData: FormData) {
         "defaultSeoDescription",
         "cronPublishIntervalMinutes",
         "disableIndexing",
-        "adminBrandLabel"
+        "adminBrandLabel",
+        "updatedAt"
       )
       VALUES (
+        ${fallbackId},
         'default',
         ${siteName},
         ${siteTagline},
@@ -157,7 +162,8 @@ async function saveSettings(formData: FormData) {
         ${defaultSeoDescription},
         ${cronPublishIntervalMinutes},
         ${disableIndexing},
-        ${adminBrandLabel}
+        ${adminBrandLabel},
+        NOW()
       )
       ON CONFLICT ("key") DO UPDATE SET
         "siteName" = EXCLUDED."siteName",
@@ -168,7 +174,8 @@ async function saveSettings(formData: FormData) {
         "defaultSeoDescription" = EXCLUDED."defaultSeoDescription",
         "cronPublishIntervalMinutes" = EXCLUDED."cronPublishIntervalMinutes",
         "disableIndexing" = EXCLUDED."disableIndexing",
-        "adminBrandLabel" = EXCLUDED."adminBrandLabel"
+        "adminBrandLabel" = EXCLUDED."adminBrandLabel",
+        "updatedAt" = NOW()
     `;
   }
 
