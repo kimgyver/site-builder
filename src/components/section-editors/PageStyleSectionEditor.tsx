@@ -21,7 +21,9 @@ function getImageUrlFromPastedContent(
     return htmlMatch[1].trim();
   }
 
-  const textMatch = text.match(/https?:\/\/[^\s"')]+|\/[^\s"')]+/i);
+  const textMatch = text.match(
+    /data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=\s]+|https?:\/\/[^\s"')]+|\/[^\s"')]+/i
+  );
   if (textMatch?.[0]) {
     return textMatch[0].trim();
   }
@@ -68,9 +70,10 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
       <div className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 text-[10px] text-blue-800">
         <p className="font-medium">Background image setup</p>
         <p>
-          1) Paste an image URL or rich-text snippet into the URL field, or 2)
-          choose one from{" "}
-          <span className="font-medium">Pick from media library</span>.
+          1) Paste into the URL field: direct image URL, HTML with
+          {" "}<code>&lt;img src="..." /&gt;</code>, or clipboard image
+          ({" "}<code>data:image;base64,...</code>). 2) Or choose one from
+          {" "}<span className="font-medium">Pick from media library</span>.
         </p>
       </div>
       <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
@@ -100,7 +103,7 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           </span>
         ) : null}
         <input
-          type="url"
+          type="text"
           className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
           value={backgroundImageUrl}
           onPaste={handleBackgroundPaste}
@@ -110,11 +113,11 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
               backgroundImageUrl: e.target.value
             })
           }
-          placeholder="https://... or /images/bg.jpg (or paste rich text)"
+          placeholder="https://... or /images/bg.jpg or data:image/..."
         />
         <p className="mt-1 text-[10px] text-zinc-500">
           Tip: if you paste HTML containing <code>&lt;img src="..." /&gt;</code>
-          , the first image URL is auto-filled.
+          or clipboard image data, the first image source is auto-filled.
         </p>
       </label>
       {!isLibraryLoading && imageCandidates.length > 0 ? (

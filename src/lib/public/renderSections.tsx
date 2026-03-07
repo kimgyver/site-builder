@@ -24,6 +24,14 @@ function getSafeBackgroundImageUrl(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const raw = value.trim();
   if (!raw) return undefined;
+  if (
+    /^data:image\/(png|jpe?g|webp|gif|bmp|avif);base64,[a-z0-9+/=\s]+$/i.test(
+      raw
+    )
+  ) {
+    // Guardrail for oversized inline payloads
+    return raw.length <= 2_500_000 ? raw : undefined;
+  }
   if (raw.startsWith("/")) return raw;
   try {
     const url = new URL(raw);
