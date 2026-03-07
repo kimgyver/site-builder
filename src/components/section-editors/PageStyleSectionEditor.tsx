@@ -1,6 +1,7 @@
 import React from "react";
 import { EditableSection } from "../../types/sections";
 import type { MediaItem } from "@/types/references";
+import { isEmbeddedDataImage, isImageLikeUrl } from "@/lib/media/imageUrlUtils";
 
 interface PageStyleSectionEditorProps {
   section: EditableSection;
@@ -29,14 +30,6 @@ function getImageUrlFromPastedContent(
   }
 
   return undefined;
-}
-
-function isLikelyImageUrl(url: string): boolean {
-  return /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif)(\?.*)?$/i.test(url);
-}
-
-function isEmbeddedDataImage(url: string): boolean {
-  return /^data:image\//i.test(url);
 }
 
 function isSupportedBackgroundImageValue(value: string): boolean {
@@ -101,9 +94,7 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
     typeof props.backgroundColor === "string"
       ? props.backgroundColor
       : "#f8fafc";
-  const imageCandidates = libraryMedia.filter(item =>
-    isLikelyImageUrl(item.url)
-  );
+  const imageCandidates = libraryMedia.filter(item => isImageLikeUrl(item.url));
   const imageModeEnabled =
     backgroundMode === "image" || backgroundMode === "both";
   const hasImageValue = backgroundImageUrl.trim().length > 0;
@@ -115,14 +106,15 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
   );
   const imageCandidatesWithCurrent =
     imageValueValid &&
-    !isDataImageValue &&
+    isImageLikeUrl(normalizedCurrentImageUrl) &&
     normalizedCurrentImageUrl.length > 0 &&
     !hasCurrentImageInCandidates
       ? [
           {
             url: normalizedCurrentImageUrl,
-            label:
-              normalizedCurrentImageUrl.length > 84
+            label: isEmbeddedDataImage(normalizedCurrentImageUrl)
+              ? "Current page · data:image;base64,..."
+              : normalizedCurrentImageUrl.length > 84
                 ? `Current page · ${normalizedCurrentImageUrl.slice(0, 81)}...`
                 : `Current page · ${normalizedCurrentImageUrl}`
           },

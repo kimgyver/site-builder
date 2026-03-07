@@ -1,6 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import type { MediaItem, PageReferenceItem } from "@/types/references";
+import { isEmbeddedDataImage, isImageLikeUrl } from "@/lib/media/imageUrlUtils";
 
 function getImageUrlFromPastedContent(
   text: string,
@@ -38,23 +39,6 @@ function readClipboardImageAsDataUrl(
     reader.onerror = () => resolve(undefined);
     reader.readAsDataURL(file);
   });
-}
-
-function isImageLikeUrl(url: string): boolean {
-  return (
-    /^data:image\//i.test(url) ||
-    /\.(jpg|jpeg|png|gif|webp|bmp|svg|avif)(\?.*)?$/i.test(url) ||
-    url.startsWith("https://placehold.co/") ||
-    url.startsWith("https://imgnews") ||
-    url.startsWith("https://images") ||
-    url.startsWith("https://pstatic") ||
-    url.startsWith("https://cdn") ||
-    url.startsWith("/public/")
-  );
-}
-
-function isEmbeddedDataImage(url: string): boolean {
-  return /^data:image\//i.test(url);
 }
 
 export function ImageSectionEditor({
