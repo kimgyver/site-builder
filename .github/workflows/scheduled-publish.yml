@@ -25,8 +25,19 @@ jobs:
         run: |
           set -euo pipefail
           URL="${SITE_URL%/}/api/cron/publish"
+          echo "Target URL host: $(echo "$URL" | sed -E 's#(https?://[^/]+).*#\1#')"
           if [ -n "${CRON_SECRET:-}" ]; then
-            curl -fsS "$URL" -H "Authorization: Bearer $CRON_SECRET"
+            response=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" "$URL" \
+              -H "Authorization: Bearer $CRON_SECRET" \
+              -H "User-Agent: github-actions-cron/1.0")
           else
-            curl -fsS "$URL"
+            response=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" "$URL" \
+              -H "User-Agent: github-actions-cron/1.0")
+          fi
+
+          echo "$response"
+          status=$(echo "$response" | awk -F: '/HTTP_STATUS/{print $2}' | tail -n1)
+          if [ -z "$status" ] || [ "$status" -ge 400 ]; then
+            echo "Publish cron request failed with status: ${status:-unknown}"
+            exit 1
           fi

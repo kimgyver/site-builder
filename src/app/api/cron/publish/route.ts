@@ -8,6 +8,7 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+const SCHEDULER_WINDOW_MINUTES = 5;
 
 function isRetryableDbError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
@@ -88,24 +89,30 @@ export async function GET(request: NextRequest) {
   const interval = normalizeCronIntervalMinutes(
     settings.cronPublishIntervalMinutes
   );
+  const minuteRemainder = now.getUTCMinutes() % interval;
 
   console.info("[cron:publish] invoked", {
     triggerSource,
     nowIso: now.toISOString(),
-    intervalMinutes: interval
+    intervalMinutes: interval,
+    minuteRemainder
   });
 
-  if (now.getUTCMinutes() % interval !== 0) {
+  if (minuteRemainder >= SCHEDULER_WINDOW_MINUTES) {
     console.info("[cron:publish] skipped", {
-      reason: "INTERVAL_NOT_REACHED",
+      reason: "INTERVAL_WINDOW_NOT_REACHED",
       currentUtcMinute: now.getUTCMinutes(),
-      intervalMinutes: interval
+      intervalMinutes: interval,
+      minuteRemainder,
+      schedulerWindowMinutes: SCHEDULER_WINDOW_MINUTES
     });
     return NextResponse.json({
       ok: true,
       skipped: true,
-      reason: "INTERVAL_NOT_REACHED",
-      intervalMinutes: interval
+      reason: "INTERVAL_WINDOW_NOT_REACHED",
+      intervalMinutes: interval,
+      minuteRemainder,
+      schedulerWindowMinutes: SCHEDULER_WINDOW_MINUTES
     });
   }
 
