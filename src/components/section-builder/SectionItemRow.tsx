@@ -61,7 +61,8 @@ export function SectionItemRow({
 }: SectionItemRowProps) {
   const sectionProps = (section.props || {}) as Record<string, unknown>;
   const isTextSection = section.type === "text" || section.type === "richText";
-  const canDuplicate = section.type !== "pageStyle";
+  const normalizedSectionType = String(section.type).trim().toLowerCase();
+  const canDuplicate = normalizedSectionType !== "pagestyle";
 
   return (
     <div

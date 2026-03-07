@@ -65,6 +65,14 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
 
   return (
     <div className="space-y-1">
+      <div className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 text-[10px] text-blue-800">
+        <p className="font-medium">Background image setup</p>
+        <p>
+          1) Paste an image URL or rich-text snippet into the URL field, or 2)
+          choose one from{" "}
+          <span className="font-medium">Pick from media library</span>.
+        </p>
+      </div>
       <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
         Background color
         <input
@@ -104,6 +112,10 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           }
           placeholder="https://... or /images/bg.jpg (or paste rich text)"
         />
+        <p className="mt-1 text-[10px] text-zinc-500">
+          Tip: if you paste HTML containing <code>&lt;img src="..." /&gt;</code>
+          , the first image URL is auto-filled.
+        </p>
       </label>
       {!isLibraryLoading && imageCandidates.length > 0 ? (
         <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
