@@ -146,6 +146,7 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
     backgroundImageDimPercent > 0
       ? `center, ${previewPosition}`
       : previewPosition;
+  const [showFullPreview, setShowFullPreview] = React.useState(false);
 
   const handleBackgroundPaste = async (
     e: React.ClipboardEvent<HTMLInputElement>
@@ -176,25 +177,10 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
 
   const handleOpenFullView = () => {
     const raw = backgroundImageUrl.trim();
-    if (!raw || typeof window === "undefined") {
+    if (!raw) {
       return;
     }
-
-    if (/^data:image\//i.test(raw)) {
-      const popup = window.open("", "_blank", "noopener,noreferrer");
-      if (!popup) {
-        return;
-      }
-
-      const safeSrc = raw.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-      popup.document.write(
-        `<!doctype html><html><head><meta charset="utf-8"><title>Image preview</title><style>html,body{margin:0;height:100%;background:#0a0a0a}body{display:flex;align-items:center;justify-content:center}img{max-width:100%;max-height:100%;object-fit:contain}</style></head><body><img src="${safeSrc}" alt="Image preview" /></body></html>`
-      );
-      popup.document.close();
-      return;
-    }
-
-    window.open(raw, "_blank", "noopener,noreferrer");
+    setShowFullPreview(true);
   };
 
   return (
@@ -371,6 +357,30 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           Higher value makes the image lighter.
         </p>
       </label>
+      {showFullPreview && backgroundImageUrl.trim().length > 0 ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
+          <button
+            type="button"
+            onClick={() => setShowFullPreview(false)}
+            className="absolute right-4 top-4 rounded border border-white/30 bg-black/40 px-3 py-1 text-xs text-white hover:bg-black/60"
+          >
+            Close
+          </button>
+          <div
+            role="img"
+            aria-label="Full preview"
+            className="h-full w-full"
+            style={{
+              backgroundImage: `url("${backgroundImageUrl
+                .trim()
+                .replace(/"/g, '\\"')}")`,
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center",
+              backgroundSize: "contain"
+            }}
+          />
+        </div>
+      ) : null}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
           Brand name (header slot)
