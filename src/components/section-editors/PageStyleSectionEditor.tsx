@@ -174,6 +174,29 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
     });
   };
 
+  const handleOpenFullView = () => {
+    const raw = backgroundImageUrl.trim();
+    if (!raw || typeof window === "undefined") {
+      return;
+    }
+
+    if (/^data:image\//i.test(raw)) {
+      const popup = window.open("", "_blank", "noopener,noreferrer");
+      if (!popup) {
+        return;
+      }
+
+      const safeSrc = raw.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+      popup.document.write(
+        `<!doctype html><html><head><meta charset="utf-8"><title>Image preview</title><style>html,body{margin:0;height:100%;background:#0a0a0a}body{display:flex;align-items:center;justify-content:center}img{max-width:100%;max-height:100%;object-fit:contain}</style></head><body><img src="${safeSrc}" alt="Image preview" /></body></html>`
+      );
+      popup.document.close();
+      return;
+    }
+
+    window.open(raw, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="space-y-1">
       <div className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 text-[10px] text-blue-800">
@@ -279,14 +302,13 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
         <div className="rounded-md border border-zinc-200 bg-white p-2">
           <div className="mb-1 flex items-center justify-between gap-2">
             <p className="text-[10px] text-zinc-600">Image preview</p>
-            <a
-              href={backgroundImageUrl}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              type="button"
+              onClick={handleOpenFullView}
               className="rounded border border-zinc-300 px-2 py-0.5 text-[10px] text-zinc-700 hover:bg-zinc-100"
             >
               Full view
-            </a>
+            </button>
           </div>
           <div
             className="h-16 rounded border border-zinc-200"
