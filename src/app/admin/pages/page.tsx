@@ -120,7 +120,10 @@ export default async function PagesListPage() {
                         Not scheduled
                       </span>
                     ) : page.publishAt <= now ? (
-                      <span className="rounded bg-amber-100 px-2 py-1 text-[11px] text-amber-800">
+                      <span
+                        className="rounded bg-amber-100 px-2 py-1 text-[11px] text-amber-800"
+                        title={`Scheduled at ${formatDateTimeLocalInTimeZone(page.publishAt, settings.publishTimeZone).replace("T", " ")} (${settings.publishTimeZone})`}
+                      >
                         Due
                       </span>
                     ) : (
