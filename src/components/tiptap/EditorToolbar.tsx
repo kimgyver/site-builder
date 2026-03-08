@@ -10,6 +10,7 @@ export function EditorToolbar({
   isTableActive,
   activeTextColor,
   activeBorderColor,
+  fontSizeValue,
   textColorValue,
   highlightColorValue,
   cellBgColorValue,
@@ -21,6 +22,8 @@ export function EditorToolbar({
   tableBorderColorInputRef,
   onSetTextColor,
   onClearTextColor,
+  onSetFontSize,
+  onClearFontSize,
   onSetHighlightColor,
   onClearHighlightColor,
   onSetOrUnsetLink,
@@ -40,6 +43,7 @@ export function EditorToolbar({
   const [showTextTools, setShowTextTools] = useState(false);
   const [showImageTools, setShowImageTools] = useState(false);
   const [showTableTools, setShowTableTools] = useState(false);
+  const fontSizePresetOptions = [12, 14, 16, 18, 20, 24, 28, 32, 40, 48];
   const imageToolsVisible = showImageTools && isImageActive;
   const tableToolsVisible = showTableTools && isTableActive;
 
@@ -65,24 +69,87 @@ export function EditorToolbar({
           active={editor.isActive("underline")}
         />
         <span className="mx-1 h-5 w-px bg-zinc-300" />
+        <span className="px-1 text-xs text-zinc-500">Size</span>
+        <select
+          className="h-7 rounded border border-zinc-300 bg-white px-1 text-xs"
+          value={
+            fontSizePresetOptions.includes(Number(fontSizeValue))
+              ? fontSizeValue
+              : "custom"
+          }
+          onChange={e => {
+            if (e.target.value === "custom") return;
+            onSetFontSize(e.target.value);
+          }}
+          aria-label="Font size preset"
+        >
+          <option value="custom">Custom</option>
+          {fontSizePresetOptions.map(size => (
+            <option key={size} value={String(size)}>
+              {size}px
+            </option>
+          ))}
+        </select>
+        <input
+          type="number"
+          min={8}
+          max={96}
+          step={1}
+          value={fontSizeValue}
+          onChange={e => onSetFontSize(e.target.value)}
+          className="h-7 w-16 rounded border border-zinc-300 bg-white px-1 text-xs"
+          aria-label="Font size in px"
+        />
+        <ToolbarButton
+          label="Clear Size"
+          title="Clear Font Size"
+          onClick={onClearFontSize}
+        />
+        <span className="mx-1 h-5 w-px bg-zinc-300" />
         <ToolbarButton
           label="P"
           onClick={() => editor.chain().focus().setParagraph().run()}
           active={editor.isActive("paragraph")}
         />
+        <span className="mx-1 h-5 w-px bg-zinc-300" />
         <ToolbarButton
-          label="H1"
-          onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 1 }).run()
-          }
-          active={editor.isActive("heading", { level: 1 })}
+          label="Text Color"
+          title="Text Color"
+          onClick={() => textColorInputRef.current?.click()}
+          active={!!activeTextColor}
+        />
+        <input
+          ref={textColorInputRef}
+          type="color"
+          value={textColorValue}
+          onChange={e => onSetTextColor(e.target.value)}
+          className="h-6 w-6 cursor-pointer rounded border border-zinc-300 bg-white p-0"
+          aria-label="Text color"
         />
         <ToolbarButton
-          label="H2"
-          onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 2 }).run()
-          }
-          active={editor.isActive("heading", { level: 2 })}
+          label="Clear Text"
+          title="Clear Text Color"
+          onClick={onClearTextColor}
+          disabled={!activeTextColor}
+        />
+        <span className="mx-1 h-5 w-px bg-zinc-300" />
+        <ToolbarButton
+          label="Text L"
+          title="Align Left"
+          onClick={() => editor.chain().focus().setTextAlign("left").run()}
+          active={editor.isActive({ textAlign: "left" })}
+        />
+        <ToolbarButton
+          label="Text C"
+          title="Align Center"
+          onClick={() => editor.chain().focus().setTextAlign("center").run()}
+          active={editor.isActive({ textAlign: "center" })}
+        />
+        <ToolbarButton
+          label="Text R"
+          title="Align Right"
+          onClick={() => editor.chain().focus().setTextAlign("right").run()}
+          active={editor.isActive({ textAlign: "right" })}
         />
         <span className="mx-1 h-5 w-px bg-zinc-300" />
         <ToolbarButton
@@ -128,21 +195,21 @@ export function EditorToolbar({
         />
         <span className="mx-1 h-5 w-px bg-zinc-300" />
         <ToolbarButton
-          label={showTextTools ? "Hide Text Tools" : "Text Tools"}
-          title="Text color, highlight, advanced headings, text align"
+          label={showTextTools ? "Hide Advanced" : "Advanced"}
+          title="Heading presets and highlight tools"
           onClick={() => setShowTextTools(prev => !prev)}
           active={showTextTools}
         />
         <ToolbarButton
-          label={imageToolsVisible ? "Hide Image Tools" : "Image Tools"}
-          title="Image width and alignment"
+          label={imageToolsVisible ? "Hide Image" : "Image"}
+          title="Image width and alignment tools"
           onClick={() => setShowImageTools(prev => !prev)}
           active={imageToolsVisible}
           disabled={!isImageActive}
         />
         <ToolbarButton
-          label={tableToolsVisible ? "Hide Table Tools" : "Table Tools"}
-          title="Table align, cell style, row/column, merge/split"
+          label={tableToolsVisible ? "Hide Table" : "Table"}
+          title="Table editing tools"
           onClick={() => setShowTableTools(prev => !prev)}
           active={tableToolsVisible}
           disabled={!isTableActive}
@@ -152,26 +219,36 @@ export function EditorToolbar({
       {showTextTools ? (
         <div className="flex flex-wrap items-center gap-1 rounded border border-zinc-200 bg-white px-2 py-1">
           <span className="px-1 text-xs font-medium text-zinc-500">Text</span>
+          <span className="px-1 text-xs text-zinc-500">Heading Preset</span>
           <ToolbarButton
-            label="Text Color"
-            title="Text Color"
-            onClick={() => textColorInputRef.current?.click()}
-            active={!!activeTextColor}
-          />
-          <input
-            ref={textColorInputRef}
-            type="color"
-            value={textColorValue}
-            onChange={e => onSetTextColor(e.target.value)}
-            className="h-6 w-6 cursor-pointer rounded border border-zinc-300 bg-white p-0"
-            aria-label="Text color"
+            label="H1"
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level: 1 }).run()
+            }
+            active={editor.isActive("heading", { level: 1 })}
           />
           <ToolbarButton
-            label="Clear Text"
-            title="Clear Text Color"
-            onClick={onClearTextColor}
-            disabled={!activeTextColor}
+            label="H2"
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level: 2 }).run()
+            }
+            active={editor.isActive("heading", { level: 2 })}
           />
+          <ToolbarButton
+            label="H3"
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level: 3 }).run()
+            }
+            active={editor.isActive("heading", { level: 3 })}
+          />
+          <ToolbarButton
+            label="H4"
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level: 4 }).run()
+            }
+            active={editor.isActive("heading", { level: 4 })}
+          />
+          <span className="mx-1 h-5 w-px bg-zinc-300" />
           <ToolbarButton
             label="Highlight"
             title="Highlight"
@@ -191,40 +268,6 @@ export function EditorToolbar({
             title="Clear Highlight"
             onClick={onClearHighlightColor}
             disabled={!editor.isActive("highlight")}
-          />
-          <span className="mx-1 h-5 w-px bg-zinc-300" />
-          <ToolbarButton
-            label="H3"
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 3 }).run()
-            }
-            active={editor.isActive("heading", { level: 3 })}
-          />
-          <ToolbarButton
-            label="H4"
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 4 }).run()
-            }
-            active={editor.isActive("heading", { level: 4 })}
-          />
-          <span className="mx-1 h-5 w-px bg-zinc-300" />
-          <ToolbarButton
-            label="Text L"
-            title="Align Left"
-            onClick={() => editor.chain().focus().setTextAlign("left").run()}
-            active={editor.isActive({ textAlign: "left" })}
-          />
-          <ToolbarButton
-            label="Text C"
-            title="Align Center"
-            onClick={() => editor.chain().focus().setTextAlign("center").run()}
-            active={editor.isActive({ textAlign: "center" })}
-          />
-          <ToolbarButton
-            label="Text R"
-            title="Align Right"
-            onClick={() => editor.chain().focus().setTextAlign("right").run()}
-            active={editor.isActive({ textAlign: "right" })}
           />
         </div>
       ) : null}

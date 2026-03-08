@@ -56,6 +56,57 @@ export function clearTextColor(
   editor.chain().focus().unsetColor().run();
 }
 
+function normalizeFontSize(fontSize: string): string | null {
+  const trimmed = fontSize.trim().toLowerCase();
+  if (!trimmed) return null;
+
+  const numericValue = Number.parseFloat(trimmed.replace(/[^0-9.]/g, ""));
+  if (!Number.isFinite(numericValue)) {
+    return null;
+  }
+
+  const clamped = Math.max(8, Math.min(96, numericValue));
+  return `${Number(clamped.toFixed(2))}px`;
+}
+
+export function setFontSize(
+  editor: Editor,
+  lastSelection: SelectionRange | null,
+  fontSize: string
+) {
+  const normalized = normalizeFontSize(fontSize);
+  if (!normalized) return;
+
+  if (lastSelection && lastSelection.from !== lastSelection.to) {
+    const appliedWithRange = editor
+      .chain()
+      .focus()
+      .setTextSelection({ from: lastSelection.from, to: lastSelection.to })
+      .setFontSize(normalized)
+      .run();
+    if (appliedWithRange) return;
+  }
+
+  editor.chain().focus().setFontSize(normalized).run();
+}
+
+export function clearFontSize(
+  editor: Editor,
+  lastSelection: SelectionRange | null
+) {
+  if (lastSelection && lastSelection.from !== lastSelection.to) {
+    const clearedWithRange = editor
+      .chain()
+      .focus()
+      .setTextSelection({ from: lastSelection.from, to: lastSelection.to })
+      .unsetFontSize()
+      .run();
+    if (clearedWithRange) return;
+  }
+
+  editor.chain().focus().unsetFontSize().run();
+}
+
 export function setHighlightColor(
   editor: Editor,
   lastSelection: SelectionRange | null,

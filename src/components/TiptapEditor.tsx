@@ -15,7 +15,7 @@ import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import TextAlign from "@tiptap/extension-text-align";
-import { TextStyle } from "@tiptap/extension-text-style";
+import { FontSize, TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import { Highlight } from "@tiptap/extension-highlight";
 import { TableRow } from "@tiptap/extension-table";
@@ -37,6 +37,7 @@ import {
 import {
   clearCellBackgroundColor as clearCellBackgroundColorCommand,
   clearCellBorderColor as clearCellBorderColorCommand,
+  clearFontSize as clearFontSizeCommand,
   clearHighlightColor as clearHighlightColorCommand,
   clearTextColor as clearTextColorCommand,
   insertImagePrompt,
@@ -46,6 +47,7 @@ import {
   setCellBorderNormal as setCellBorderNormalCommand,
   setCellBorderTransparent as setCellBorderTransparentCommand,
   setCellBorderWidth as setCellBorderWidthCommand,
+  setFontSize as setFontSizeCommand,
   setHighlightColor as setHighlightColorCommand,
   setImageAlign as setImageAlignCommand,
   setImageWidth as setImageWidthCommand,
@@ -148,6 +150,7 @@ export function TiptapEditor({
   const tableBorderColorInputRef = useRef<HTMLInputElement | null>(null);
   const [slashMatch, setSlashMatch] = useState<SlashMatch | null>(null);
   const [slashActiveIndex, setSlashActiveIndex] = useState(0);
+  const [fontSizeValue, setFontSizeValue] = useState("16");
   const [textColorValue, setTextColorValue] = useState("#111827");
   const [highlightColorValue, setHighlightColorValue] = useState("#fde68a");
   const [cellBgColorValue, setCellBgColorValue] = useState("#f4f4f5");
@@ -190,6 +193,7 @@ export function TiptapEditor({
       WebPasteTables,
       ClickSelectImage,
       TextStyle,
+      FontSize,
       Color,
       Highlight.configure({ multicolor: true }),
       Underline,
@@ -347,6 +351,22 @@ export function TiptapEditor({
         setCellBgColorValue(bgColor);
       }
 
+      const textStyleAttrs = editor.getAttributes("textStyle") as Record<
+        string,
+        unknown
+      >;
+      const activeFontSize = textStyleAttrs.fontSize;
+      if (typeof activeFontSize === "string") {
+        const parsed = Number.parseFloat(
+          activeFontSize.replace(/[^0-9.]/g, "")
+        );
+        if (Number.isFinite(parsed)) {
+          setFontSizeValue(
+            String(Math.max(8, Math.min(96, Math.round(parsed))))
+          );
+        }
+      }
+
       lastSelectedTableCellPositionsRef.current =
         getSelectedTableCellPositions(editor);
 
@@ -435,6 +455,12 @@ export function TiptapEditor({
 
   const clearTextColor = () =>
     clearTextColorCommand(editor, lastTextSelectionRef.current);
+
+  const setFontSize = (fontSize: string) =>
+    setFontSizeCommand(editor, lastTextSelectionRef.current, fontSize);
+
+  const clearFontSize = () =>
+    clearFontSizeCommand(editor, lastTextSelectionRef.current);
 
   const setHighlightColor = (color: string) =>
     setHighlightColorCommand(editor, lastTextSelectionRef.current, color);
@@ -591,6 +617,7 @@ export function TiptapEditor({
         isTableActive={isTableActive}
         activeTextColor={activeTextColor}
         activeBorderColor={activeBorderColor}
+        fontSizeValue={fontSizeValue}
         textColorValue={textColorValue}
         highlightColorValue={highlightColorValue}
         cellBgColorValue={cellBgColorValue}
@@ -605,6 +632,11 @@ export function TiptapEditor({
           setTextColor(color);
         }}
         onClearTextColor={clearTextColor}
+        onSetFontSize={fontSize => {
+          setFontSizeValue(fontSize);
+          setFontSize(fontSize);
+        }}
+        onClearFontSize={clearFontSize}
         onSetHighlightColor={color => {
           setHighlightColorValue(color);
           setHighlightColor(color);
