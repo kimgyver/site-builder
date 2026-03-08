@@ -277,7 +277,17 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
       </label>
       {imageModeEnabled && hasImageValue && imageValueValid ? (
         <div className="rounded-md border border-zinc-200 bg-white p-2">
-          <p className="mb-1 text-[10px] text-zinc-600">Image preview</p>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <p className="text-[10px] text-zinc-600">Image preview</p>
+            <a
+              href={backgroundImageUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded border border-zinc-300 px-2 py-0.5 text-[10px] text-zinc-700 hover:bg-zinc-100"
+            >
+              Full view
+            </a>
+          </div>
           <div
             className="h-16 rounded border border-zinc-200"
             style={{
