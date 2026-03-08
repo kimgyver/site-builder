@@ -229,19 +229,19 @@ export function EditorToolbar({
         />
         <span className="mx-1 h-5 w-px bg-zinc-300" />
         <ToolbarButton
-          label="Text L"
+          label="Text Left"
           title="Align Left"
           onClick={() => editor.chain().focus().setTextAlign("left").run()}
           active={editor.isActive({ textAlign: "left" })}
         />
         <ToolbarButton
-          label="Text C"
+          label="Text Center"
           title="Align Center"
           onClick={() => editor.chain().focus().setTextAlign("center").run()}
           active={editor.isActive({ textAlign: "center" })}
         />
         <ToolbarButton
-          label="Text R"
+          label="Text Right"
           title="Align Right"
           onClick={() => editor.chain().focus().setTextAlign("right").run()}
           active={editor.isActive({ textAlign: "right" })}
@@ -328,19 +328,19 @@ export function EditorToolbar({
             disabled={!isImageActive}
           />
           <ToolbarButton
-            label="Img L"
+            label="Image Left"
             title="Image Align Left"
             onClick={() => onSetImageAlign("left")}
             disabled={!isImageActive}
           />
           <ToolbarButton
-            label="Img C"
+            label="Image Center"
             title="Image Align Center"
             onClick={() => onSetImageAlign("center")}
             disabled={!isImageActive}
           />
           <ToolbarButton
-            label="Img R"
+            label="Image Right"
             title="Image Align Right"
             onClick={() => onSetImageAlign("right")}
             disabled={!isImageActive}
@@ -354,17 +354,17 @@ export function EditorToolbar({
             Table
           </span>
           <ToolbarButton
-            label="L"
+            label="Table Left"
             title="Table Align: Left"
             onClick={() => onSetTableAlign("left")}
           />
           <ToolbarButton
-            label="C"
+            label="Table Center"
             title="Table Align: Center"
             onClick={() => onSetTableAlign("center")}
           />
           <ToolbarButton
-            label="R"
+            label="Table Right"
             title="Table Align: Right"
             onClick={() => onSetTableAlign("right")}
           />
