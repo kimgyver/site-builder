@@ -154,6 +154,7 @@ export function sanitizeCmsHtml(input: unknown) {
         "background-image": [/^none$/, /^url\(["']?https?:\/\//i],
         "text-align": [/^(left|center|right|justify)$/],
         "font-size": [/^\d+(\.\d+)?(px|rem|em|%)$/],
+        "font-family": [/^[a-zA-Z0-9\s,"'-]+$/],
         "font-weight": [/^(normal|bold|[1-9]00)$/],
         "font-style": [/^(normal|italic|oblique)$/],
         "line-height": [/^\d+(\.\d+)?(px|rem|em|%)?$/],

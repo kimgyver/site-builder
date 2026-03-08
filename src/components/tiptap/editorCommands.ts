@@ -107,6 +107,51 @@ export function clearFontSize(
   editor.chain().focus().unsetFontSize().run();
 }
 
+function normalizeFontFamily(fontFamily: string): string | null {
+  const trimmed = fontFamily.trim();
+  if (!trimmed) return null;
+  if (!/^[a-zA-Z0-9\s,"'-]+$/.test(trimmed)) return null;
+  return trimmed;
+}
+
+export function setFontFamily(
+  editor: Editor,
+  lastSelection: SelectionRange | null,
+  fontFamily: string
+) {
+  const normalized = normalizeFontFamily(fontFamily);
+  if (!normalized) return;
+
+  if (lastSelection && lastSelection.from !== lastSelection.to) {
+    const appliedWithRange = editor
+      .chain()
+      .focus()
+      .setTextSelection({ from: lastSelection.from, to: lastSelection.to })
+      .setFontFamily(normalized)
+      .run();
+    if (appliedWithRange) return;
+  }
+
+  editor.chain().focus().setFontFamily(normalized).run();
+}
+
+export function clearFontFamily(
+  editor: Editor,
+  lastSelection: SelectionRange | null
+) {
+  if (lastSelection && lastSelection.from !== lastSelection.to) {
+    const clearedWithRange = editor
+      .chain()
+      .focus()
+      .setTextSelection({ from: lastSelection.from, to: lastSelection.to })
+      .unsetFontFamily()
+      .run();
+    if (clearedWithRange) return;
+  }
+
+  editor.chain().focus().unsetFontFamily().run();
+}
+
 export function setHighlightColor(
   editor: Editor,
   lastSelection: SelectionRange | null,

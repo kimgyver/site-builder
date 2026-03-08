@@ -15,7 +15,7 @@ import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import TextAlign from "@tiptap/extension-text-align";
-import { FontSize, TextStyle } from "@tiptap/extension-text-style";
+import { FontFamily, FontSize, TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import { Highlight } from "@tiptap/extension-highlight";
 import { TableRow } from "@tiptap/extension-table";
@@ -37,6 +37,7 @@ import {
 import {
   clearCellBackgroundColor as clearCellBackgroundColorCommand,
   clearCellBorderColor as clearCellBorderColorCommand,
+  clearFontFamily as clearFontFamilyCommand,
   clearFontSize as clearFontSizeCommand,
   clearHighlightColor as clearHighlightColorCommand,
   clearTextColor as clearTextColorCommand,
@@ -47,6 +48,7 @@ import {
   setCellBorderNormal as setCellBorderNormalCommand,
   setCellBorderTransparent as setCellBorderTransparentCommand,
   setCellBorderWidth as setCellBorderWidthCommand,
+  setFontFamily as setFontFamilyCommand,
   setFontSize as setFontSizeCommand,
   setHighlightColor as setHighlightColorCommand,
   setImageAlign as setImageAlignCommand,
@@ -150,6 +152,7 @@ export function TiptapEditor({
   const tableBorderColorInputRef = useRef<HTMLInputElement | null>(null);
   const [slashMatch, setSlashMatch] = useState<SlashMatch | null>(null);
   const [slashActiveIndex, setSlashActiveIndex] = useState(0);
+  const [fontFamilyValue, setFontFamilyValue] = useState("default");
   const [fontSizeValue, setFontSizeValue] = useState("16");
   const [textColorValue, setTextColorValue] = useState("#111827");
   const [highlightColorValue, setHighlightColorValue] = useState("#fde68a");
@@ -193,6 +196,7 @@ export function TiptapEditor({
       WebPasteTables,
       ClickSelectImage,
       TextStyle,
+      FontFamily,
       FontSize,
       Color,
       Highlight.configure({ multicolor: true }),
@@ -355,6 +359,13 @@ export function TiptapEditor({
         string,
         unknown
       >;
+      const activeFontFamily = textStyleAttrs.fontFamily;
+      if (typeof activeFontFamily === "string" && activeFontFamily.trim()) {
+        setFontFamilyValue(activeFontFamily.trim());
+      } else {
+        setFontFamilyValue("default");
+      }
+
       const activeFontSize = textStyleAttrs.fontSize;
       if (typeof activeFontSize === "string") {
         const parsed = Number.parseFloat(
@@ -455,6 +466,12 @@ export function TiptapEditor({
 
   const clearTextColor = () =>
     clearTextColorCommand(editor, lastTextSelectionRef.current);
+
+  const setFontFamily = (fontFamily: string) =>
+    setFontFamilyCommand(editor, lastTextSelectionRef.current, fontFamily);
+
+  const clearFontFamily = () =>
+    clearFontFamilyCommand(editor, lastTextSelectionRef.current);
 
   const setFontSize = (fontSize: string) =>
     setFontSizeCommand(editor, lastTextSelectionRef.current, fontSize);
@@ -617,6 +634,7 @@ export function TiptapEditor({
         isTableActive={isTableActive}
         activeTextColor={activeTextColor}
         activeBorderColor={activeBorderColor}
+        fontFamilyValue={fontFamilyValue}
         fontSizeValue={fontSizeValue}
         textColorValue={textColorValue}
         highlightColorValue={highlightColorValue}
@@ -632,6 +650,11 @@ export function TiptapEditor({
           setTextColor(color);
         }}
         onClearTextColor={clearTextColor}
+        onSetFontFamily={fontFamily => {
+          setFontFamilyValue(fontFamily);
+          setFontFamily(fontFamily);
+        }}
+        onClearFontFamily={clearFontFamily}
         onSetFontSize={fontSize => {
           setFontSizeValue(fontSize);
           setFontSize(fontSize);

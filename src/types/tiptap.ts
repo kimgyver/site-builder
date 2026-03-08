@@ -35,6 +35,7 @@ export interface EditorToolbarProps {
   isTableActive: boolean;
   activeTextColor?: string;
   activeBorderColor?: string | null;
+  fontFamilyValue: string;
   fontSizeValue: string;
   textColorValue: string;
   highlightColorValue: string;
@@ -47,6 +48,8 @@ export interface EditorToolbarProps {
   tableBorderColorInputRef: RefObject<HTMLInputElement | null>;
   onSetTextColor: (color: string) => void;
   onClearTextColor: () => void;
+  onSetFontFamily: (fontFamily: string) => void;
+  onClearFontFamily: () => void;
   onSetFontSize: (fontSize: string) => void;
   onClearFontSize: () => void;
   onSetHighlightColor: (color: string) => void;

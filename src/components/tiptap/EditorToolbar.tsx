@@ -10,6 +10,7 @@ export function EditorToolbar({
   isTableActive,
   activeTextColor,
   activeBorderColor,
+  fontFamilyValue,
   fontSizeValue,
   textColorValue,
   highlightColorValue,
@@ -22,6 +23,8 @@ export function EditorToolbar({
   tableBorderColorInputRef,
   onSetTextColor,
   onClearTextColor,
+  onSetFontFamily,
+  onClearFontFamily,
   onSetFontSize,
   onClearFontSize,
   onSetHighlightColor,
@@ -43,6 +46,19 @@ export function EditorToolbar({
   const [showTextTools, setShowTextTools] = useState(false);
   const [showImageTools, setShowImageTools] = useState(false);
   const [showTableTools, setShowTableTools] = useState(false);
+  const fontFamilyPresetOptions = [
+    { label: "Default", value: "default" },
+    { label: "Arial", value: "Arial, Helvetica, sans-serif" },
+    { label: "Helvetica", value: "Helvetica, Arial, sans-serif" },
+    { label: "Verdana", value: "Verdana, Geneva, sans-serif" },
+    { label: "Tahoma", value: "Tahoma, Geneva, sans-serif" },
+    { label: "Trebuchet MS", value: '"Trebuchet MS", sans-serif' },
+    { label: "Georgia", value: "Georgia, serif" },
+    { label: "Times New Roman", value: '"Times New Roman", serif' },
+    { label: "Courier New", value: '"Courier New", monospace' },
+    { label: "Comic Sans MS", value: '"Comic Sans MS", cursive' },
+    { label: "Impact", value: "Impact, Haettenschweiler, sans-serif" }
+  ];
   const fontSizePresetOptions = [12, 14, 16, 18, 20, 24, 28, 32, 40, 48];
   const imageToolsVisible = showImageTools && isImageActive;
   const tableToolsVisible = showTableTools && isTableActive;
@@ -67,6 +83,37 @@ export function EditorToolbar({
           title="Underline"
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           active={editor.isActive("underline")}
+        />
+        <span className="mx-1 h-5 w-px bg-zinc-300" />
+        <span className="px-1 text-xs text-zinc-500">Font</span>
+        <select
+          className="h-7 rounded border border-zinc-300 bg-white px-1 text-xs"
+          value={
+            fontFamilyPresetOptions.some(
+              option => option.value === fontFamilyValue
+            )
+              ? fontFamilyValue
+              : "default"
+          }
+          onChange={e => {
+            if (e.target.value === "default") {
+              onClearFontFamily();
+              return;
+            }
+            onSetFontFamily(e.target.value);
+          }}
+          aria-label="Font family"
+        >
+          {fontFamilyPresetOptions.map(option => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <ToolbarButton
+          label="Clear Font"
+          title="Clear Font Family"
+          onClick={onClearFontFamily}
         />
         <span className="mx-1 h-5 w-px bg-zinc-300" />
         <span className="px-1 text-xs text-zinc-500">Size</span>
