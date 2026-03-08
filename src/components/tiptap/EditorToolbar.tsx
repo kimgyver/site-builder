@@ -45,7 +45,6 @@ export function EditorToolbar({
   onClearCellBorderColor,
   onSetCellBorderWidth
 }: EditorToolbarProps) {
-  const [showTextTools, setShowTextTools] = useState(false);
   const [showImageTools, setShowImageTools] = useState(false);
   const [showTableTools, setShowTableTools] = useState(false);
   const textPresetOptions = [
@@ -208,6 +207,26 @@ export function EditorToolbar({
           onClick={onClearTextColor}
           disabled={!activeTextColor}
         />
+        <ToolbarButton
+          label="Highlight"
+          title="Highlight"
+          onClick={() => highlightColorInputRef.current?.click()}
+          active={editor.isActive("highlight")}
+        />
+        <input
+          ref={highlightColorInputRef}
+          type="color"
+          value={highlightColorValue}
+          onChange={e => onSetHighlightColor(e.target.value)}
+          className="h-6 w-6 cursor-pointer rounded border border-zinc-300 bg-white p-0"
+          aria-label="Highlight color"
+        />
+        <ToolbarButton
+          label="Clear Highlight"
+          title="Clear Highlight"
+          onClick={onClearHighlightColor}
+          disabled={!editor.isActive("highlight")}
+        />
         <span className="mx-1 h-5 w-px bg-zinc-300" />
         <ToolbarButton
           label="Text L"
@@ -271,82 +290,20 @@ export function EditorToolbar({
         />
         <span className="mx-1 h-5 w-px bg-zinc-300" />
         <ToolbarButton
-          label={showTextTools ? "Hide Advanced" : "Advanced"}
-          title="Heading presets and highlight tools"
-          onClick={() => setShowTextTools(prev => !prev)}
-          active={showTextTools}
-        />
-        <ToolbarButton
-          label={imageToolsVisible ? "Hide Image" : "Image"}
+          label={imageToolsVisible ? "Hide Image Tools" : "Image Tools"}
           title="Image width and alignment tools"
           onClick={() => setShowImageTools(prev => !prev)}
           active={imageToolsVisible}
           disabled={!isImageActive}
         />
         <ToolbarButton
-          label={tableToolsVisible ? "Hide Table" : "Table"}
+          label={tableToolsVisible ? "Hide Table Tools" : "Table Tools"}
           title="Table editing tools"
           onClick={() => setShowTableTools(prev => !prev)}
           active={tableToolsVisible}
           disabled={!isTableActive}
         />
       </div>
-
-      {showTextTools ? (
-        <div className="flex flex-wrap items-center gap-1 rounded border border-zinc-200 bg-white px-2 py-1">
-          <span className="px-1 text-xs font-medium text-zinc-500">Text</span>
-          <span className="px-1 text-xs text-zinc-500">Heading Preset</span>
-          <ToolbarButton
-            label="H1"
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 1 }).run()
-            }
-            active={editor.isActive("heading", { level: 1 })}
-          />
-          <ToolbarButton
-            label="H2"
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 2 }).run()
-            }
-            active={editor.isActive("heading", { level: 2 })}
-          />
-          <ToolbarButton
-            label="H3"
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 3 }).run()
-            }
-            active={editor.isActive("heading", { level: 3 })}
-          />
-          <ToolbarButton
-            label="H4"
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level: 4 }).run()
-            }
-            active={editor.isActive("heading", { level: 4 })}
-          />
-          <span className="mx-1 h-5 w-px bg-zinc-300" />
-          <ToolbarButton
-            label="Highlight"
-            title="Highlight"
-            onClick={() => highlightColorInputRef.current?.click()}
-            active={editor.isActive("highlight")}
-          />
-          <input
-            ref={highlightColorInputRef}
-            type="color"
-            value={highlightColorValue}
-            onChange={e => onSetHighlightColor(e.target.value)}
-            className="h-6 w-6 cursor-pointer rounded border border-zinc-300 bg-white p-0"
-            aria-label="Highlight color"
-          />
-          <ToolbarButton
-            label="Clear HL"
-            title="Clear Highlight"
-            onClick={onClearHighlightColor}
-            disabled={!editor.isActive("highlight")}
-          />
-        </div>
-      ) : null}
 
       {imageToolsVisible ? (
         <div className="flex flex-wrap items-center gap-1 rounded border border-zinc-200 bg-white px-2 py-1">
