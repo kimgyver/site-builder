@@ -55,11 +55,13 @@ export default async function PagesListPage() {
           <thead className="border-b bg-zinc-50 text-xs font-medium uppercase text-zinc-500">
             <tr>
               <th className="px-4 py-2">Title</th>
-              <th className="px-4 py-2">Locale</th>
+              <th className="hidden px-4 py-2 md:table-cell">Locale</th>
               <th className="px-4 py-2">Slug</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Publish schedule</th>
-              <th className="px-4 py-2">Updated</th>
+              <th className="hidden px-4 py-2 md:table-cell">Status</th>
+              <th className="hidden px-4 py-2 md:table-cell">
+                Publish schedule
+              </th>
+              <th className="hidden px-4 py-2 md:table-cell">Updated</th>
               <th
                 className="border-l border-zinc-200 bg-white px-4 py-2"
                 style={{ position: "sticky", right: 0, zIndex: 2 }}
@@ -79,18 +81,38 @@ export default async function PagesListPage() {
               pages.map(page => (
                 <tr key={page.id} className="border-t hover:bg-zinc-50">
                   <td className="px-4 py-2 text-sm font-medium text-zinc-900">
-                    {page.title}
+                    <div className="space-y-1">
+                      <div>{page.title}</div>
+                      <div className="space-y-0.5 text-[11px] font-normal text-zinc-500 md:hidden">
+                        <div>Locale: {page.locale}</div>
+                        <div>Status: {page.status.toLowerCase()}</div>
+                        <div>
+                          Schedule:{" "}
+                          {page.status === "PUBLISHED"
+                            ? "—"
+                            : !page.publishAt
+                              ? "Not scheduled"
+                              : page.publishAt <= now
+                                ? "Due"
+                                : formatDateTimeLocalInTimeZone(
+                                    page.publishAt,
+                                    settings.publishTimeZone
+                                  ).replace("T", " ")}
+                        </div>
+                        <div>Updated: {page.updatedAt.toLocaleString()}</div>
+                      </div>
+                    </div>
                   </td>
-                  <td className="px-4 py-2 text-xs text-zinc-600">
+                  <td className="hidden px-4 py-2 text-xs text-zinc-600 md:table-cell">
                     {page.locale}
                   </td>
                   <td className="px-4 py-2 text-xs text-zinc-600">
                     /{page.locale}/{page.slug}
                   </td>
-                  <td className="px-4 py-2 text-xs capitalize text-zinc-700">
+                  <td className="hidden px-4 py-2 text-xs capitalize text-zinc-700 md:table-cell">
                     {page.status.toLowerCase()}
                   </td>
-                  <td className="px-4 py-2 text-xs text-zinc-600">
+                  <td className="hidden px-4 py-2 text-xs text-zinc-600 md:table-cell">
                     {page.status === "PUBLISHED" ? (
                       <span className="text-zinc-500">—</span>
                     ) : !page.publishAt ? (
@@ -111,7 +133,7 @@ export default async function PagesListPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-2 text-xs text-zinc-600">
+                  <td className="hidden px-4 py-2 text-xs text-zinc-600 md:table-cell">
                     {page.updatedAt.toLocaleString()}
                   </td>
                   <td

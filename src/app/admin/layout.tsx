@@ -67,11 +67,10 @@ export default async function AdminLayout({
             </Link>
             <Link
               href="/admin/settings"
-              aria-label="Open settings"
-              title="Settings"
-              className="inline-flex h-7 w-7 items-center justify-center rounded border border-zinc-300 text-sm text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
+              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
             >
               <SettingsGearIcon className="h-4 w-4" />
+              <span>Settings</span>
             </Link>
             <form action={logout}>
               <button
@@ -87,13 +86,6 @@ export default async function AdminLayout({
       <main className="mx-auto flex w-full max-w-5xl px-4 py-6">
         {children}
       </main>
-      <Link
-        href="/admin/settings"
-        aria-label="Open settings"
-        className="fixed bottom-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-white text-lg text-zinc-700 shadow-sm transition-colors hover:bg-zinc-100 hover:text-zinc-900"
-      >
-        <SettingsGearIcon className="h-5 w-5" />
-      </Link>
     </div>
   );
 }
