@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/siteSettings";
+import { formatDateTimeLocalInTimeZone } from "@/lib/publishTimeZone";
 import {
   SESSION_COOKIE_NAME,
   canEditContent,
@@ -16,6 +18,8 @@ export default async function PagesListPage() {
     : ("publisher" as const);
 
   const canCreatePage = role ? canEditContent(role) : false;
+  const settings = await getSiteSettings();
+  const now = new Date();
 
   const pages = await prisma.page.findMany({
     orderBy: { updatedAt: "desc" }
@@ -54,6 +58,7 @@ export default async function PagesListPage() {
               <th className="px-4 py-2">Locale</th>
               <th className="px-4 py-2">Slug</th>
               <th className="px-4 py-2">Status</th>
+              <th className="px-4 py-2">Publish schedule</th>
               <th className="px-4 py-2">Updated</th>
               <th
                 className="border-l border-zinc-200 bg-white px-4 py-2"
@@ -66,7 +71,7 @@ export default async function PagesListPage() {
           <tbody>
             {pages.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
+                <td colSpan={7} className="px-4 py-8 text-center text-zinc-500">
                   No pages yet. Create your first page.
                 </td>
               </tr>
@@ -84,6 +89,27 @@ export default async function PagesListPage() {
                   </td>
                   <td className="px-4 py-2 text-xs capitalize text-zinc-700">
                     {page.status.toLowerCase()}
+                  </td>
+                  <td className="px-4 py-2 text-xs text-zinc-600">
+                    {page.status === "PUBLISHED" ? (
+                      <span className="text-zinc-500">—</span>
+                    ) : !page.publishAt ? (
+                      <span className="rounded bg-zinc-100 px-2 py-1 text-[11px] text-zinc-600">
+                        Not scheduled
+                      </span>
+                    ) : page.publishAt <= now ? (
+                      <span className="rounded bg-amber-100 px-2 py-1 text-[11px] text-amber-800">
+                        Due
+                      </span>
+                    ) : (
+                      <span className="rounded bg-emerald-100 px-2 py-1 text-[11px] text-emerald-800">
+                        Scheduled ·{" "}
+                        {formatDateTimeLocalInTimeZone(
+                          page.publishAt,
+                          settings.publishTimeZone
+                        ).replace("T", " ")}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-2 text-xs text-zinc-600">
                     {page.updatedAt.toLocaleString()}
