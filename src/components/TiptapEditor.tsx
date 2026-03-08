@@ -163,6 +163,49 @@ export function TiptapEditor({
 
   const normalize = (html: string) => html.replace(/\s+/g, " ").trim();
 
+  const normalizeColorToHex = (value: unknown): string | null => {
+    if (typeof value !== "string") return null;
+    const raw = value.trim();
+    if (!raw) return null;
+
+    const hexMatch = raw.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+    if (hexMatch) {
+      const hex = hexMatch[1];
+      if (hex.length === 3) {
+        return `#${hex
+          .split("")
+          .map(ch => ch + ch)
+          .join("")
+          .toLowerCase()}`;
+      }
+      return `#${hex.toLowerCase()}`;
+    }
+
+    const rgbMatch = raw.match(
+      /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*(?:\d*\.?\d+))?\s*\)$/i
+    );
+    if (!rgbMatch) return null;
+
+    const [r, g, b] = rgbMatch.slice(1, 4).map(Number);
+    if (
+      !Number.isFinite(r) ||
+      !Number.isFinite(g) ||
+      !Number.isFinite(b) ||
+      r < 0 ||
+      r > 255 ||
+      g < 0 ||
+      g > 255 ||
+      b < 0 ||
+      b > 255
+    ) {
+      return null;
+    }
+
+    return `#${[r, g, b]
+      .map(channel => channel.toString(16).padStart(2, "0"))
+      .join("")}`;
+  };
+
   const emitChange = (html: string, doc: unknown) => {
     if (!onChangeHtml) return;
     if (normalize(html) === normalize(lastPropagatedHtmlRef.current)) {
@@ -375,8 +418,22 @@ export function TiptapEditor({
           setFontSizeValue(
             String(Math.max(8, Math.min(96, Math.round(parsed))))
           );
+        } else {
+          setFontSizeValue("16");
         }
+      } else {
+        setFontSizeValue("16");
       }
+
+      const activeTextColorHex = normalizeColorToHex(textStyleAttrs.color);
+      setTextColorValue(activeTextColorHex ?? "#111827");
+
+      const highlightAttrs = editor.getAttributes("highlight") as Record<
+        string,
+        unknown
+      >;
+      const activeHighlightHex = normalizeColorToHex(highlightAttrs.color);
+      setHighlightColorValue(activeHighlightHex ?? "#fde68a");
 
       lastSelectedTableCellPositionsRef.current =
         getSelectedTableCellPositions(editor);
