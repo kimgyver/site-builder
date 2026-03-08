@@ -8,6 +8,7 @@ export function EditorToolbar({
   isImageActive,
   effectiveImageWidth,
   isTableActive,
+  textPresetValue,
   activeTextColor,
   activeBorderColor,
   fontFamilyValue,
@@ -23,6 +24,7 @@ export function EditorToolbar({
   tableBorderColorInputRef,
   onSetTextColor,
   onClearTextColor,
+  onApplyTextPreset,
   onSetFontFamily,
   onClearFontFamily,
   onSetFontSize,
@@ -46,6 +48,15 @@ export function EditorToolbar({
   const [showTextTools, setShowTextTools] = useState(false);
   const [showImageTools, setShowImageTools] = useState(false);
   const [showTableTools, setShowTableTools] = useState(false);
+  const textPresetOptions = [
+    { label: "Normal", value: "normal" },
+    { label: "Title", value: "title" },
+    { label: "Subtitle", value: "subtitle" },
+    { label: "Heading 1", value: "heading1" },
+    { label: "Heading 2", value: "heading2" },
+    { label: "Heading 3", value: "heading3" },
+    { label: "Heading 4", value: "heading4" }
+  ];
   const fontFamilyPresetOptions = [
     { label: "Default", value: "default" },
     { label: "Arial", value: "Arial, Helvetica, sans-serif" },
@@ -84,6 +95,24 @@ export function EditorToolbar({
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           active={editor.isActive("underline")}
         />
+        <span className="mx-1 h-5 w-px bg-zinc-300" />
+        <span className="px-1 text-xs text-zinc-500">Preset</span>
+        <select
+          className="h-7 rounded border border-zinc-300 bg-white px-1 text-xs"
+          value={
+            textPresetOptions.some(option => option.value === textPresetValue)
+              ? textPresetValue
+              : "normal"
+          }
+          onChange={e => onApplyTextPreset(e.target.value)}
+          aria-label="Text preset"
+        >
+          {textPresetOptions.map(option => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
         <span className="mx-1 h-5 w-px bg-zinc-300" />
         <span className="px-1 text-xs text-zinc-500">Font</span>
         <select

@@ -152,6 +152,7 @@ export function TiptapEditor({
   const tableBorderColorInputRef = useRef<HTMLInputElement | null>(null);
   const [slashMatch, setSlashMatch] = useState<SlashMatch | null>(null);
   const [slashActiveIndex, setSlashActiveIndex] = useState(0);
+  const [textPresetValue, setTextPresetValue] = useState("normal");
   const [fontFamilyValue, setFontFamilyValue] = useState("default");
   const [fontSizeValue, setFontSizeValue] = useState("16");
   const [textColorValue, setTextColorValue] = useState("#111827");
@@ -222,6 +223,29 @@ export function TiptapEditor({
       }
       return next;
     });
+  };
+
+  const detectTextPreset = (activeEditor: CoreEditor): string => {
+    if (activeEditor.isActive("heading", { level: 1 })) return "heading1";
+    if (activeEditor.isActive("heading", { level: 2 })) return "heading2";
+    if (activeEditor.isActive("heading", { level: 3 })) return "heading3";
+    if (activeEditor.isActive("heading", { level: 4 })) return "heading4";
+
+    const textStyleAttrs = activeEditor.getAttributes("textStyle") as Record<
+      string,
+      unknown
+    >;
+    const activeFontSize = textStyleAttrs.fontSize;
+    if (typeof activeFontSize === "string") {
+      const parsed = Number.parseFloat(activeFontSize.replace(/[^0-9.]/g, ""));
+      if (Number.isFinite(parsed)) {
+        if (parsed >= 36) return "title";
+        if (parsed >= 24) return "subtitle";
+      }
+    }
+
+    if (activeEditor.isActive("paragraph")) return "normal";
+    return "normal";
   };
 
   const extensions = useMemo(
@@ -402,6 +426,7 @@ export function TiptapEditor({
         string,
         unknown
       >;
+      setTextPresetValue(detectTextPreset(editor));
       const activeFontFamily = textStyleAttrs.fontFamily;
       if (typeof activeFontFamily === "string" && activeFontFamily.trim()) {
         setFontFamilyValue(activeFontFamily.trim());
@@ -523,6 +548,114 @@ export function TiptapEditor({
 
   const clearTextColor = () =>
     clearTextColorCommand(editor, lastTextSelectionRef.current);
+
+  const applyTextPreset = (preset: string) => {
+    if (preset === "heading1") {
+      editor
+        .chain()
+        .focus()
+        .setHeading({ level: 1 })
+        .unsetFontSize()
+        .unsetFontFamily()
+        .unsetColor()
+        .run();
+      setFontFamilyValue("default");
+      setFontSizeValue("16");
+      setTextColorValue("#111827");
+      setTextPresetValue("heading1");
+      return;
+    }
+    if (preset === "heading2") {
+      editor
+        .chain()
+        .focus()
+        .setHeading({ level: 2 })
+        .unsetFontSize()
+        .unsetFontFamily()
+        .unsetColor()
+        .run();
+      setFontFamilyValue("default");
+      setFontSizeValue("16");
+      setTextColorValue("#111827");
+      setTextPresetValue("heading2");
+      return;
+    }
+    if (preset === "heading3") {
+      editor
+        .chain()
+        .focus()
+        .setHeading({ level: 3 })
+        .unsetFontSize()
+        .unsetFontFamily()
+        .unsetColor()
+        .run();
+      setFontFamilyValue("default");
+      setFontSizeValue("16");
+      setTextColorValue("#111827");
+      setTextPresetValue("heading3");
+      return;
+    }
+    if (preset === "heading4") {
+      editor
+        .chain()
+        .focus()
+        .setHeading({ level: 4 })
+        .unsetFontSize()
+        .unsetFontFamily()
+        .unsetColor()
+        .run();
+      setFontFamilyValue("default");
+      setFontSizeValue("16");
+      setTextColorValue("#111827");
+      setTextPresetValue("heading4");
+      return;
+    }
+
+    if (preset === "title") {
+      editor
+        .chain()
+        .focus()
+        .setParagraph()
+        .setFontFamily('"Times New Roman", serif')
+        .setFontSize("40px")
+        .setColor("#111827")
+        .run();
+      setFontFamilyValue('"Times New Roman", serif');
+      setFontSizeValue("40");
+      setTextColorValue("#111827");
+      setTextPresetValue("title");
+      return;
+    }
+
+    if (preset === "subtitle") {
+      editor
+        .chain()
+        .focus()
+        .setParagraph()
+        .setFontFamily("Arial, Helvetica, sans-serif")
+        .setFontSize("28px")
+        .setColor("#52525b")
+        .run();
+      setFontFamilyValue("Arial, Helvetica, sans-serif");
+      setFontSizeValue("28");
+      setTextColorValue("#52525b");
+      setTextPresetValue("subtitle");
+      return;
+    }
+
+    editor
+      .chain()
+      .focus()
+      .setParagraph()
+      .unsetFontSize()
+      .unsetFontFamily()
+      .unsetColor()
+      .run();
+    setFontFamilyValue("default");
+    setFontSizeValue("16");
+    setTextColorValue("#111827");
+    setTextPresetValue("normal");
+  };
 
   const setFontFamily = (fontFamily: string) =>
     setFontFamilyCommand(editor, lastTextSelectionRef.current, fontFamily);
@@ -689,6 +822,7 @@ export function TiptapEditor({
         isImageActive={isImageActive}
         effectiveImageWidth={effectiveImageWidth}
         isTableActive={isTableActive}
+        textPresetValue={textPresetValue}
         activeTextColor={activeTextColor}
         activeBorderColor={activeBorderColor}
         fontFamilyValue={fontFamilyValue}
@@ -707,6 +841,7 @@ export function TiptapEditor({
           setTextColor(color);
         }}
         onClearTextColor={clearTextColor}
+        onApplyTextPreset={applyTextPreset}
         onSetFontFamily={fontFamily => {
           setFontFamilyValue(fontFamily);
           setFontFamily(fontFamily);

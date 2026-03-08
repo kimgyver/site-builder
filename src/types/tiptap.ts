@@ -33,6 +33,7 @@ export interface EditorToolbarProps {
   isImageActive: boolean;
   effectiveImageWidth: number | null;
   isTableActive: boolean;
+  textPresetValue: string;
   activeTextColor?: string;
   activeBorderColor?: string | null;
   fontFamilyValue: string;
@@ -48,6 +49,7 @@ export interface EditorToolbarProps {
   tableBorderColorInputRef: RefObject<HTMLInputElement | null>;
   onSetTextColor: (color: string) => void;
   onClearTextColor: () => void;
+  onApplyTextPreset: (preset: string) => void;
   onSetFontFamily: (fontFamily: string) => void;
   onClearFontFamily: () => void;
   onSetFontSize: (fontSize: string) => void;
