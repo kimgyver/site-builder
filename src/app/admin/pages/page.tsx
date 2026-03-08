@@ -58,7 +58,7 @@ export default async function PagesListPage() {
               <th className="hidden px-4 py-2 md:table-cell">Locale</th>
               <th className="px-4 py-2">Slug</th>
               <th className="hidden px-4 py-2 md:table-cell">Status</th>
-              <th className="hidden px-4 py-2 md:table-cell">
+              <th className="hidden w-40 px-4 py-2 text-center md:table-cell">
                 Publish schedule
               </th>
               <th className="hidden px-4 py-2 md:table-cell">Updated</th>
@@ -112,27 +112,33 @@ export default async function PagesListPage() {
                   <td className="hidden px-4 py-2 text-xs capitalize text-zinc-700 md:table-cell">
                     {page.status.toLowerCase()}
                   </td>
-                  <td className="hidden px-4 py-2 text-xs text-zinc-600 md:table-cell">
+                  <td className="hidden w-40 px-4 py-2 text-center text-xs text-zinc-600 md:table-cell">
                     {page.status === "PUBLISHED" ? (
                       <span className="text-zinc-500">—</span>
                     ) : !page.publishAt ? (
-                      <span className="rounded bg-zinc-100 px-2 py-1 text-[11px] text-zinc-600">
+                      <span className="inline-flex items-center justify-center rounded bg-zinc-100 px-2 py-1 text-[11px] text-zinc-600">
                         Not scheduled
                       </span>
                     ) : page.publishAt <= now ? (
-                      <span
-                        className="rounded bg-amber-100 px-2 py-1 text-[11px] text-amber-800"
-                        title={`Scheduled at ${formatDateTimeLocalInTimeZone(page.publishAt, settings.publishTimeZone).replace("T", " ")} (${settings.publishTimeZone})`}
-                      >
-                        Due
+                      <span className="group relative inline-flex items-center justify-center">
+                        <span className="inline-flex items-center justify-center rounded bg-amber-100 px-2 py-1 text-[11px] text-amber-800">
+                          Due
+                        </span>
+                        <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-900 px-2 py-1 text-[10px] text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                          Scheduled at{" "}
+                          {formatDateTimeLocalInTimeZone(
+                            page.publishAt,
+                            settings.publishTimeZone
+                          ).replace("T", " ")}{" "}
+                          ({settings.publishTimeZone})
+                        </span>
                       </span>
                     ) : (
-                      <span className="rounded bg-emerald-100 px-2 py-1 text-[11px] text-emerald-800">
-                        Scheduled ·{" "}
-                        {formatDateTimeLocalInTimeZone(
-                          page.publishAt,
-                          settings.publishTimeZone
-                        ).replace("T", " ")}
+                      <span
+                        className="inline-flex items-center justify-center rounded bg-emerald-100 px-2 py-1 text-[11px] text-emerald-800"
+                        title={`Scheduled at ${formatDateTimeLocalInTimeZone(page.publishAt, settings.publishTimeZone).replace("T", " ")} (${settings.publishTimeZone})`}
+                      >
+                        Scheduled
                       </span>
                     )}
                   </td>
