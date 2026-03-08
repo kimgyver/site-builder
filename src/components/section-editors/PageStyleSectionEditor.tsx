@@ -371,12 +371,11 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
             aria-label="Full preview"
             className="h-full w-full"
             style={{
-              backgroundImage: `url("${backgroundImageUrl
-                .trim()
-                .replace(/"/g, '\\"')}")`,
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "center",
-              backgroundSize: "contain"
+              backgroundColor,
+              backgroundImage: previewBackgroundImage,
+              backgroundRepeat: previewBackgroundRepeat,
+              backgroundPosition: previewBackgroundPosition,
+              backgroundSize: previewBackgroundSize
             }}
           />
         </div>
