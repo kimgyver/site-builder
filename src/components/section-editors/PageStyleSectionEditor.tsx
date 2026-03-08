@@ -183,6 +183,12 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
     setShowFullPreview(true);
   };
 
+  const handleNumberInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (e.currentTarget.value === "0") {
+      e.currentTarget.select();
+    }
+  };
+
   return (
     <div className="space-y-1">
       <div className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 text-[10px] text-blue-800">
@@ -346,6 +352,7 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
           disabled={!imageModeEnabled}
           value={backgroundImageDimPercent}
+          onFocus={handleNumberInputFocus}
           onChange={e =>
             updateProps({
               ...props,
@@ -441,6 +448,7 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
               ? props.brandLogoHeightPx
               : 32
           }
+          onFocus={handleNumberInputFocus}
           onChange={e =>
             updateProps({
               ...props,
@@ -487,6 +495,7 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
             value={
               typeof props.sectionGapPx === "number" ? props.sectionGapPx : 32
             }
+            onFocus={handleNumberInputFocus}
             onChange={e =>
               updateProps({
                 ...props,
@@ -557,6 +566,7 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           value={
             typeof props.menuFontSizePx === "number" ? props.menuFontSizePx : 14
           }
+          onFocus={handleNumberInputFocus}
           onChange={e =>
             updateProps({
               ...props,
