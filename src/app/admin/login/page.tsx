@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { isAdminAuthEnabled, resolveRoleForPassword } from "@/lib/adminAuth";
+import { isAdminAuthEnabled } from "@/lib/adminAuth";
 
 export default async function AdminLogin({
   searchParams

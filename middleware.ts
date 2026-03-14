@@ -45,11 +45,12 @@ export function middleware(request: NextRequest) {
   }
 
   const isLoginPage = pathname === "/admin/login";
+  const isLoginSubmitPath = pathname === "/admin/login/submit";
   const session = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const role = getRoleFromSessionCookie(session);
   const authed = Boolean(role);
 
-  if (isLoginPage) {
+  if (isLoginPage || isLoginSubmitPath) {
     if (authed) {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
