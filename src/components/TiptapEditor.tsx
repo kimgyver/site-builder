@@ -8,10 +8,11 @@ import {
   type KeyboardEvent as ReactKeyboardEvent
 } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
-import type { Editor as CoreEditor } from "@tiptap/core";
 import type { TiptapEditorProps } from "@/types/components";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
+import Subscript from "@tiptap/extension-subscript";
+import Superscript from "@tiptap/extension-superscript";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import TextAlign from "@tiptap/extension-text-align";
@@ -28,36 +29,20 @@ import { ClickSelectImage } from "./tiptap/ClickSelectImage";
 import { EditorToolbar } from "./tiptap/EditorToolbar";
 import { SlashMenu } from "./tiptap/SlashMenu";
 import {
-  SLASH_COMMANDS,
-  executeSlashCommand,
   getSlashMatchFromEditor,
-  type SlashCommand,
   type SlashMatch
 } from "./tiptap/slashCommands";
-import {
-  clearCellBackgroundColor as clearCellBackgroundColorCommand,
-  clearCellBorderColor as clearCellBorderColorCommand,
-  clearFontFamily as clearFontFamilyCommand,
-  clearFontSize as clearFontSizeCommand,
-  clearHighlightColor as clearHighlightColorCommand,
-  clearTextColor as clearTextColorCommand,
-  insertImagePrompt,
-  insertTable as insertTableCommand,
-  setCellBackgroundColor as setCellBackgroundColorCommand,
-  setCellBorderColor as setCellBorderColorCommand,
-  setCellBorderNormal as setCellBorderNormalCommand,
-  setCellBorderTransparent as setCellBorderTransparentCommand,
-  setCellBorderWidth as setCellBorderWidthCommand,
-  setFontFamily as setFontFamilyCommand,
-  setFontSize as setFontSizeCommand,
-  setHighlightColor as setHighlightColorCommand,
-  setImageAlign as setImageAlignCommand,
-  setImageWidth as setImageWidthCommand,
-  setTableAlign as setTableAlignCommand,
-  setOrUnsetLink as setOrUnsetLinkCommand,
-  setTextColor as setTextColorCommand
-} from "./tiptap/editorCommands";
 import { getEditorDerivedState } from "./tiptap/editorDerivedState";
+import { syncTableAlignmentInDom } from "./tiptap/editorFormattingUtils";
+import { StyledParagraph } from "./tiptap/styledParagraph";
+import { TiptapEditorSkeleton } from "./tiptap/TiptapEditorSkeleton";
+import {
+  getFilteredSlashCommands,
+  handleSlashEditorKeyDown,
+  runSlashCommand
+} from "./tiptap/slashInteraction";
+import { useTiptapSelectionSync } from "./tiptap/useTiptapSelectionSync";
+import { createEditorActions } from "./tiptap/editorActions";
 
 export function TiptapEditor({
   defaultValue = "",
@@ -67,76 +52,6 @@ export function TiptapEditor({
   className,
   editorClassName
 }: TiptapEditorProps) {
-  const syncTableAlignmentInDom = (activeEditor: CoreEditor) => {
-    activeEditor.state.doc.descendants((node, pos) => {
-      if (node.type.name !== "table") return;
-
-      const domNode = activeEditor.view.nodeDOM(pos);
-      const tableEl =
-        domNode instanceof HTMLTableElement
-          ? domNode
-          : domNode instanceof HTMLElement
-            ? domNode.querySelector("table")
-            : null;
-
-      if (!tableEl) return;
-
-      const align = node.attrs.align as "left" | "center" | "right" | null;
-      if (align !== "left" && align !== "center" && align !== "right") {
-        tableEl.removeAttribute("data-align");
-        tableEl.style.marginLeft = "";
-        tableEl.style.marginRight = "";
-        return;
-      }
-
-      tableEl.setAttribute("data-align", align);
-      if (align === "center") {
-        tableEl.style.marginLeft = "auto";
-        tableEl.style.marginRight = "auto";
-      } else if (align === "right") {
-        tableEl.style.marginLeft = "auto";
-        tableEl.style.marginRight = "0";
-      } else {
-        tableEl.style.marginLeft = "0";
-        tableEl.style.marginRight = "auto";
-      }
-    });
-  };
-
-  const getSelectedTableCellPositions = (activeEditor: CoreEditor) => {
-    const selectionWithCells = activeEditor.state.selection as unknown as {
-      forEachCell?: (
-        fn: (node: { attrs: Record<string, unknown> }, pos: number) => void
-      ) => void;
-      $from?: {
-        depth: number;
-        node: (depth: number) => { type: { name: string } };
-        before: (depth: number) => number;
-      };
-    };
-
-    if (typeof selectionWithCells.forEachCell === "function") {
-      const positions: number[] = [];
-      selectionWithCells.forEachCell((_, pos) => {
-        positions.push(pos);
-      });
-      if (positions.length) {
-        return positions;
-      }
-    }
-
-    const anchor =
-      selectionWithCells.$from ?? activeEditor.state.selection.$from;
-    for (let depth = anchor.depth; depth >= 0; depth -= 1) {
-      const node = anchor.node(depth);
-      if (node.type.name === "tableCell" || node.type.name === "tableHeader") {
-        return [anchor.before(depth)];
-      }
-    }
-
-    return null;
-  };
-
   const lastEmittedHtmlRef = useRef<string>(defaultValue || "");
   const lastPropagatedHtmlRef = useRef<string>(defaultValue || "");
   const lastDefaultValueRef = useRef<string>(defaultValue || "");
@@ -153,6 +68,12 @@ export function TiptapEditor({
   const [slashMatch, setSlashMatch] = useState<SlashMatch | null>(null);
   const [slashActiveIndex, setSlashActiveIndex] = useState(0);
   const [textPresetValue, setTextPresetValue] = useState("normal");
+  const [paragraphStyleValue, setParagraphStyleValue] = useState<
+    "body" | "lead" | "quote"
+  >("body");
+  const [paragraphSpacingValue, setParagraphSpacingValue] = useState<
+    "compact" | "normal" | "relaxed"
+  >("normal");
   const [fontFamilyValue, setFontFamilyValue] = useState("default");
   const [fontSizeValue, setFontSizeValue] = useState("16");
   const [textColorValue, setTextColorValue] = useState("#111827");
@@ -163,49 +84,6 @@ export function TiptapEditor({
   const [, bumpSelectionTick] = useState(0);
 
   const normalize = (html: string) => html.replace(/\s+/g, " ").trim();
-
-  const normalizeColorToHex = (value: unknown): string | null => {
-    if (typeof value !== "string") return null;
-    const raw = value.trim();
-    if (!raw) return null;
-
-    const hexMatch = raw.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
-    if (hexMatch) {
-      const hex = hexMatch[1];
-      if (hex.length === 3) {
-        return `#${hex
-          .split("")
-          .map(ch => ch + ch)
-          .join("")
-          .toLowerCase()}`;
-      }
-      return `#${hex.toLowerCase()}`;
-    }
-
-    const rgbMatch = raw.match(
-      /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*(?:\d*\.?\d+))?\s*\)$/i
-    );
-    if (!rgbMatch) return null;
-
-    const [r, g, b] = rgbMatch.slice(1, 4).map(Number);
-    if (
-      !Number.isFinite(r) ||
-      !Number.isFinite(g) ||
-      !Number.isFinite(b) ||
-      r < 0 ||
-      r > 255 ||
-      g < 0 ||
-      g > 255 ||
-      b < 0 ||
-      b > 255
-    ) {
-      return null;
-    }
-
-    return `#${[r, g, b]
-      .map(channel => channel.toString(16).padStart(2, "0"))
-      .join("")}`;
-  };
 
   const emitChange = (html: string, doc: unknown) => {
     if (!onChangeHtml) return;
@@ -225,38 +103,17 @@ export function TiptapEditor({
     });
   };
 
-  const detectTextPreset = (activeEditor: CoreEditor): string => {
-    if (activeEditor.isActive("heading", { level: 1 })) return "heading1";
-    if (activeEditor.isActive("heading", { level: 2 })) return "heading2";
-    if (activeEditor.isActive("heading", { level: 3 })) return "heading3";
-    if (activeEditor.isActive("heading", { level: 4 })) return "heading4";
-
-    const textStyleAttrs = activeEditor.getAttributes("textStyle") as Record<
-      string,
-      unknown
-    >;
-    const activeFontSize = textStyleAttrs.fontSize;
-    if (typeof activeFontSize === "string") {
-      const parsed = Number.parseFloat(activeFontSize.replace(/[^0-9.]/g, ""));
-      if (Number.isFinite(parsed)) {
-        if (parsed >= 36) return "title";
-        if (parsed >= 24) return "subtitle";
-      }
-    }
-
-    if (activeEditor.isActive("paragraph")) return "normal";
-    return "normal";
-  };
-
   const extensions = useMemo(
     () => [
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3, 4]
         },
+        paragraph: false,
         link: false,
         underline: false
       }),
+      StyledParagraph,
       TextAlign.configure({
         types: ["heading", "paragraph", "tableCell", "tableHeader"]
       }),
@@ -268,6 +125,8 @@ export function TiptapEditor({
       Color,
       Highlight.configure({ multicolor: true }),
       Underline,
+      Subscript,
+      Superscript,
       ResizableImage.configure({
         inline: false,
         allowBase64: true,
@@ -375,109 +234,23 @@ export function TiptapEditor({
   });
 
   // Selection changes (like clicking an image) do not trigger `onUpdate`,
-  // so we need to re-render to show context toolbars.
-  useEffect(() => {
-    if (!editor) return;
-    syncTableAlignmentInDom(editor);
-    const rerender = () => {
-      const { from, to } = editor.state.selection;
-      if (from !== to) {
-        lastTextSelectionRef.current = { from, to };
-      } else if (!lastTextSelectionRef.current) {
-        lastTextSelectionRef.current = { from, to };
-      }
-
-      const tableCellAttrs = editor.getAttributes("tableCell") as Record<
-        string,
-        unknown
-      >;
-      const tableHeaderAttrs = editor.getAttributes("tableHeader") as Record<
-        string,
-        unknown
-      >;
-      const activeTableAttrs =
-        Object.keys(tableCellAttrs).length > 0
-          ? tableCellAttrs
-          : tableHeaderAttrs;
-
-      const rawBorderWidth = activeTableAttrs.borderWidth;
-      const parsedBorderWidth =
-        rawBorderWidth === null || rawBorderWidth === undefined
-          ? NaN
-          : Number(String(rawBorderWidth).replace(/[^0-9.]/g, ""));
-      if (Number.isFinite(parsedBorderWidth)) {
-        setTableBorderWidthValue(Math.max(1, Math.min(12, parsedBorderWidth)));
-      }
-
-      const borderColor = activeTableAttrs.borderColor;
-      if (
-        typeof borderColor === "string" &&
-        /^#([0-9a-fA-F]{6})$/.test(borderColor)
-      ) {
-        setTableBorderColorValue(borderColor);
-      }
-
-      const bgColor = activeTableAttrs.backgroundColor;
-      if (typeof bgColor === "string" && /^#([0-9a-fA-F]{6})$/.test(bgColor)) {
-        setCellBgColorValue(bgColor);
-      }
-
-      const textStyleAttrs = editor.getAttributes("textStyle") as Record<
-        string,
-        unknown
-      >;
-      setTextPresetValue(detectTextPreset(editor));
-      const activeFontFamily = textStyleAttrs.fontFamily;
-      if (typeof activeFontFamily === "string" && activeFontFamily.trim()) {
-        setFontFamilyValue(activeFontFamily.trim());
-      } else {
-        setFontFamilyValue("default");
-      }
-
-      const activeFontSize = textStyleAttrs.fontSize;
-      if (typeof activeFontSize === "string") {
-        const parsed = Number.parseFloat(
-          activeFontSize.replace(/[^0-9.]/g, "")
-        );
-        if (Number.isFinite(parsed)) {
-          setFontSizeValue(
-            String(Math.max(8, Math.min(96, Math.round(parsed))))
-          );
-        } else {
-          setFontSizeValue("16");
-        }
-      } else {
-        setFontSizeValue("16");
-      }
-
-      const activeTextColorHex = normalizeColorToHex(textStyleAttrs.color);
-      setTextColorValue(activeTextColorHex ?? "#111827");
-
-      const highlightAttrs = editor.getAttributes("highlight") as Record<
-        string,
-        unknown
-      >;
-      const activeHighlightHex = normalizeColorToHex(highlightAttrs.color);
-      setHighlightColorValue(activeHighlightHex ?? "#fde68a");
-
-      lastSelectedTableCellPositionsRef.current =
-        getSelectedTableCellPositions(editor);
-
-      bumpSelectionTick(t => (t + 1) % 1000000);
-    };
-    const { from, to } = editor.state.selection;
-    if (from !== to) {
-      lastTextSelectionRef.current = { from, to };
-    } else if (!lastTextSelectionRef.current) {
-      lastTextSelectionRef.current = { from, to };
-    }
-    lastSelectedTableCellPositionsRef.current =
-      getSelectedTableCellPositions(editor);
-    editor.on("selectionUpdate", rerender);
-    return () => {
-      editor.off("selectionUpdate", rerender);
-    };
-  }, [editor, bumpSelectionTick, lastTextSelectionRef]);
+  // so we keep derived toolbar state in sync via a dedicated hook.
+  useTiptapSelectionSync({
+    editor,
+    lastTextSelectionRef,
+    lastSelectedTableCellPositionsRef,
+    setTextPresetValue,
+    setParagraphStyleValue,
+    setParagraphSpacingValue,
+    setFontFamilyValue,
+    setFontSizeValue,
+    setTextColorValue,
+    setHighlightColorValue,
+    setCellBgColorValue,
+    setTableBorderColorValue,
+    setTableBorderWidthValue,
+    bumpSelectionTick
+  });
 
   // Keep editor content in sync when parent changes (e.g., switching sections)
   useEffect(() => {
@@ -527,284 +300,8 @@ export function TiptapEditor({
   }, [slashActiveIndex, slashMatch]);
 
   if (!editor) {
-    return (
-      <div className={"space-y-1 " + (className ?? "")}>
-        <div className="h-8 animate-pulse rounded-md border border-zinc-200 bg-zinc-50" />
-        <div className="min-h-45 w-full animate-pulse rounded-md border border-zinc-300 bg-white px-3 py-2">
-          <div className="space-y-2 pt-1">
-            <div className="h-3 w-11/12 rounded bg-zinc-200" />
-            <div className="h-3 w-4/5 rounded bg-zinc-200" />
-            <div className="h-3 w-3/5 rounded bg-zinc-200" />
-          </div>
-        </div>
-      </div>
-    );
+    return <TiptapEditorSkeleton className={className} />;
   }
-
-  const setOrUnsetLink = () => setOrUnsetLinkCommand(editor);
-
-  const setTextColor = (color: string) =>
-    setTextColorCommand(editor, lastTextSelectionRef.current, color);
-
-  const clearTextColor = () =>
-    clearTextColorCommand(editor, lastTextSelectionRef.current);
-
-  const applyTextPreset = (preset: string) => {
-    if (preset === "heading1") {
-      editor
-        .chain()
-        .focus()
-        .setHeading({ level: 1 })
-        .unsetFontSize()
-        .unsetFontFamily()
-        .unsetColor()
-        .run();
-      setFontFamilyValue("default");
-      setFontSizeValue("16");
-      setTextColorValue("#111827");
-      setTextPresetValue("heading1");
-      return;
-    }
-    if (preset === "heading2") {
-      editor
-        .chain()
-        .focus()
-        .setHeading({ level: 2 })
-        .unsetFontSize()
-        .unsetFontFamily()
-        .unsetColor()
-        .run();
-      setFontFamilyValue("default");
-      setFontSizeValue("16");
-      setTextColorValue("#111827");
-      setTextPresetValue("heading2");
-      return;
-    }
-    if (preset === "heading3") {
-      editor
-        .chain()
-        .focus()
-        .setHeading({ level: 3 })
-        .unsetFontSize()
-        .unsetFontFamily()
-        .unsetColor()
-        .run();
-      setFontFamilyValue("default");
-      setFontSizeValue("16");
-      setTextColorValue("#111827");
-      setTextPresetValue("heading3");
-      return;
-    }
-    if (preset === "heading4") {
-      editor
-        .chain()
-        .focus()
-        .setHeading({ level: 4 })
-        .unsetFontSize()
-        .unsetFontFamily()
-        .unsetColor()
-        .run();
-      setFontFamilyValue("default");
-      setFontSizeValue("16");
-      setTextColorValue("#111827");
-      setTextPresetValue("heading4");
-      return;
-    }
-
-    if (preset === "title") {
-      editor
-        .chain()
-        .focus()
-        .setParagraph()
-        .setFontFamily('"Times New Roman", serif')
-        .setFontSize("40px")
-        .setColor("#111827")
-        .run();
-      setFontFamilyValue('"Times New Roman", serif');
-      setFontSizeValue("40");
-      setTextColorValue("#111827");
-      setTextPresetValue("title");
-      return;
-    }
-
-    if (preset === "subtitle") {
-      editor
-        .chain()
-        .focus()
-        .setParagraph()
-        .setFontFamily("Arial, Helvetica, sans-serif")
-        .setFontSize("28px")
-        .setColor("#52525b")
-        .run();
-      setFontFamilyValue("Arial, Helvetica, sans-serif");
-      setFontSizeValue("28");
-      setTextColorValue("#52525b");
-      setTextPresetValue("subtitle");
-      return;
-    }
-
-    editor
-      .chain()
-      .focus()
-      .setParagraph()
-      .unsetFontSize()
-      .unsetFontFamily()
-      .unsetColor()
-      .run();
-    setFontFamilyValue("default");
-    setFontSizeValue("16");
-    setTextColorValue("#111827");
-    setTextPresetValue("normal");
-  };
-
-  const setFontFamily = (fontFamily: string) =>
-    setFontFamilyCommand(editor, lastTextSelectionRef.current, fontFamily);
-
-  const clearFontFamily = () =>
-    clearFontFamilyCommand(editor, lastTextSelectionRef.current);
-
-  const setFontSize = (fontSize: string) =>
-    setFontSizeCommand(editor, lastTextSelectionRef.current, fontSize);
-
-  const clearFontSize = () =>
-    clearFontSizeCommand(editor, lastTextSelectionRef.current);
-
-  const setHighlightColor = (color: string) =>
-    setHighlightColorCommand(editor, lastTextSelectionRef.current, color);
-
-  const clearHighlightColor = () =>
-    clearHighlightColorCommand(editor, lastTextSelectionRef.current);
-
-  const setCellBackgroundColor = (color: string) =>
-    setCellBackgroundColorCommand(
-      editor,
-      color,
-      lastSelectedTableCellPositionsRef.current
-    );
-
-  const clearCellBackgroundColor = () =>
-    clearCellBackgroundColorCommand(
-      editor,
-      lastSelectedTableCellPositionsRef.current
-    );
-
-  const setCellBorderTransparent = () =>
-    setCellBorderTransparentCommand(
-      editor,
-      lastSelectedTableCellPositionsRef.current
-    );
-
-  const setCellBorderNormal = () =>
-    setCellBorderNormalCommand(
-      editor,
-      lastSelectedTableCellPositionsRef.current
-    );
-
-  const setCellBorderColor = (color: string) =>
-    setCellBorderColorCommand(
-      editor,
-      color,
-      lastSelectedTableCellPositionsRef.current
-    );
-
-  const clearCellBorderColor = () =>
-    clearCellBorderColorCommand(
-      editor,
-      lastSelectedTableCellPositionsRef.current
-    );
-
-  const setCellBorderWidth = (width: number) =>
-    setCellBorderWidthCommand(
-      editor,
-      width,
-      lastSelectedTableCellPositionsRef.current
-    );
-
-  const insertImage = () => insertImagePrompt(editor);
-
-  const setImageWidth = (percent: number | null) =>
-    setImageWidthCommand(editor, selectedImagePos, percent);
-
-  const setImageAlign = (align: "left" | "center" | "right") =>
-    setImageAlignCommand(editor, selectedImagePos, align);
-
-  const insertTable = () => insertTableCommand(editor);
-
-  const setTableAlign = (align: "left" | "center" | "right") =>
-    setTableAlignCommand(editor, align);
-
-  const runSlashCommand = (command: SlashCommand) => {
-    if (!slashMatch) return;
-
-    editor
-      .chain()
-      .focus()
-      .deleteRange({ from: slashMatch.from, to: slashMatch.to })
-      .run();
-    executeSlashCommand(editor, command.id);
-    setSlashMatch(null);
-    setSlashActiveIndex(0);
-  };
-
-  const filteredSlashCommands = (() => {
-    if (!slashMatch) return [];
-
-    const q = slashMatch.query.trim().toLowerCase();
-    if (!q) return SLASH_COMMANDS;
-
-    return SLASH_COMMANDS.filter(command => {
-      if (command.label.toLowerCase().includes(q)) return true;
-      return command.keywords.some(keyword => keyword.includes(q));
-    });
-  })();
-
-  const handleEditorKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (!slashMatch) return;
-
-    if (!filteredSlashCommands.length) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        setSlashMatch(null);
-        setSlashActiveIndex(0);
-      }
-      return;
-    }
-
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setSlashActiveIndex(prev => (prev + 1) % filteredSlashCommands.length);
-      return;
-    }
-
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setSlashActiveIndex(
-        prev =>
-          (prev - 1 + filteredSlashCommands.length) %
-          filteredSlashCommands.length
-      );
-      return;
-    }
-
-    if (event.key === "Enter") {
-      event.preventDefault();
-      const index = Math.max(
-        0,
-        Math.min(slashActiveIndex, filteredSlashCommands.length - 1)
-      );
-      const selected = filteredSlashCommands[index];
-      if (selected) {
-        runSlashCommand(selected);
-      }
-      return;
-    }
-
-    if (event.key === "Escape") {
-      event.preventDefault();
-      setSlashMatch(null);
-      setSlashActiveIndex(0);
-    }
-  };
 
   const {
     selectedImagePos,
@@ -815,6 +312,62 @@ export function TiptapEditor({
     effectiveImageWidth
   } = getEditorDerivedState(editor);
 
+  const {
+    setOrUnsetLink,
+    setTextColor,
+    setParagraphStyle,
+    setParagraphSpacing,
+    applyTextPreset,
+    setFontFamily,
+    clearFontFamily,
+    setFontSize,
+    setHighlightColor,
+    setCellBackgroundColor,
+    clearCellBackgroundColor,
+    setCellBorderTransparent,
+    setCellBorderNormal,
+    setCellBorderColor,
+    clearCellBorderColor,
+    setCellBorderWidth,
+    insertImage,
+    setImageWidth,
+    setImageAlign,
+    insertTable,
+    setTableAlign
+  } = createEditorActions({
+    editor,
+    selectedImagePos,
+    lastTextSelectionRef,
+    lastSelectedTableCellPositionsRef,
+    setParagraphStyleValue,
+    setParagraphSpacingValue,
+    setFontFamilyValue,
+    setFontSizeValue,
+    setTextColorValue,
+    setTextPresetValue
+  });
+
+  const filteredSlashCommands = getFilteredSlashCommands(slashMatch);
+
+  const handleEditorKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    handleSlashEditorKeyDown({
+      event,
+      slashMatch,
+      slashActiveIndex,
+      filteredSlashCommands,
+      setSlashMatch,
+      setSlashActiveIndex,
+      onSelectCommand: command =>
+        runSlashCommand({
+          editor,
+          slashMatch,
+          command,
+          setSlashMatch,
+          setSlashActiveIndex: value => setSlashActiveIndex(value)
+        })
+    });
+  };
+
   return (
     <div className={"space-y-1 " + (className ?? "")}>
       <EditorToolbar
@@ -822,6 +375,8 @@ export function TiptapEditor({
         isImageActive={isImageActive}
         effectiveImageWidth={effectiveImageWidth}
         isTableActive={isTableActive}
+        paragraphStyleValue={paragraphStyleValue}
+        paragraphSpacingValue={paragraphSpacingValue}
         textPresetValue={textPresetValue}
         activeTextColor={activeTextColor}
         activeBorderColor={activeBorderColor}
@@ -840,7 +395,8 @@ export function TiptapEditor({
           setTextColorValue(color);
           setTextColor(color);
         }}
-        onClearTextColor={clearTextColor}
+        onSetParagraphStyle={setParagraphStyle}
+        onSetParagraphSpacing={setParagraphSpacing}
         onApplyTextPreset={applyTextPreset}
         onSetFontFamily={fontFamily => {
           setFontFamilyValue(fontFamily);
@@ -851,12 +407,10 @@ export function TiptapEditor({
           setFontSizeValue(fontSize);
           setFontSize(fontSize);
         }}
-        onClearFontSize={clearFontSize}
         onSetHighlightColor={color => {
           setHighlightColorValue(color);
           setHighlightColor(color);
         }}
-        onClearHighlightColor={clearHighlightColor}
         onSetOrUnsetLink={setOrUnsetLink}
         onInsertImage={insertImage}
         onInsertTable={insertTable}
@@ -887,7 +441,15 @@ export function TiptapEditor({
           filteredSlashCommands={filteredSlashCommands}
           slashActiveIndex={slashActiveIndex}
           slashListRef={slashListRef}
-          onRunSlashCommand={runSlashCommand}
+          onRunSlashCommand={command =>
+            runSlashCommand({
+              editor,
+              slashMatch,
+              command,
+              setSlashMatch,
+              setSlashActiveIndex: value => setSlashActiveIndex(value)
+            })
+          }
         />
 
         <EditorContent editor={editor} onKeyDown={handleEditorKeyDown} />

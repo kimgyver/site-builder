@@ -89,6 +89,51 @@ input:disabled,
   margin: var(--rich-p-margin-y) 0;
 }
 
+.rich-content :where(p[data-p-spacing="compact"]) {
+  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.rich-content :where(p[data-p-spacing="normal"]) {
+  margin-top: var(--rich-p-margin-y);
+  margin-bottom: var(--rich-p-margin-y);
+}
+
+.rich-content :where(p[data-p-spacing="relaxed"]) {
+  margin-top: 1.05rem;
+  margin-bottom: 1.05rem;
+}
+
+.rich-content :where(p[data-p-style="lead"]) {
+  font-size: 2.45rem;
+  line-height: 1.22;
+  font-weight: 380;
+  color: #5f6368;
+  letter-spacing: -0.01em;
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.rich-content :where(p[data-p-style="quote"]) {
+  font-size: 1.1rem;
+  line-height: 1.75;
+  color: #1f2937;
+  border-left: 3px solid #cbd5e1;
+  padding-left: 0.85rem;
+  margin-top: 0.9rem;
+  margin-bottom: 0;
+}
+
+/* Keep quote paragraphs visually grouped when user presses Enter in quote. */
+.rich-content :where(p[data-p-style="quote"] + p[data-p-style="quote"]) {
+  margin-top: 0;
+}
+
+/* Preserve comfortable gap when quote block is followed by a normal paragraph. */
+.rich-content :where(p[data-p-style="quote"] + p:not([data-p-style="quote"])) {
+  margin-top: 0.9rem;
+}
+
 /*
   Tables with user-resized columns may be wider than their container.
   We allow horizontal scrolling so column widths remain stable.
@@ -152,6 +197,17 @@ input:disabled,
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New", monospace;
   font-size: 0.9em;
+  background: #f1f5f9;
+  border: 1px solid #dbe4ee;
+  border-radius: 0.35rem;
+  padding: 0.08rem 0.32rem;
+}
+
+.rich-content :where(pre code) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
 }
 
 .rich-content :where(pre) {

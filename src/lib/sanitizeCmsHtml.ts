@@ -32,6 +32,8 @@ export function sanitizeCmsHtml(input: unknown) {
       "i",
       "u",
       "s",
+      "sub",
+      "sup",
       "small",
       "mark",
       "blockquote",

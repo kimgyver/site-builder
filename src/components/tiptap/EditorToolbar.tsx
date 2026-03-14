@@ -2,12 +2,19 @@ import type { EditorToolbarProps } from "@/types/tiptap";
 import { useState } from "react";
 import { ToolbarButton } from "./ToolbarButton";
 import { deleteCurrentTable } from "./editorCommands";
+import {
+  fontFamilyPresetOptions,
+  fontSizePresetOptions,
+  textPresetOptions
+} from "./toolbarOptions";
 
 export function EditorToolbar({
   editor,
   isImageActive,
   effectiveImageWidth,
   isTableActive,
+  paragraphStyleValue,
+  paragraphSpacingValue,
   textPresetValue,
   activeTextColor,
   activeBorderColor,
@@ -23,14 +30,13 @@ export function EditorToolbar({
   cellBgColorInputRef,
   tableBorderColorInputRef,
   onSetTextColor,
-  onClearTextColor,
+  onSetParagraphStyle,
+  onSetParagraphSpacing,
   onApplyTextPreset,
   onSetFontFamily,
   onClearFontFamily,
   onSetFontSize,
-  onClearFontSize,
   onSetHighlightColor,
-  onClearHighlightColor,
   onSetOrUnsetLink,
   onInsertImage,
   onInsertTable,
@@ -47,31 +53,12 @@ export function EditorToolbar({
 }: EditorToolbarProps) {
   const [showImageTools, setShowImageTools] = useState(false);
   const [showTableTools, setShowTableTools] = useState(false);
-  const textPresetOptions = [
-    { label: "Normal", value: "normal" },
-    { label: "Title", value: "title" },
-    { label: "Subtitle", value: "subtitle" },
-    { label: "Heading 1", value: "heading1" },
-    { label: "Heading 2", value: "heading2" },
-    { label: "Heading 3", value: "heading3" },
-    { label: "Heading 4", value: "heading4" }
-  ];
-  const fontFamilyPresetOptions = [
-    { label: "Default", value: "default" },
-    { label: "Arial", value: "Arial, Helvetica, sans-serif" },
-    { label: "Helvetica", value: "Helvetica, Arial, sans-serif" },
-    { label: "Verdana", value: "Verdana, Geneva, sans-serif" },
-    { label: "Tahoma", value: "Tahoma, Geneva, sans-serif" },
-    { label: "Trebuchet MS", value: '"Trebuchet MS", sans-serif' },
-    { label: "Georgia", value: "Georgia, serif" },
-    { label: "Times New Roman", value: '"Times New Roman", serif' },
-    { label: "Courier New", value: '"Courier New", monospace' },
-    { label: "Comic Sans MS", value: '"Comic Sans MS", cursive' },
-    { label: "Impact", value: "Impact, Haettenschweiler, sans-serif" }
-  ];
-  const fontSizePresetOptions = [12, 14, 16, 18, 20, 24, 28, 32, 40, 48];
   const imageToolsVisible = showImageTools && isImageActive;
   const tableToolsVisible = showTableTools && isTableActive;
+
+  const fontSizeNumber = Number(fontSizeValue);
+  const fontSizeArray = Array.from(fontSizePresetOptions) as number[];
+  const isPresetFontSize = fontSizeArray.includes(fontSizeNumber);
 
   return (
     <div className="space-y-2 rounded-md border border-zinc-300 bg-zinc-50 px-2 py-2 text-xs text-zinc-700 md:px-2.5 md:py-2.5 md:text-sm">
@@ -94,6 +81,66 @@ export function EditorToolbar({
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           active={editor.isActive("underline")}
         />
+        <ToolbarButton
+          label="Strike"
+          title="Strikethrough"
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+          active={editor.isActive("strike")}
+        />
+        <ToolbarButton
+          label="Code"
+          title="Inline Code"
+          onClick={() => editor.chain().focus().toggleCode().run()}
+          active={editor.isActive("code")}
+        />
+        <ToolbarButton
+          label="Sub"
+          title="Subscript"
+          onClick={() => editor.chain().focus().toggleSubscript().run()}
+          active={editor.isActive("subscript")}
+        />
+        <ToolbarButton
+          label="Sup"
+          title="Superscript"
+          onClick={() => editor.chain().focus().toggleSuperscript().run()}
+          active={editor.isActive("superscript")}
+        />
+        <ToolbarButton
+          label="Clear Format"
+          title="Clear Formatting"
+          onClick={() =>
+            editor.chain().focus().unsetAllMarks().clearNodes().run()
+          }
+        />
+        <span className="mx-1 h-5 w-px bg-zinc-300" />
+        <span className="px-1 text-xs text-zinc-500">Paragraph</span>
+        <select
+          className="h-7 rounded border border-zinc-300 bg-white px-1 text-xs"
+          value={paragraphStyleValue}
+          onChange={e =>
+            onSetParagraphStyle(e.target.value as "body" | "lead" | "quote")
+          }
+          aria-label="Paragraph style"
+        >
+          <option value="body">Body</option>
+          <option value="lead">Lead</option>
+          <option value="quote">Quote</option>
+        </select>
+        <span className="px-1 text-xs text-zinc-500">Spacing</span>
+        <select
+          className="h-7 rounded border border-zinc-300 bg-white px-1 text-xs"
+          value={paragraphSpacingValue}
+          onChange={e =>
+            onSetParagraphSpacing(
+              e.target.value as "compact" | "normal" | "relaxed"
+            )
+          }
+          aria-label="Paragraph spacing"
+        >
+          <option value="compact">Compact</option>
+          <option value="normal">Normal</option>
+          <option value="relaxed">Relaxed</option>
+        </select>
         <span className="mx-1 h-5 w-px bg-zinc-300" />
         <span className="px-1 text-xs text-zinc-500">Preset</span>
         <select
@@ -138,20 +185,11 @@ export function EditorToolbar({
             </option>
           ))}
         </select>
-        <ToolbarButton
-          label="Clear Font"
-          title="Clear Font Family"
-          onClick={onClearFontFamily}
-        />
         <span className="mx-1 h-5 w-px bg-zinc-300" />
         <span className="px-1 text-xs text-zinc-500">Size</span>
         <select
           className="h-7 rounded border border-zinc-300 bg-white px-1 text-xs"
-          value={
-            fontSizePresetOptions.includes(Number(fontSizeValue))
-              ? fontSizeValue
-              : "custom"
-          }
+          value={isPresetFontSize ? fontSizeValue : "custom"}
           onChange={e => {
             if (e.target.value === "custom") return;
             onSetFontSize(e.target.value);
@@ -175,11 +213,6 @@ export function EditorToolbar({
           className="h-7 w-16 rounded border border-zinc-300 bg-white px-1 text-xs"
           aria-label="Font size in px"
         />
-        <ToolbarButton
-          label="Clear Size"
-          title="Clear Font Size"
-          onClick={onClearFontSize}
-        />
         <span className="mx-1 h-5 w-px bg-zinc-300" />
         <ToolbarButton
           label="P"
@@ -202,12 +235,6 @@ export function EditorToolbar({
           aria-label="Text color"
         />
         <ToolbarButton
-          label="Clear Text"
-          title="Clear Text Color"
-          onClick={onClearTextColor}
-          disabled={!activeTextColor}
-        />
-        <ToolbarButton
           label="Highlight"
           title="Highlight"
           onClick={() => highlightColorInputRef.current?.click()}
@@ -220,12 +247,6 @@ export function EditorToolbar({
           onChange={e => onSetHighlightColor(e.target.value)}
           className="h-6 w-6 cursor-pointer rounded border border-zinc-300 bg-white p-0"
           aria-label="Highlight color"
-        />
-        <ToolbarButton
-          label="Clear Highlight"
-          title="Clear Highlight"
-          onClick={onClearHighlightColor}
-          disabled={!editor.isActive("highlight")}
         />
         <span className="mx-1 h-5 w-px bg-zinc-300" />
         <ToolbarButton

@@ -33,6 +33,8 @@ export interface EditorToolbarProps {
   isImageActive: boolean;
   effectiveImageWidth: number | null;
   isTableActive: boolean;
+  paragraphStyleValue: "body" | "lead" | "quote";
+  paragraphSpacingValue: "compact" | "normal" | "relaxed";
   textPresetValue: string;
   activeTextColor?: string;
   activeBorderColor?: string | null;
@@ -48,14 +50,13 @@ export interface EditorToolbarProps {
   cellBgColorInputRef: RefObject<HTMLInputElement | null>;
   tableBorderColorInputRef: RefObject<HTMLInputElement | null>;
   onSetTextColor: (color: string) => void;
-  onClearTextColor: () => void;
+  onSetParagraphStyle: (style: "body" | "lead" | "quote") => void;
+  onSetParagraphSpacing: (spacing: "compact" | "normal" | "relaxed") => void;
   onApplyTextPreset: (preset: string) => void;
   onSetFontFamily: (fontFamily: string) => void;
   onClearFontFamily: () => void;
   onSetFontSize: (fontSize: string) => void;
-  onClearFontSize: () => void;
   onSetHighlightColor: (color: string) => void;
-  onClearHighlightColor: () => void;
   onSetOrUnsetLink: () => void;
   onInsertImage: () => void;
   onInsertTable: () => void;

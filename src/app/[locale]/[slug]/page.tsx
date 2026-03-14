@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -11,8 +10,7 @@ import type {
 import {
   DEFAULT_LOCALE,
   SUPPORTED_LOCALES,
-  isSupportedLocale,
-  type SupportedLocale
+  isSupportedLocale
 } from "@/lib/i18n";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { resolveSiteUrl } from "@/lib/siteUrl";
@@ -26,31 +24,13 @@ import {
   renderSections,
   type RenderableSection
 } from "@/lib/public/renderSections";
-
-async function findPageByLocale({
-  slug,
-  locale,
-  preview
-}: {
-  slug: string;
-  locale: SupportedLocale;
-  preview?: string;
-}) {
-  const where =
-    preview && preview.trim()
-      ? {
-          slug,
-          locale,
-          OR: [{ status: "PUBLISHED" as const }, { previewToken: preview }]
-        }
-      : { slug, locale, status: "PUBLISHED" as const };
-
-  return prisma.page.findFirst({
-    where,
-    include: { sections: { orderBy: { order: "asc" } } }
-  });
-}
-
+import {
+  DEFAULT_BRANDING,
+  DEFAULT_NAVIGATION_STYLE,
+  findPageByLocale,
+  loadPageShellData,
+  pickGlobalGroup
+} from "./pageData";
 export async function generateMetadata({
   params,
   searchParams
@@ -136,73 +116,10 @@ export default async function LocaleDynamicPage({
 
   const localeForLinks = rawLocale;
 
-  const getMenuByLocation = async (location: "header" | "footer") => {
-    try {
-      return await prisma.menu.findFirst({
-        where: { location },
-        select: {
-          id: true,
-          name: true,
-          location: true,
-          items: {
-            orderBy: { order: "asc" },
-            select: { id: true, href: true, label: true, openInNewTab: true }
-          }
-        }
-      });
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      if (
-        message.includes("openInNewTab") ||
-        message.includes("OpenInNewTab")
-      ) {
-        return await prisma.menu.findFirst({
-          where: { location },
-          select: {
-            id: true,
-            name: true,
-            location: true,
-            items: {
-              orderBy: { order: "asc" },
-              select: { id: true, href: true, label: true }
-            }
-          }
-        });
-      }
-      throw e;
-    }
-  };
-
-  const [headerMenu, footerMenu, headerGroups, footerGroups] =
-    await Promise.all([
-      getMenuByLocation("header"),
-      getMenuByLocation("footer"),
-      prisma.globalSectionGroup.findMany({
-        where: { location: "header" },
-        include: { sections: { orderBy: { order: "asc" } } },
-        orderBy: { createdAt: "asc" }
-      }),
-      prisma.globalSectionGroup.findMany({
-        where: { location: "footer" },
-        include: { sections: { orderBy: { order: "asc" } } },
-        orderBy: { createdAt: "asc" }
-      })
-    ]);
+  const { headerMenu, footerMenu, headerGroups, footerGroups } =
+    await loadPageShellData();
 
   const settings = await getSiteSettings();
-
-  const pickGlobalGroup = <T extends { id: string; isDefault: boolean }>(
-    groups: T[],
-    preferredId?: string | null
-  ) => {
-    if (preferredId) {
-      const matched = groups.find(group => group.id === preferredId);
-      if (matched) return matched;
-    }
-    const defaultGroup = groups.find(group => group.isDefault);
-    if (defaultGroup) return defaultGroup;
-    return groups[0] ?? null;
-  };
 
   const headerGlobals = pickGlobalGroup(headerGroups, page.headerGlobalGroupId);
   const footerGlobals = pickGlobalGroup(footerGroups, page.footerGlobalGroupId);
@@ -226,34 +143,19 @@ export default async function LocaleDynamicPage({
     ? getSectionNavigationStyle(
         headerGlobals.sections as unknown as RenderableSection[]
       )
-    : {
-        menuTextColor: undefined,
-        menuHoverColor: undefined,
-        menuFontSizePx: undefined,
-        dividerColor: undefined
-      };
+    : DEFAULT_NAVIGATION_STYLE;
 
   const footerNavigationStyle = footerGlobals?.sections
     ? getSectionNavigationStyle(
         footerGlobals.sections as unknown as RenderableSection[]
       )
-    : {
-        menuTextColor: undefined,
-        menuHoverColor: undefined,
-        menuFontSizePx: undefined,
-        dividerColor: undefined
-      };
+    : DEFAULT_NAVIGATION_STYLE;
 
   const headerBranding = headerGlobals?.sections
     ? getSectionBrandingConfig(
         headerGlobals.sections as unknown as RenderableSection[]
       )
-    : {
-        brandName: "",
-        brandHref: undefined,
-        brandLogoUrl: undefined,
-        brandLogoHeightPx: 32
-      };
+    : DEFAULT_BRANDING;
 
   const pageBranding = getSectionBrandingConfig(
     page.sections as unknown as RenderableSection[]

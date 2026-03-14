@@ -2,6 +2,14 @@ import React from "react";
 import { EditableSection } from "../../types/sections";
 import type { MediaItem } from "@/types/references";
 import { isEmbeddedDataImage, isImageLikeUrl } from "@/lib/media/imageUrlUtils";
+import { PageStyleBackgroundHelp } from "./PageStyleBackgroundHelp";
+import { PageStyleFullPreviewModal } from "./PageStyleFullPreviewModal";
+import {
+  derivePageStyleEditorState,
+  getBackgroundPreviewStyles,
+  getImageUrlFromPastedContent,
+  readClipboardImageAsDataUrl
+} from "./pageStyleSectionEditorUtils";
 
 interface PageStyleSectionEditorProps {
   section: EditableSection;
@@ -12,59 +20,6 @@ interface PageStyleSectionEditorProps {
   mediaTotal: number;
   mediaLimit: number;
 }
-
-function getImageUrlFromPastedContent(
-  text: string,
-  html: string
-): string | undefined {
-  const htmlMatch = html.match(/<img[^>]+src=["']([^"']+)["']/i);
-  if (htmlMatch?.[1]) {
-    return htmlMatch[1].trim();
-  }
-
-  const textMatch = text.match(
-    /data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=\s]+|https?:\/\/[^\s"')]+|\/[^\s"')]+/i
-  );
-  if (textMatch?.[0]) {
-    return textMatch[0].trim();
-  }
-
-  return undefined;
-}
-
-function isSupportedBackgroundImageValue(value: string): boolean {
-  const raw = value.trim();
-  if (!raw) return false;
-  if (
-    /^data:image\/(png|jpe?g|webp|gif|bmp|avif);base64,[a-z0-9+/=\s]+$/i.test(
-      raw
-    )
-  ) {
-    return raw.length <= 2_500_000;
-  }
-  if (raw.startsWith("/")) return true;
-  return /^https?:\/\//i.test(raw);
-}
-
-function readClipboardImageAsDataUrl(
-  items: DataTransferItemList
-): Promise<string | undefined> {
-  const imageItem = Array.from(items).find(item =>
-    item.type.toLowerCase().startsWith("image/")
-  );
-  const file = imageItem?.getAsFile();
-  if (!file) return Promise.resolve(undefined);
-
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      resolve(typeof reader.result === "string" ? reader.result : undefined);
-    };
-    reader.onerror = () => resolve(undefined);
-    reader.readAsDataURL(file);
-  });
-}
-
 const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
   section,
   updateProps,
@@ -74,78 +29,33 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
   mediaLimit
 }) => {
   const props = (section.props || {}) as Record<string, unknown>;
-  const backgroundMode =
-    props.backgroundMode === "color" ||
-    props.backgroundMode === "image" ||
-    props.backgroundMode === "both"
-      ? String(props.backgroundMode)
-      : "both";
-  const backgroundImageUrl =
-    typeof props.backgroundImageUrl === "string"
-      ? props.backgroundImageUrl
-      : "";
-  const backgroundImageRenderMode =
-    props.backgroundImageRenderMode === "cover" ||
-    props.backgroundImageRenderMode === "original" ||
-    props.backgroundImageRenderMode === "tile"
-      ? String(props.backgroundImageRenderMode)
-      : "cover";
-  const backgroundColor =
-    typeof props.backgroundColor === "string"
-      ? props.backgroundColor
-      : "#f8fafc";
-  const imageCandidates = libraryMedia.filter(item => isImageLikeUrl(item.url));
-  const imageModeEnabled =
-    backgroundMode === "image" || backgroundMode === "both";
-  const hasImageValue = backgroundImageUrl.trim().length > 0;
-  const imageValueValid = isSupportedBackgroundImageValue(backgroundImageUrl);
-  const isDataImageValue = /^data:image\//i.test(backgroundImageUrl.trim());
-  const normalizedCurrentImageUrl = backgroundImageUrl.trim();
-  const hasCurrentImageInCandidates = imageCandidates.some(
-    item => item.url === normalizedCurrentImageUrl
-  );
-  const imageCandidatesWithCurrent =
-    imageValueValid &&
-    isImageLikeUrl(normalizedCurrentImageUrl) &&
-    normalizedCurrentImageUrl.length > 0 &&
-    !hasCurrentImageInCandidates
-      ? [
-          {
-            url: normalizedCurrentImageUrl,
-            label: isEmbeddedDataImage(normalizedCurrentImageUrl)
-              ? "Current page · data:image;base64,..."
-              : normalizedCurrentImageUrl.length > 84
-                ? `Current page · ${normalizedCurrentImageUrl.slice(0, 81)}...`
-                : `Current page · ${normalizedCurrentImageUrl}`
-          },
-          ...imageCandidates
-        ]
-      : imageCandidates;
-  const backgroundImageDimPercent =
-    typeof props.backgroundImageDimPercent === "number"
-      ? props.backgroundImageDimPercent
-      : 0;
-  const previewRepeat =
-    backgroundImageRenderMode === "tile" ? "repeat" : "no-repeat";
-  const previewSize = backgroundImageRenderMode === "cover" ? "cover" : "auto";
-  const previewPosition =
-    backgroundImageRenderMode === "cover" ? "center" : "top left";
-  const previewDimAlpha = Number((backgroundImageDimPercent / 100).toFixed(2));
-  const escapedPreviewUrl = backgroundImageUrl.replace(/"/g, '\\"');
-  const previewBackgroundImage =
-    backgroundImageDimPercent > 0
-      ? `linear-gradient(rgba(255, 255, 255, ${previewDimAlpha}), rgba(255, 255, 255, ${previewDimAlpha})), url("${escapedPreviewUrl}")`
-      : `url("${escapedPreviewUrl}")`;
-  const previewBackgroundRepeat =
-    backgroundImageDimPercent > 0
-      ? `no-repeat, ${previewRepeat}`
-      : previewRepeat;
-  const previewBackgroundSize =
-    backgroundImageDimPercent > 0 ? `cover, ${previewSize}` : previewSize;
-  const previewBackgroundPosition =
-    backgroundImageDimPercent > 0
-      ? `center, ${previewPosition}`
-      : previewPosition;
+  const {
+    backgroundMode,
+    backgroundImageUrl,
+    backgroundImageRenderMode,
+    backgroundColor,
+    imageCandidatesWithCurrent,
+    imageModeEnabled,
+    hasImageValue,
+    imageValueValid,
+    isDataImageValue,
+    backgroundImageDimPercent
+  } = derivePageStyleEditorState({
+    props,
+    libraryMedia,
+    isImageLikeUrl,
+    isEmbeddedDataImage
+  });
+  const {
+    previewBackgroundImage,
+    previewBackgroundRepeat,
+    previewBackgroundSize,
+    previewBackgroundPosition
+  } = getBackgroundPreviewStyles({
+    backgroundImageRenderMode,
+    backgroundImageDimPercent,
+    backgroundImageUrl
+  });
   const [showFullPreview, setShowFullPreview] = React.useState(false);
 
   const handleBackgroundPaste = async (
@@ -174,30 +84,9 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
       backgroundImageUrl: extracted
     });
   };
-
-  const handleOpenFullView = () => {
-    const raw = backgroundImageUrl.trim();
-    if (!raw) {
-      return;
-    }
-    setShowFullPreview(true);
-  };
-
-  const handleNumberInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    if (e.currentTarget.value === "0") {
-      e.currentTarget.select();
-    }
-  };
-
   return (
     <div className="space-y-1">
-      <div className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 text-[10px] text-blue-800">
-        <p className="font-medium">Background setup (quick steps)</p>
-        <p>
-          1) Set mode to Image only or Both. 2) Copy an image and paste (Cmd+V)
-          into Background image URL, or pick one from media library. 3) Save.
-        </p>
-      </div>
+      <PageStyleBackgroundHelp />
       <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
         Background mode
         <select
@@ -246,7 +135,7 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
         {!isLibraryLoading && mediaLimit > 0 ? (
           <span className="ml-1 text-zinc-500">
             · {imageCandidatesWithCurrent.length} available
-            {mediaTotal > imageCandidates.length
+            {mediaTotal > imageCandidatesWithCurrent.length
               ? ` (of ${mediaTotal} in library)`
               : ""}
           </span>
@@ -296,7 +185,11 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
             <p className="text-[10px] text-zinc-600">Image preview</p>
             <button
               type="button"
-              onClick={handleOpenFullView}
+              onClick={() => {
+                const raw = backgroundImageUrl.trim();
+                if (!raw) return;
+                setShowFullPreview(true);
+              }}
               className="rounded border border-zinc-300 px-2 py-0.5 text-[10px] text-zinc-700 hover:bg-zinc-100"
             >
               Full view
@@ -332,8 +225,10 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
             {imageCandidatesWithCurrent.map(item => (
               <option key={item.url} value={item.url}>
                 {isEmbeddedDataImage(item.url)
-                  ? `[Embedded] ${item.label}`
-                  : item.label}
+                  ? `[Embedded] ${"label" in item ? item.label : item.url}`
+                  : "label" in item
+                    ? item.label
+                    : item.url}
               </option>
             ))}
           </select>
@@ -352,7 +247,11 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
           disabled={!imageModeEnabled}
           value={backgroundImageDimPercent}
-          onFocus={handleNumberInputFocus}
+          onFocus={e => {
+            if (e.currentTarget.value === "0") {
+              e.currentTarget.select();
+            }
+          }}
           onChange={e =>
             updateProps({
               ...props,
@@ -364,29 +263,15 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           Higher value makes the image lighter.
         </p>
       </label>
-      {showFullPreview && backgroundImageUrl.trim().length > 0 ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-          <button
-            type="button"
-            onClick={() => setShowFullPreview(false)}
-            className="absolute right-4 top-4 rounded border border-white/30 bg-black/40 px-3 py-1 text-xs text-white hover:bg-black/60"
-          >
-            Close
-          </button>
-          <div
-            role="img"
-            aria-label="Full preview"
-            className="h-full w-full"
-            style={{
-              backgroundColor,
-              backgroundImage: previewBackgroundImage,
-              backgroundRepeat: previewBackgroundRepeat,
-              backgroundPosition: previewBackgroundPosition,
-              backgroundSize: previewBackgroundSize
-            }}
-          />
-        </div>
-      ) : null}
+      <PageStyleFullPreviewModal
+        open={showFullPreview && backgroundImageUrl.trim().length > 0}
+        onClose={() => setShowFullPreview(false)}
+        backgroundColor={backgroundColor}
+        previewBackgroundImage={previewBackgroundImage}
+        previewBackgroundRepeat={previewBackgroundRepeat}
+        previewBackgroundPosition={previewBackgroundPosition}
+        previewBackgroundSize={previewBackgroundSize}
+      />
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
           Brand name (header slot)
@@ -448,7 +333,11 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
               ? props.brandLogoHeightPx
               : 32
           }
-          onFocus={handleNumberInputFocus}
+          onFocus={e => {
+            if (e.currentTarget.value === "0") {
+              e.currentTarget.select();
+            }
+          }}
           onChange={e =>
             updateProps({
               ...props,
@@ -495,7 +384,11 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
             value={
               typeof props.sectionGapPx === "number" ? props.sectionGapPx : 32
             }
-            onFocus={handleNumberInputFocus}
+            onFocus={e => {
+              if (e.currentTarget.value === "0") {
+                e.currentTarget.select();
+              }
+            }}
             onChange={e =>
               updateProps({
                 ...props,
@@ -566,7 +459,11 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
           value={
             typeof props.menuFontSizePx === "number" ? props.menuFontSizePx : 14
           }
-          onFocus={handleNumberInputFocus}
+          onFocus={e => {
+            if (e.currentTarget.value === "0") {
+              e.currentTarget.select();
+            }
+          }}
           onChange={e =>
             updateProps({
               ...props,
@@ -601,5 +498,4 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
     </div>
   );
 };
-
 export default PageStyleSectionEditor;
