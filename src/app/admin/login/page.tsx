@@ -1,39 +1,5 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import {
-  SESSION_COOKIE_NAME,
-  buildSessionCookieValue,
-  isAdminAuthEnabled,
-  resolveRoleForPassword
-} from "@/lib/adminAuth";
-
-async function login(formData: FormData) {
-  "use server";
-
-  const password = String(formData.get("password") ?? "");
-  const nextPathRaw = String(formData.get("next") ?? "/admin");
-  const nextPath = nextPathRaw.startsWith("/admin") ? nextPathRaw : "/admin";
-
-  if (!isAdminAuthEnabled()) {
-    redirect(nextPath);
-  }
-
-  const role = resolveRoleForPassword(password);
-  if (!role) {
-    redirect(`/admin/login?error=1&next=${encodeURIComponent(nextPath)}`);
-  }
-
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, buildSessionCookieValue(role), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 8
-  });
-
-  redirect(nextPath);
-}
+import { isAdminAuthEnabled, resolveRoleForPassword } from "@/lib/adminAuth";
 
 export default async function AdminLogin({
   searchParams
@@ -65,7 +31,7 @@ export default async function AdminLogin({
         </p>
       ) : null}
 
-      <form action={login} className="space-y-3">
+      <form method="post" action="/admin/login/submit" className="space-y-3">
         <input type="hidden" name="next" value={nextPath} />
 
         <div className="space-y-1">

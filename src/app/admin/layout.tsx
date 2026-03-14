@@ -1,8 +1,5 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { SESSION_COOKIE_NAME } from "@/lib/adminAuth";
 import { getSiteSettings } from "@/lib/siteSettings";
 
 function SettingsGearIcon({ className }: { className?: string }) {
@@ -22,14 +19,6 @@ function SettingsGearIcon({ className }: { className?: string }) {
       <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   );
-}
-
-async function logout() {
-  "use server";
-
-  const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE_NAME);
-  redirect("/admin/login");
 }
 
 export default async function AdminLayout({
@@ -72,7 +61,7 @@ export default async function AdminLayout({
               <SettingsGearIcon className="h-4 w-4" />
               <span>Settings</span>
             </Link>
-            <form action={logout}>
+            <form method="post" action="/admin/logout">
               <button
                 type="submit"
                 className="whitespace-nowrap hover:text-zinc-900"
