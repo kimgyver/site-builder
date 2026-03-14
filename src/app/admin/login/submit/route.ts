@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import {
   SESSION_COOKIE_NAME,
@@ -14,7 +13,7 @@ export async function POST(request: Request) {
   const nextPath = nextPathRaw.startsWith("/admin") ? nextPathRaw : "/admin";
 
   if (!isAdminAuthEnabled()) {
-    return NextResponse.redirect(new URL(nextPath, request.url));
+    return NextResponse.redirect(new URL(nextPath, request.url), 303);
   }
 
   const role = resolveRoleForPassword(password);
@@ -22,12 +21,11 @@ export async function POST(request: Request) {
     const redirectUrl = new URL("/admin/login", request.url);
     redirectUrl.searchParams.set("error", "1");
     redirectUrl.searchParams.set("next", nextPath);
-    return NextResponse.redirect(redirectUrl);
+    return NextResponse.redirect(redirectUrl, 303);
   }
 
-  const response = NextResponse.redirect(new URL(nextPath, request.url));
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, buildSessionCookieValue(role), {
+  const response = NextResponse.redirect(new URL(nextPath, request.url), 303);
+  response.cookies.set(SESSION_COOKIE_NAME, buildSessionCookieValue(role), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
