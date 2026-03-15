@@ -1,5 +1,11 @@
 "use client";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties
+} from "react";
 import SlashMenu from "@/tiptap/SlashMenu";
 import { getSlashCommands } from "@/tiptap/slashCommands";
 import { Toast } from "@/components/Toast";
@@ -69,7 +75,8 @@ export function SectionBuilder({
     const props = (pageStyleSection?.props ?? {}) as Record<string, unknown>;
 
     const colorValue = (value: unknown) =>
-      typeof value === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value)
+      typeof value === "string" &&
+      /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value)
         ? value
         : undefined;
     const pxValue = (value: unknown, min: number, max: number) => {
@@ -93,18 +100,22 @@ export function SectionBuilder({
     const quotePaddingX = pxValue(props.quotePaddingXPx, 0, 36);
 
     if (quoteBg) (style as Record<string, string>)["--rich-quote-bg"] = quoteBg;
-    if (quoteBorder) (style as Record<string, string>)["--rich-quote-border"] = quoteBorder;
+    if (quoteBorder)
+      (style as Record<string, string>)["--rich-quote-border"] = quoteBorder;
     if (quoteBorderWidth) {
-      (style as Record<string, string>)["--rich-quote-border-width"] = quoteBorderWidth;
+      (style as Record<string, string>)["--rich-quote-border-width"] =
+        quoteBorderWidth;
     }
     if (quoteRadius) {
       (style as Record<string, string>)["--rich-quote-radius"] = quoteRadius;
     }
     if (quotePaddingY) {
-      (style as Record<string, string>)["--rich-quote-padding-y"] = quotePaddingY;
+      (style as Record<string, string>)["--rich-quote-padding-y"] =
+        quotePaddingY;
     }
     if (quotePaddingX) {
-      (style as Record<string, string>)["--rich-quote-padding-x"] = quotePaddingX;
+      (style as Record<string, string>)["--rich-quote-padding-x"] =
+        quotePaddingX;
     }
 
     return style;

@@ -109,21 +109,13 @@ export function createEditorActions({
     setCellBorderNormalCommand(editor, getSelectedTableCellPositions());
 
   const setCellBorderColor = (color: string) =>
-    setCellBorderColorCommand(
-      editor,
-      color,
-      getSelectedTableCellPositions()
-    );
+    setCellBorderColorCommand(editor, color, getSelectedTableCellPositions());
 
   const clearCellBorderColor = () =>
     clearCellBorderColorCommand(editor, getSelectedTableCellPositions());
 
   const setCellBorderWidth = (width: number) =>
-    setCellBorderWidthCommand(
-      editor,
-      width,
-      getSelectedTableCellPositions()
-    );
+    setCellBorderWidthCommand(editor, width, getSelectedTableCellPositions());
 
   const insertImage = () => insertImagePrompt(editor);
 
