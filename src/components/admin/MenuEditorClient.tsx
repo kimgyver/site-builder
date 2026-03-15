@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 
 type MenuItemInput = {
   label: string;
@@ -43,7 +44,7 @@ export default function MenuEditorClient({
   canEdit: boolean;
 }) {
   const [name, setName] = useState(initialName);
-  const [state, formAction] = useFormState<SaveState, FormData>(saveAction, {
+  const [state, formAction] = useActionState<SaveState, FormData>(saveAction, {
     status: "idle"
   });
   const [items, setItems] = useState<MenuItemInput[]>(

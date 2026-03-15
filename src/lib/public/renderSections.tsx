@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import React, { type ReactNode } from "react";
 import type { FaqItem, SectionProps } from "@/types/sections";
 import {
   getMapsEmbedSrc,
@@ -22,6 +22,28 @@ export type RenderableSection = {
   enabled?: boolean | null;
   props?: unknown;
 };
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function toRenderableHtml(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(trimmed);
+  if (looksLikeHtml) return value;
+
+  return trimmed
+    .split(/\n\s*\n/)
+    .map(block => `<p>${escapeHtml(block).replace(/\n/g, "<br />")}</p>`)
+    .join("");
+}
 
 export function renderSection(
   section: RenderableSection,
@@ -86,76 +108,6 @@ export function renderSection(
         <h2 className="text-3xl font-semibold tracking-tight">
           {title || pageTitle}
         </h2>
-        {subtitle ? (
-          <p
-            className="mt-3 max-w-prose text-sm text-zinc-300"
-            style={heroSubtitleColor ? { color: heroSubtitleColor } : undefined}
-          >
-            {subtitle}
-          </p>
-        ) : null}
-        {(primaryCtaLabel && primaryCtaHref) ||
-        (secondaryCtaLabel && secondaryCtaHref) ? (
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            {primaryCtaLabel && primaryCtaHref ? (
-              <a
-                href={primaryCtaHref}
-                className="inline-flex rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-zinc-900"
-                target={primaryOpenInNewTab ? "_blank" : undefined}
-                rel={primaryOpenInNewTab ? "noopener noreferrer" : undefined}
-              >
-                {primaryCtaLabel}
-              </a>
-            ) : null}
-            {secondaryCtaLabel && secondaryCtaHref ? (
-              <a
-                href={secondaryCtaHref}
-                className="inline-flex rounded-md border border-white/70 px-3 py-1.5 text-xs font-medium text-white"
-                target={secondaryOpenInNewTab ? "_blank" : undefined}
-                rel={secondaryOpenInNewTab ? "noopener noreferrer" : undefined}
-              >
-                {secondaryCtaLabel}
-              </a>
-            ) : null}
-          </div>
-        ) : null}
-      </section>
-    );
-  }
-
-  if (section.type === "embed") {
-    const provider = props.provider === "maps" ? "maps" : "youtube";
-    const src =
-      provider === "maps"
-        ? getMapsEmbedSrc(props.url)
-        : getYouTubeEmbedSrc(props.url);
-    if (!src) return null;
-
-    const embedTitle =
-      typeof props.title === "string" && props.title.trim()
-        ? props.title.trim()
-        : provider === "maps"
-          ? "Google Maps"
-          : "YouTube video";
-
-    return (
-      <section key={section.id} className="space-y-2">
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
-          <iframe
-            src={src}
-            title={embedTitle}
-            loading="lazy"
-            referrerPolicy="strict-origin-when-cross-origin"
-            allow={
-              provider === "youtube"
-                ? "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                : undefined
-            }
-            allowFullScreen={provider === "youtube"}
-            className="w-full"
-            style={{ height: 420 }}
-          />
-        </div>
       </section>
     );
   }
@@ -175,24 +127,59 @@ export function renderSection(
   }
 
   if (section.type === "columns") {
-    const leftHtml = typeof props.leftHtml === "string" ? props.leftHtml : "";
+    const leftHtml =
+      typeof props.leftHtml === "string" ? toRenderableHtml(props.leftHtml) : "";
     const rightHtml =
-      typeof props.rightHtml === "string" ? props.rightHtml : "";
+      typeof props.rightHtml === "string"
+        ? toRenderableHtml(props.rightHtml)
+        : "";
+    const thirdHtml =
+      typeof props.thirdHtml === "string"
+        ? toRenderableHtml(props.thirdHtml)
+        : "";
+    const desktopColumns = props.desktopColumns === 3 ? 3 : 2;
     const ratio =
-      props.ratio === "2:1" || props.ratio === "1:2" ? props.ratio : "1:1";
+      props.ratio === "2:1" ||
+      props.ratio === "1:2" ||
+      props.ratio === "2:1:1" ||
+      props.ratio === "1:2:1" ||
+      props.ratio === "1:1:2"
+        ? props.ratio
+        : desktopColumns === 3
+          ? "1:1:1"
+          : "1:1";
+    const mobileMode =
+      props.mobileMode === "customHtml" ? "customHtml" : "stack";
+    const mobileHtml =
+      typeof props.mobileHtml === "string"
+        ? toRenderableHtml(props.mobileHtml)
+        : "";
     const reverseOnMobile = props.reverseOnMobile === true;
 
     const gridClass =
-      ratio === "2:1"
-        ? "lg:grid-cols-[2fr_1fr]"
-        : ratio === "1:2"
-          ? "lg:grid-cols-[1fr_2fr]"
-          : "lg:grid-cols-2";
+      desktopColumns === 3
+        ? ratio === "2:1:1"
+          ? "lg:grid-cols-[2fr_1fr_1fr]"
+          : ratio === "1:2:1"
+            ? "lg:grid-cols-[1fr_2fr_1fr]"
+            : ratio === "1:1:2"
+              ? "lg:grid-cols-[1fr_1fr_2fr]"
+              : "lg:grid-cols-3"
+        : ratio === "2:1"
+          ? "lg:grid-cols-[2fr_1fr]"
+          : ratio === "1:2"
+            ? "lg:grid-cols-[1fr_2fr]"
+            : "lg:grid-cols-2";
 
-    return (
+    const reverseClass =
+      mobileMode === "stack" && reverseOnMobile
+        ? "[&>*:first-child]:order-2 [&>*:nth-child(2)]:order-1 lg:[&>*:first-child]:order-1 lg:[&>*:nth-child(2)]:order-2"
+        : "";
+
+    const desktopSection = (
       <section
-        key={section.id}
-        className={`grid grid-cols-1 gap-4 ${gridClass} ${reverseOnMobile ? "[&>*:first-child]:order-2 [&>*:last-child]:order-1 lg:[&>*:first-child]:order-1 lg:[&>*:last-child]:order-2" : ""}`}
+        key={`${section.id}-desktop`}
+        className={`grid grid-cols-1 gap-4 ${gridClass} ${reverseClass} ${mobileMode === "customHtml" ? "hidden lg:grid" : ""}`}
       >
         <div
           className="rich-content max-w-none"
@@ -202,8 +189,29 @@ export function renderSection(
           className="rich-content max-w-none"
           dangerouslySetInnerHTML={{ __html: rightHtml }}
         />
+        {desktopColumns === 3 ? (
+          <div
+            className="rich-content max-w-none"
+            dangerouslySetInnerHTML={{ __html: thirdHtml }}
+          />
+        ) : null}
       </section>
     );
+
+    if (mobileMode === "customHtml" && mobileHtml.trim()) {
+      return (
+        <div key={section.id}>
+          <section
+            key={`${section.id}-mobile`}
+            className="rich-content max-w-none lg:hidden"
+            dangerouslySetInnerHTML={{ __html: mobileHtml }}
+          />
+          {desktopSection}
+        </div>
+      );
+    }
+
+    return desktopSection;
   }
 
   if (section.type === "image") {
@@ -285,34 +293,6 @@ export function renderSection(
           </figcaption>
         ) : null}
       </figure>
-    );
-  }
-
-  if (section.type === "faq") {
-    const items = Array.isArray(props.items) ? (props.items as FaqItem[]) : [];
-    if (!items.length) return null;
-
-    return (
-      <section key={section.id} className="space-y-4">
-        <h2 className="text-xl font-semibold tracking-tight">
-          {title || "FAQ"}
-        </h2>
-        <dl className="space-y-3">
-          {items.map((item, index) => (
-            <div
-              key={index}
-              className="rounded-md border border-zinc-200 bg-white px-4 py-3"
-            >
-              <dt className="text-sm font-medium text-zinc-900">
-                {item.question ?? ""}
-              </dt>
-              <dd className="mt-1 text-sm text-zinc-600">
-                {item.answer ?? ""}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
     );
   }
 

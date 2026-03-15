@@ -61,20 +61,35 @@ export const SECTION_CATALOG: Record<SectionType, SectionMeta> = {
   columns: {
     type: "columns",
     label: "Columns",
-    description: "Two-column content layout",
+    description: "Responsive multi-column content layout",
     icon: "🧱",
     keywords: ["columns", "two-column", "grid", "layout"],
     createDefaultProps: () => ({
       leftHtml: "<p>Left column content</p>",
       rightHtml: "<p>Right column content</p>",
+      thirdHtml: "<p>Third column content</p>",
+      desktopColumns: 2,
       ratio: "1:1",
-      reverseOnMobile: false
+      reverseOnMobile: false,
+      mobileMode: "stack",
+      mobileHtml: "<p>Mobile layout content</p>"
     }),
     convertProps: from => ({
       leftHtml: (from.leftHtml as string) ?? "<p>Left column content</p>",
       rightHtml: (from.rightHtml as string) ?? "<p>Right column content</p>",
-      ratio: from.ratio === "2:1" || from.ratio === "1:2" ? from.ratio : "1:1",
-      reverseOnMobile: from.reverseOnMobile === true
+      thirdHtml: (from.thirdHtml as string) ?? "<p>Third column content</p>",
+      desktopColumns: from.desktopColumns === 3 ? 3 : 2,
+      ratio:
+        from.ratio === "2:1" ||
+        from.ratio === "1:2" ||
+        from.ratio === "2:1:1" ||
+        from.ratio === "1:2:1" ||
+        from.ratio === "1:1:2"
+          ? from.ratio
+          : "1:1",
+      reverseOnMobile: from.reverseOnMobile === true,
+      mobileMode: from.mobileMode === "customHtml" ? "customHtml" : "stack",
+      mobileHtml: (from.mobileHtml as string) ?? "<p>Mobile layout content</p>"
     })
   },
   rawHtml: {
