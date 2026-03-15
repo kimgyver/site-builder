@@ -40,7 +40,8 @@ export default function AdminPageClientWrapper({
   saveSections,
   updatePage,
   deletePage,
-  restoreRevision
+  restoreRevision,
+  listPageRevisions
 }: {
   page: PageWithSectionsAndRevisions;
   globalGroups: Array<{
@@ -63,6 +64,16 @@ export default function AdminPageClientWrapper({
   restoreRevision: (
     formData: FormData
   ) => Promise<{ ok?: boolean; error?: string; updatedAt?: string } | unknown>;
+  listPageRevisions: (args: {
+    pageId: string;
+    skip?: number;
+    take?: number;
+  }) => Promise<{
+    ok: boolean;
+    revisions: Array<PageWithSectionsAndRevisions["revisions"][number]>;
+    hasMore: boolean;
+    error?: string;
+  }>;
 }) {
   const router = useRouter();
   const [sectionsExpectedUpdatedAt, setSectionsExpectedUpdatedAt] = useState(
@@ -81,7 +92,8 @@ export default function AdminPageClientWrapper({
   } = usePagedRevisions<PageWithSectionsAndRevisions["revisions"][number]>({
     pageId: page.id,
     initialRevisions: page.revisions,
-    pageSize: REVISION_PAGE_SIZE
+    pageSize: REVISION_PAGE_SIZE,
+    listPageRevisions
   });
   const handleShowToast = (message: string) =>
     setToast({ show: true, message });

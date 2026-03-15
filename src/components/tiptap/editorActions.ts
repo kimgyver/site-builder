@@ -1,5 +1,4 @@
 import type { Editor } from "@tiptap/core";
-import type { MutableRefObject } from "react";
 import {
   clearCellBackgroundColor as clearCellBackgroundColorCommand,
   clearCellBorderColor as clearCellBorderColorCommand,
@@ -25,8 +24,8 @@ import { applyTextPresetToEditor } from "./textPreset";
 type CreateEditorActionsParams = {
   editor: Editor;
   selectedImagePos: number | null;
-  lastTextSelectionRef: MutableRefObject<{ from: number; to: number } | null>;
-  lastSelectedTableCellPositionsRef: MutableRefObject<number[] | null>;
+  getLastTextSelection: () => { from: number; to: number } | null;
+  getSelectedTableCellPositions: () => number[] | null;
   setParagraphStyleValue: (value: "body" | "lead" | "quote") => void;
   setParagraphSpacingValue: (value: "compact" | "normal" | "relaxed") => void;
   setFontFamilyValue: (value: string) => void;
@@ -38,8 +37,8 @@ type CreateEditorActionsParams = {
 export function createEditorActions({
   editor,
   selectedImagePos,
-  lastTextSelectionRef,
-  lastSelectedTableCellPositionsRef,
+  getLastTextSelection,
+  getSelectedTableCellPositions,
   setParagraphStyleValue,
   setParagraphSpacingValue,
   setFontFamilyValue,
@@ -50,7 +49,7 @@ export function createEditorActions({
   const setOrUnsetLink = () => setOrUnsetLinkCommand(editor);
 
   const setTextColor = (color: string) =>
-    setTextColorCommand(editor, lastTextSelectionRef.current, color);
+    setTextColorCommand(editor, getLastTextSelection(), color);
 
   const setParagraphStyle = (style: "body" | "lead" | "quote") => {
     editor
@@ -82,60 +81,48 @@ export function createEditorActions({
   };
 
   const setFontFamily = (fontFamily: string) =>
-    setFontFamilyCommand(editor, lastTextSelectionRef.current, fontFamily);
+    setFontFamilyCommand(editor, getLastTextSelection(), fontFamily);
 
   const clearFontFamily = () =>
-    clearFontFamilyCommand(editor, lastTextSelectionRef.current);
+    clearFontFamilyCommand(editor, getLastTextSelection());
 
   const setFontSize = (fontSize: string) =>
-    setFontSizeCommand(editor, lastTextSelectionRef.current, fontSize);
+    setFontSizeCommand(editor, getLastTextSelection(), fontSize);
 
   const setHighlightColor = (color: string) =>
-    setHighlightColorCommand(editor, lastTextSelectionRef.current, color);
+    setHighlightColorCommand(editor, getLastTextSelection(), color);
 
   const setCellBackgroundColor = (color: string) =>
     setCellBackgroundColorCommand(
       editor,
       color,
-      lastSelectedTableCellPositionsRef.current
+      getSelectedTableCellPositions()
     );
 
   const clearCellBackgroundColor = () =>
-    clearCellBackgroundColorCommand(
-      editor,
-      lastSelectedTableCellPositionsRef.current
-    );
+    clearCellBackgroundColorCommand(editor, getSelectedTableCellPositions());
 
   const setCellBorderTransparent = () =>
-    setCellBorderTransparentCommand(
-      editor,
-      lastSelectedTableCellPositionsRef.current
-    );
+    setCellBorderTransparentCommand(editor, getSelectedTableCellPositions());
 
   const setCellBorderNormal = () =>
-    setCellBorderNormalCommand(
-      editor,
-      lastSelectedTableCellPositionsRef.current
-    );
+    setCellBorderNormalCommand(editor, getSelectedTableCellPositions());
 
   const setCellBorderColor = (color: string) =>
     setCellBorderColorCommand(
       editor,
       color,
-      lastSelectedTableCellPositionsRef.current
+      getSelectedTableCellPositions()
     );
 
   const clearCellBorderColor = () =>
-    clearCellBorderColorCommand(
-      editor,
-      lastSelectedTableCellPositionsRef.current
-    );
+    clearCellBorderColorCommand(editor, getSelectedTableCellPositions());
 
   const setCellBorderWidth = (width: number) =>
     setCellBorderWidthCommand(
       editor,
       width,
-      lastSelectedTableCellPositionsRef.current
+      getSelectedTableCellPositions()
     );
 
   const insertImage = () => insertImagePrompt(editor);

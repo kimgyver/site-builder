@@ -9,7 +9,6 @@ interface AccordionSectionEditorProps {
 
 const AccordionSectionEditor: React.FC<AccordionSectionEditorProps> = ({
   section,
-  patchProps,
   updateProps
 }) => {
   const props = (section.props || {}) as Record<string, unknown>;

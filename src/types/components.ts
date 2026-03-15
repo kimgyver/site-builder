@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { CSSProperties } from "react";
 import type { JSONContent } from "@tiptap/core";
 import type { EditableSection } from "@/types/sections";
 
@@ -9,6 +10,7 @@ export interface TiptapEditorProps {
   onChangeHtml?: (html: string, doc: JSONContent) => void;
   className?: string;
   editorClassName?: string;
+  editorContainerStyle?: CSSProperties;
 }
 
 export interface RichTextEditorProps {

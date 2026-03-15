@@ -114,19 +114,43 @@ input:disabled,
   margin-bottom: 1.25rem;
 }
 
-.rich-content :where(p[data-p-style="quote"]) {
+.rich-content :where(p[data-p-style="quote"], blockquote) {
   font-size: 1.1rem;
   line-height: 1.75;
-  color: #1f2937;
-  border-left: 3px solid #cbd5e1;
-  padding-left: 0.85rem;
+  color: var(--rich-quote-text, #1f2937);
+  background-color: var(--rich-quote-bg, #f3f4f6);
+  border-left: var(--rich-quote-border-width, 3px) solid
+    var(--rich-quote-border, #38bdf8);
+  border-radius: var(--rich-quote-radius, 0);
+  padding-top: var(--rich-quote-padding-y, 0.55rem);
+  padding-right: var(--rich-quote-padding-x, 0.85rem);
+  padding-bottom: var(--rich-quote-padding-y, 0.55rem);
+  padding-left: var(--rich-quote-padding-x, 0.85rem);
   margin-top: 0.9rem;
   margin-bottom: 0;
+}
+
+.rich-content :where(blockquote p) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.rich-content :where(blockquote p + p) {
+  margin-top: 0.6rem;
 }
 
 /* Keep quote paragraphs visually grouped when user presses Enter in quote. */
 .rich-content :where(p[data-p-style="quote"] + p[data-p-style="quote"]) {
   margin-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* When a quote paragraph is followed by another quote paragraph,
+   flatten its bottom corners so the left bar reads as one continuous block. */
+.rich-content :where(p[data-p-style="quote"]:has(+ p[data-p-style="quote"])) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 /* Preserve comfortable gap when quote block is followed by a normal paragraph. */

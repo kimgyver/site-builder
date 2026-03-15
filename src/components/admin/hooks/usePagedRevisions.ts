@@ -7,11 +7,22 @@ type RevisionRecord = {
 export function usePagedRevisions<TRevision extends RevisionRecord>({
   pageId,
   initialRevisions,
-  pageSize
+  pageSize,
+  listPageRevisions
 }: {
   pageId: string;
   initialRevisions: TRevision[];
   pageSize: number;
+  listPageRevisions: (args: {
+    pageId: string;
+    skip?: number;
+    take?: number;
+  }) => Promise<{
+    ok: boolean;
+    revisions: TRevision[];
+    hasMore: boolean;
+    error?: string;
+  }>;
 }) {
   const [revisions, setRevisions] = useState<TRevision[]>(initialRevisions);
   const [hasMoreRevisions, setHasMoreRevisions] = useState(
@@ -22,23 +33,8 @@ export function usePagedRevisions<TRevision extends RevisionRecord>({
 
   const fetchRevisions = useCallback(
     async ({ skip, take }: { skip: number; take: number }) => {
-      const response = await fetch(
-        `/api/admin/pages/${pageId}/revisions?skip=${skip}&take=${take}`,
-        {
-          cache: "no-store",
-          credentials: "same-origin"
-        }
-      );
-      if (!response.ok) {
-        return null;
-      }
-
-      const payload = (await response.json()) as {
-        revisions?: unknown;
-        hasMore?: unknown;
-      };
-
-      if (!Array.isArray(payload.revisions)) {
+      const payload = await listPageRevisions({ pageId, skip, take });
+      if (!payload.ok || !Array.isArray(payload.revisions)) {
         return null;
       }
 
@@ -50,7 +46,7 @@ export function usePagedRevisions<TRevision extends RevisionRecord>({
             : (payload.revisions as unknown[]).length >= take
       };
     },
-    [pageId]
+    [listPageRevisions, pageId]
   );
 
   const refreshRecentRevisions = useCallback(async () => {

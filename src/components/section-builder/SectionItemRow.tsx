@@ -11,6 +11,7 @@ import { TextSectionEditor } from "../section-editors/TextSectionEditor";
 import { SECTION_CATALOG } from "@/lib/sectionCatalog";
 import type { EditableSection } from "@/types/sections";
 import type { MediaItem, PageReferenceItem } from "@/types/references";
+import type { CSSProperties } from "react";
 
 type SectionItemRowProps = {
   section: EditableSection;
@@ -37,6 +38,7 @@ type SectionItemRowProps = {
     total: number;
     limit: number;
   };
+  richContentStyle?: CSSProperties;
 };
 
 export function SectionItemRow({
@@ -57,7 +59,8 @@ export function SectionItemRow({
   libraryMedia,
   libraryPages,
   isReferenceLibraryLoading,
-  libraryMediaMeta
+  libraryMediaMeta,
+  richContentStyle
 }: SectionItemRowProps) {
   const sectionProps = (section.props || {}) as Record<string, unknown>;
   const isTextSection = section.type === "text" || section.type === "richText";
@@ -136,6 +139,7 @@ export function SectionItemRow({
                 props={sectionProps}
                 updateProps={nextProps => updateProps(sectionIndex, nextProps)}
                 type={section.type}
+                richContentStyle={richContentStyle}
               />
             </div>
           ) : section.type === "rawHtml" ? (

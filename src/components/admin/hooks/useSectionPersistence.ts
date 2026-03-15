@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { EditableSection } from "@/types/sections";
 import {
   buildSectionsSignature,
-  putSectionsRequest,
   saveSectionsViaAction,
   toUserError
 } from "@/components/admin/sections/sectionPersistenceUtils";
@@ -45,16 +44,6 @@ export function useSectionPersistence({
   const firstRenderRef = useRef(true);
   const lastInitialSectionsJsonRef = useRef<string>(
     buildSectionsSignature(initialSections)
-  );
-
-  const putSections = useCallback(
-    async (args: { sections: EditableSection[]; expectedUpdatedAt: string }) =>
-      putSectionsRequest({
-        pageId,
-        sections: args.sections,
-        expectedUpdatedAt: args.expectedUpdatedAt
-      }),
-    [pageId]
   );
 
   const saveViaServerAction = useCallback(async () => {
@@ -192,27 +181,6 @@ export function useSectionPersistence({
       setIsSaving(true);
       setError(null);
 
-      const result = await putSections({
-        sections,
-        expectedUpdatedAt: expectedUpdatedAtLocal
-      });
-      setIsSaving(false);
-      if (result.ok) {
-        setExpectedUpdatedAtLocal(result.updatedAt);
-        setLastSavedSignature(nextSignature);
-        setAutosaveState("saved");
-        if (onSuccess) onSuccess("manual", result.updatedAt);
-        return;
-      }
-
-      if (result.error === "STALE_PAGE") {
-        setAutosaveState("conflict");
-        setError(
-          "Conflict detected: this page was updated elsewhere. Reload to continue editing."
-        );
-        return;
-      }
-
       try {
         const serverResult = await saveSectionsViaAction({
           action,
@@ -236,6 +204,8 @@ export function useSectionPersistence({
       } catch (err) {
         setAutosaveState("error");
         setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setIsSaving(false);
       }
     },
     [
@@ -245,7 +215,6 @@ export function useSectionPersistence({
       lastSavedSignature,
       onSuccess,
       pageId,
-      putSections,
       readOnly,
       sections
     ]

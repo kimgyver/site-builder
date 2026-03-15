@@ -9,7 +9,6 @@ interface CalloutSectionEditorProps {
 
 const CalloutSectionEditor: React.FC<CalloutSectionEditorProps> = ({
   section,
-  patchProps,
   updateProps
 }) => {
   const props = (section.props || {}) as Record<string, unknown>;

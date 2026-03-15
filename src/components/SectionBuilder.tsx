@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import SlashMenu from "@/tiptap/SlashMenu";
 import { getSlashCommands } from "@/tiptap/slashCommands";
 import { Toast } from "@/components/Toast";
@@ -61,6 +61,54 @@ export function SectionBuilder({
     () => sections.some(section => section.type === "pageStyle"),
     [sections]
   );
+
+  const richContentStyle = useMemo(() => {
+    const pageStyleSection = sections.find(
+      section => section.type === "pageStyle" && section.enabled !== false
+    );
+    const props = (pageStyleSection?.props ?? {}) as Record<string, unknown>;
+
+    const colorValue = (value: unknown) =>
+      typeof value === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value)
+        ? value
+        : undefined;
+    const pxValue = (value: unknown, min: number, max: number) => {
+      const numeric =
+        typeof value === "number"
+          ? value
+          : typeof value === "string"
+            ? Number(value)
+            : NaN;
+      return Number.isFinite(numeric)
+        ? `${Math.min(max, Math.max(min, numeric))}px`
+        : undefined;
+    };
+
+    const style: CSSProperties = {};
+    const quoteBg = colorValue(props.quoteBackgroundColor);
+    const quoteBorder = colorValue(props.quoteBorderColor);
+    const quoteBorderWidth = pxValue(props.quoteBorderWidthPx, 1, 12);
+    const quoteRadius = pxValue(props.quoteBorderRadiusPx, 0, 24);
+    const quotePaddingY = pxValue(props.quotePaddingYPx, 0, 24);
+    const quotePaddingX = pxValue(props.quotePaddingXPx, 0, 36);
+
+    if (quoteBg) (style as Record<string, string>)["--rich-quote-bg"] = quoteBg;
+    if (quoteBorder) (style as Record<string, string>)["--rich-quote-border"] = quoteBorder;
+    if (quoteBorderWidth) {
+      (style as Record<string, string>)["--rich-quote-border-width"] = quoteBorderWidth;
+    }
+    if (quoteRadius) {
+      (style as Record<string, string>)["--rich-quote-radius"] = quoteRadius;
+    }
+    if (quotePaddingY) {
+      (style as Record<string, string>)["--rich-quote-padding-y"] = quotePaddingY;
+    }
+    if (quotePaddingX) {
+      (style as Record<string, string>)["--rich-quote-padding-x"] = quotePaddingX;
+    }
+
+    return style;
+  }, [sections]);
 
   const serializeSections = (items: EditableSection[]) =>
     JSON.stringify(
@@ -453,6 +501,7 @@ export function SectionBuilder({
               libraryPages={libraryPages}
               isReferenceLibraryLoading={isReferenceLibraryLoading}
               libraryMediaMeta={libraryMediaMeta}
+              richContentStyle={richContentStyle}
             />
           ))}
         </div>

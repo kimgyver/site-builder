@@ -1,3 +1,5 @@
+"use server";
+
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
@@ -19,13 +21,10 @@ import {
   extractRevisionPayload,
   isIgnorableRevisionError,
   isRevisionSchemaIssue,
-  normalizeSnapshotSections,
-  sanitizeRichHtml
+  normalizeSnapshotSections
 } from "./actions.helpers";
 
-export { normalizeSnapshotSections, sanitizeRichHtml };
-
-export async function getAdminRoleForAction(
+async function getAdminRoleForAction(
   nextPath: string
 ): Promise<AdminRole> {
   if (!isAdminAuthEnabled()) return "publisher";
@@ -37,6 +36,54 @@ export async function getAdminRoleForAction(
     redirect(`/admin/login?next=${encodeURIComponent(nextPath)}`);
   }
   return role;
+}
+
+export async function listPageRevisions(args: {
+  pageId: string;
+  skip?: number;
+  take?: number;
+}) {
+  const pageId = String(args.pageId ?? "").trim();
+  if (!pageId) {
+    return { ok: false, error: "INVALID_PAGE_ID", revisions: [], hasMore: false };
+  }
+
+  const role = await getAdminRoleForAction(`/admin/pages/${pageId}`);
+  if (!role) {
+    return { ok: false, error: "UNAUTHORIZED", revisions: [], hasMore: false };
+  }
+
+  const skip = Number.isFinite(args.skip) ? Math.max(0, Number(args.skip)) : 0;
+  const takeInput = Number.isFinite(args.take) ? Number(args.take) : 10;
+  const take = Math.max(1, Math.min(20, takeInput));
+
+  try {
+    const rows = await prisma.pageRevision.findMany({
+      where: { pageId },
+      orderBy: { version: "desc" },
+      skip,
+      take: take + 1,
+      select: {
+        id: true,
+        version: true,
+        source: true,
+        createdAt: true,
+        note: true,
+        snapshot: true
+      }
+    });
+
+    const hasMore = rows.length > take;
+    const revisions = hasMore ? rows.slice(0, take) : rows;
+    return { ok: true, revisions, hasMore };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+      revisions: [],
+      hasMore: false
+    };
+  }
 }
 
 export async function updatePage(formData: FormData) {

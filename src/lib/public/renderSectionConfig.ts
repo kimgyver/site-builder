@@ -19,6 +19,18 @@ export type RenderableSectionConfigInput = {
   props?: unknown;
 };
 
+function getSafePxValue(value: unknown, min: number, max: number) {
+  const numeric =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number(value)
+        : NaN;
+
+  if (!Number.isFinite(numeric)) return undefined;
+  return Math.min(max, Math.max(min, numeric));
+}
+
 export function getSectionLayoutConfig(
   sections: RenderableSectionConfigInput[]
 ) {
@@ -117,6 +129,69 @@ export function getSectionNavigationStyle(
     menuFontSizePx: getSafeFontSizePx(pageStyleProps.menuFontSizePx),
     dividerColor: getSafeColor(pageStyleProps.dividerColor)
   };
+}
+
+export function getSectionRichTextStyle(
+  sections: RenderableSectionConfigInput[]
+): CSSProperties | undefined {
+  const pageStyleSection = sections.find(
+    section => section.enabled !== false && section.type === "pageStyle"
+  );
+  const pageStyleProps = (pageStyleSection?.props ?? {}) as SectionProps;
+
+  const quoteBackgroundColor = getSafeColor(
+    pageStyleProps.quoteBackgroundColor
+  );
+  const quoteBorderColor = getSafeColor(pageStyleProps.quoteBorderColor);
+  const quoteBorderWidthPx = getSafePxValue(
+    pageStyleProps.quoteBorderWidthPx,
+    1,
+    12
+  );
+  const quoteBorderRadiusPx = getSafePxValue(
+    pageStyleProps.quoteBorderRadiusPx,
+    0,
+    24
+  );
+  const quotePaddingYPx = getSafePxValue(pageStyleProps.quotePaddingYPx, 0, 24);
+  const quotePaddingXPx = getSafePxValue(pageStyleProps.quotePaddingXPx, 0, 36);
+
+  if (
+    !quoteBackgroundColor &&
+    !quoteBorderColor &&
+    quoteBorderWidthPx === undefined &&
+    quoteBorderRadiusPx === undefined &&
+    quotePaddingYPx === undefined &&
+    quotePaddingXPx === undefined
+  ) {
+    return undefined;
+  }
+
+  const style: CSSProperties = {};
+  if (quoteBackgroundColor) {
+    (style as Record<string, string>)["--rich-quote-bg"] = quoteBackgroundColor;
+  }
+  if (quoteBorderColor) {
+    (style as Record<string, string>)["--rich-quote-border"] = quoteBorderColor;
+  }
+  if (quoteBorderWidthPx !== undefined) {
+    (style as Record<string, string>)["--rich-quote-border-width"] =
+      `${quoteBorderWidthPx}px`;
+  }
+  if (quoteBorderRadiusPx !== undefined) {
+    (style as Record<string, string>)["--rich-quote-radius"] =
+      `${quoteBorderRadiusPx}px`;
+  }
+  if (quotePaddingYPx !== undefined) {
+    (style as Record<string, string>)["--rich-quote-padding-y"] =
+      `${quotePaddingYPx}px`;
+  }
+  if (quotePaddingXPx !== undefined) {
+    (style as Record<string, string>)["--rich-quote-padding-x"] =
+      `${quotePaddingXPx}px`;
+  }
+
+  return style;
 }
 
 export function getSectionBrandingConfig(

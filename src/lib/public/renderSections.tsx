@@ -12,7 +12,8 @@ export {
   getSectionBackgroundStyle,
   getSectionBrandingConfig,
   getSectionLayoutConfig,
-  getSectionNavigationStyle
+  getSectionNavigationStyle,
+  getSectionRichTextStyle
 } from "./renderSectionConfig";
 
 export type RenderableSection = {

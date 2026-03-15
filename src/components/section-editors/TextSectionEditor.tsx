@@ -1,14 +1,17 @@
 import React from "react";
 import { TiptapEditor } from "@/components/TiptapEditor";
+import type { CSSProperties } from "react";
 
 export function TextSectionEditor({
   props,
   updateProps,
-  type
+  type,
+  richContentStyle
 }: {
   props: Record<string, unknown>;
   updateProps: (props: Record<string, unknown>) => void;
   type: "text" | "richText";
+  richContentStyle?: CSSProperties;
 }) {
   return (
     <div className="space-y-1">
@@ -19,6 +22,7 @@ export function TextSectionEditor({
             ? "Write and format rich text for this block"
             : "Write text for this block (you can format with the toolbar)"
         }
+        editorContainerStyle={richContentStyle}
         onChangeHtml={html => {
           const current = typeof props.html === "string" ? props.html : "";
           if (current === html) {

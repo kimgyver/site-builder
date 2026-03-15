@@ -1,6 +1,7 @@
 import AdminPageClientWrapper from "@/components/admin/AdminPageClientWrapper";
 
 import {
+  listPageRevisions,
   updatePage,
   deletePage,
   saveSections,
@@ -108,6 +109,7 @@ export default function EditPage({
       updatePage={updatePage}
       deletePage={deletePage}
       restoreRevision={restoreRevision}
+      listPageRevisions={listPageRevisions}
     />
   );
 }

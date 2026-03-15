@@ -50,7 +50,8 @@ export function TiptapEditor({
   placeholder,
   onChangeHtml,
   className,
-  editorClassName
+  editorClassName,
+  editorContainerStyle
 }: TiptapEditorProps) {
   const lastEmittedHtmlRef = useRef<string>(defaultValue || "");
   const lastPropagatedHtmlRef = useRef<string>(defaultValue || "");
@@ -334,11 +335,14 @@ export function TiptapEditor({
     setImageAlign,
     insertTable,
     setTableAlign
+    // `createEditorActions` closes over refs for event handlers only.
+    // eslint-disable-next-line react-hooks/refs
   } = createEditorActions({
     editor,
     selectedImagePos,
-    lastTextSelectionRef,
-    lastSelectedTableCellPositionsRef,
+    getLastTextSelection: () => lastTextSelectionRef.current,
+    getSelectedTableCellPositions: () =>
+      lastSelectedTableCellPositionsRef.current,
     setParagraphStyleValue,
     setParagraphSpacingValue,
     setFontFamilyValue,
@@ -435,7 +439,10 @@ export function TiptapEditor({
         }}
       />
 
-      <div className="relative min-h-45 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm leading-6 text-zinc-900 focus-within:border-zinc-900 focus-within:ring-1 focus-within:ring-zinc-900 md:text-base md:leading-7">
+      <div
+        className="relative min-h-45 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm leading-6 text-zinc-900 focus-within:border-zinc-900 focus-within:ring-1 focus-within:ring-zinc-900 md:text-base md:leading-7"
+        style={editorContainerStyle}
+      >
         <SlashMenu
           slashMatch={slashMatch}
           filteredSlashCommands={filteredSlashCommands}

@@ -9,7 +9,6 @@ interface EmbedSectionEditorProps {
 
 const EmbedSectionEditor: React.FC<EmbedSectionEditorProps> = ({
   section,
-  patchProps,
   updateProps
 }) => {
   const props = (section.props || {}) as Record<string, unknown>;

@@ -84,6 +84,41 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
       backgroundImageUrl: extracted
     });
   };
+
+  const applyQuotePreset = (preset: "soft" | "accent" | "minimal") => {
+    const presetValues =
+      preset === "soft"
+        ? {
+            quoteBackgroundColor: "#f3f4f6",
+            quoteBorderColor: "#38bdf8",
+            quoteBorderWidthPx: 3,
+            quoteBorderRadiusPx: 6,
+            quotePaddingYPx: 9,
+            quotePaddingXPx: 14
+          }
+        : preset === "accent"
+          ? {
+              quoteBackgroundColor: "#eef6ff",
+              quoteBorderColor: "#2563eb",
+              quoteBorderWidthPx: 4,
+              quoteBorderRadiusPx: 8,
+              quotePaddingYPx: 10,
+              quotePaddingXPx: 16
+            }
+          : {
+              quoteBackgroundColor: "#ffffff",
+              quoteBorderColor: "#d4d4d8",
+              quoteBorderWidthPx: 2,
+              quoteBorderRadiusPx: 0,
+              quotePaddingYPx: 8,
+              quotePaddingXPx: 12
+            };
+
+    updateProps({
+      ...props,
+      ...presetValues
+    });
+  };
   return (
     <div className="space-y-1">
       <PageStyleBackgroundHelp />
@@ -444,6 +479,152 @@ const PageStyleSectionEditor: React.FC<PageStyleSectionEditorProps> = ({
               updateProps({
                 ...props,
                 menuHoverColor: e.target.value
+              })
+            }
+          />
+        </label>
+      </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+          Quote background color
+          <input
+            type="color"
+            className="mt-1 h-7 w-full cursor-pointer rounded border border-zinc-300 bg-white p-0"
+            value={
+              typeof props.quoteBackgroundColor === "string"
+                ? props.quoteBackgroundColor
+                : "#f3f4f6"
+            }
+            onChange={e =>
+              updateProps({
+                ...props,
+                quoteBackgroundColor: e.target.value
+              })
+            }
+          />
+        </label>
+        <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+          Quote left border color
+          <input
+            type="color"
+            className="mt-1 h-7 w-full cursor-pointer rounded border border-zinc-300 bg-white p-0"
+            value={
+              typeof props.quoteBorderColor === "string"
+                ? props.quoteBorderColor
+                : "#38bdf8"
+            }
+            onChange={e =>
+              updateProps({
+                ...props,
+                quoteBorderColor: e.target.value
+              })
+            }
+          />
+        </label>
+      </div>
+      <div className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-2 text-[10px] text-zinc-600">
+        <div className="mb-1 font-medium text-zinc-700">Quote presets</div>
+        <div className="flex flex-wrap gap-1">
+          <button
+            type="button"
+            className="rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] text-zinc-700 hover:bg-zinc-100"
+            onClick={() => applyQuotePreset("soft")}
+          >
+            Soft
+          </button>
+          <button
+            type="button"
+            className="rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] text-zinc-700 hover:bg-zinc-100"
+            onClick={() => applyQuotePreset("accent")}
+          >
+            Accent
+          </button>
+          <button
+            type="button"
+            className="rounded border border-zinc-300 bg-white px-2 py-1 text-[10px] text-zinc-700 hover:bg-zinc-100"
+            onClick={() => applyQuotePreset("minimal")}
+          >
+            Minimal
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+          Quote border width (px)
+          <input
+            type="number"
+            min={1}
+            max={12}
+            className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+            value={
+              typeof props.quoteBorderWidthPx === "number"
+                ? props.quoteBorderWidthPx
+                : 3
+            }
+            onChange={e =>
+              updateProps({
+                ...props,
+                quoteBorderWidthPx: Number(e.target.value)
+              })
+            }
+          />
+        </label>
+        <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+          Quote radius (px)
+          <input
+            type="number"
+            min={0}
+            max={24}
+            className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+            value={
+              typeof props.quoteBorderRadiusPx === "number"
+                ? props.quoteBorderRadiusPx
+                : 0
+            }
+            onChange={e =>
+              updateProps({
+                ...props,
+                quoteBorderRadiusPx: Number(e.target.value)
+              })
+            }
+          />
+        </label>
+        <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+          Quote padding Y (px)
+          <input
+            type="number"
+            min={0}
+            max={24}
+            className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+            value={
+              typeof props.quotePaddingYPx === "number"
+                ? props.quotePaddingYPx
+                : 9
+            }
+            onChange={e =>
+              updateProps({
+                ...props,
+                quotePaddingYPx: Number(e.target.value)
+              })
+            }
+          />
+        </label>
+        <label className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] text-zinc-600">
+          Quote padding X (px)
+          <input
+            type="number"
+            min={0}
+            max={36}
+            className="mt-1 w-full rounded border border-zinc-300 bg-white px-2 py-1 text-[11px]"
+            value={
+              typeof props.quotePaddingXPx === "number"
+                ? props.quotePaddingXPx
+                : 14
+            }
+            onChange={e =>
+              updateProps({
+                ...props,
+                quotePaddingXPx: Number(e.target.value)
               })
             }
           />

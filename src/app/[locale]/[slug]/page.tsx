@@ -19,6 +19,7 @@ import {
   getSectionBackgroundStyle,
   getSectionLayoutConfig,
   getSectionNavigationStyle,
+  getSectionRichTextStyle,
   isExternalHref,
   localizeInternalHref,
   renderSections,
@@ -160,6 +161,19 @@ export default async function LocaleDynamicPage({
   const pageBranding = getSectionBrandingConfig(
     page.sections as unknown as RenderableSection[]
   );
+  const pageRichTextStyle = getSectionRichTextStyle(
+    page.sections as unknown as RenderableSection[]
+  );
+  const headerRichTextStyle = headerGlobals?.sections
+    ? getSectionRichTextStyle(
+        headerGlobals.sections as unknown as RenderableSection[]
+      )
+    : undefined;
+  const footerRichTextStyle = footerGlobals?.sections
+    ? getSectionRichTextStyle(
+        footerGlobals.sections as unknown as RenderableSection[]
+      )
+    : undefined;
   const pageLayout = getSectionLayoutConfig(
     page.sections as unknown as RenderableSection[]
   );
@@ -303,6 +317,7 @@ export default async function LocaleDynamicPage({
               <div
                 className="text-zinc-800"
                 style={{
+                  ...(headerRichTextStyle ?? {}),
                   display: "grid",
                   rowGap: `${headerLayout.sectionGapPx}px`
                 }}
@@ -392,6 +407,7 @@ export default async function LocaleDynamicPage({
         <div
           className="text-zinc-800"
           style={{
+            ...(pageRichTextStyle ?? {}),
             marginTop: pageLayout.showPageTitle ? "1.5rem" : "0",
             display: "grid",
             rowGap: `${pageLayout.sectionGapPx}px`
@@ -417,6 +433,7 @@ export default async function LocaleDynamicPage({
               <div
                 className="text-zinc-800"
                 style={{
+                  ...(footerRichTextStyle ?? {}),
                   display: "grid",
                   rowGap: `${footerLayout.sectionGapPx}px`
                 }}
