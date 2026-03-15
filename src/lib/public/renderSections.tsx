@@ -128,7 +128,9 @@ export function renderSection(
 
   if (section.type === "columns") {
     const leftHtml =
-      typeof props.leftHtml === "string" ? toRenderableHtml(props.leftHtml) : "";
+      typeof props.leftHtml === "string"
+        ? toRenderableHtml(props.leftHtml)
+        : "";
     const rightHtml =
       typeof props.rightHtml === "string"
         ? toRenderableHtml(props.rightHtml)

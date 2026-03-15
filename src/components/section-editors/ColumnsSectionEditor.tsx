@@ -51,8 +51,7 @@ export default function ColumnsSectionEditor({
       : desktopColumns === 3
         ? "1:1:1"
         : "1:1";
-  const mobileMode =
-    props.mobileMode === "customHtml" ? "customHtml" : "stack";
+  const mobileMode = props.mobileMode === "customHtml" ? "customHtml" : "stack";
 
   const applyDesktopMobileTemplate = () => {
     updateProps({
@@ -144,7 +143,8 @@ export default function ColumnsSectionEditor({
             onChange={e =>
               updateProps({
                 ...props,
-                mobileMode: e.target.value === "customHtml" ? "customHtml" : "stack"
+                mobileMode:
+                  e.target.value === "customHtml" ? "customHtml" : "stack"
               })
             }
           >
@@ -180,10 +180,13 @@ export default function ColumnsSectionEditor({
           Desktop left area content. One line per sentence/item.
         </div>
         <TiptapEditor
-          defaultValue={typeof props.leftHtml === "string" ? props.leftHtml : ""}
+          defaultValue={
+            typeof props.leftHtml === "string" ? props.leftHtml : ""
+          }
           placeholder="e.g. Company intro, address, copyright"
           onChangeHtml={leftHtml => {
-            const current = typeof props.leftHtml === "string" ? props.leftHtml : "";
+            const current =
+              typeof props.leftHtml === "string" ? props.leftHtml : "";
             if (current === leftHtml) {
               return;
             }
@@ -201,10 +204,13 @@ export default function ColumnsSectionEditor({
           Desktop right area content. Use line breaks to separate entries.
         </div>
         <TiptapEditor
-          defaultValue={typeof props.rightHtml === "string" ? props.rightHtml : ""}
+          defaultValue={
+            typeof props.rightHtml === "string" ? props.rightHtml : ""
+          }
           placeholder="e.g. Contact details, business hours"
           onChangeHtml={rightHtml => {
-            const current = typeof props.rightHtml === "string" ? props.rightHtml : "";
+            const current =
+              typeof props.rightHtml === "string" ? props.rightHtml : "";
             if (current === rightHtml) {
               return;
             }
@@ -218,15 +224,21 @@ export default function ColumnsSectionEditor({
 
       {desktopColumns === 3 ? (
         <div className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-2 text-[10px] text-zinc-600">
-          <div className="mb-1 font-medium text-zinc-700">Third column text</div>
+          <div className="mb-1 font-medium text-zinc-700">
+            Third column text
+          </div>
           <div className="mb-2 text-zinc-500">
-            Desktop third area content. Usually used for quick links or extra info.
+            Desktop third area content. Usually used for quick links or extra
+            info.
           </div>
           <TiptapEditor
-            defaultValue={typeof props.thirdHtml === "string" ? props.thirdHtml : ""}
+            defaultValue={
+              typeof props.thirdHtml === "string" ? props.thirdHtml : ""
+            }
             placeholder="e.g. Quick links, notices"
             onChangeHtml={thirdHtml => {
-              const current = typeof props.thirdHtml === "string" ? props.thirdHtml : "";
+              const current =
+                typeof props.thirdHtml === "string" ? props.thirdHtml : "";
               if (current === thirdHtml) {
                 return;
               }
@@ -243,13 +255,17 @@ export default function ColumnsSectionEditor({
         <div className="block rounded-md border border-zinc-200 bg-zinc-50 px-2 py-2 text-[10px] text-zinc-600">
           <div className="mb-1 font-medium text-zinc-700">Mobile-only text</div>
           <div className="mb-2 text-zinc-500">
-            This content is shown only on mobile when Mobile mode is set to custom.
+            This content is shown only on mobile when Mobile mode is set to
+            custom.
           </div>
           <TiptapEditor
-            defaultValue={typeof props.mobileHtml === "string" ? props.mobileHtml : ""}
+            defaultValue={
+              typeof props.mobileHtml === "string" ? props.mobileHtml : ""
+            }
             placeholder="e.g. Compact mobile footer/navigation text"
             onChangeHtml={mobileHtml => {
-              const current = typeof props.mobileHtml === "string" ? props.mobileHtml : "";
+              const current =
+                typeof props.mobileHtml === "string" ? props.mobileHtml : "";
               if (current === mobileHtml) {
                 return;
               }
